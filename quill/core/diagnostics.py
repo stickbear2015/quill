@@ -6,9 +6,11 @@ import locale
 import platform
 import sys
 import zipfile
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode
 
 from quill.core.document import Document
 from quill.core.notifications import Notification
@@ -100,6 +102,46 @@ def write_diagnostics_bundle(
     return target
 
 
+def build_diagnostics_review_text(
+    *,
+    settings: Settings,
+    keymap: Mapping[str, str],
+    notifications: list[Notification],
+    current_document: Document | None,
+    include_file_paths: bool,
+    extra_environment: dict[str, object] | None = None,
+) -> str:
+    metadata = collect_environment_info(extra_environment=extra_environment)
+    lines = [
+        "Diagnostics Review",
+        "",
+        "Quill will create a local zip archive containing:",
+        "- Redacted settings",
+        "- Active keymap",
+        f"- Up to {min(len(notifications), 50)} recent notifications",
+        f"- Up to {len(load_diagnostic_events())} recent command and lifecycle events",
+        "- Recent log files from the last 7 days, if present",
+        "- Environment summary for support and troubleshooting",
+    ]
+    if current_document is not None:
+        lines.append(f"- Current document snapshot for {current_document.name}")
+        if include_file_paths:
+            lines.append("- Plain file path included")
+        else:
+            lines.append("- File path will be hashed before export")
+    lines.extend(
+        [
+            "",
+            f"Quill version: {metadata['quill_version']}",
+            f"Platform: {metadata['platform']}",
+            f"Python: {metadata['python_version']}",
+            f"Keymap entries: {len(keymap)}",
+            f"Settings keys: {len(redact_settings(settings))}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def build_bug_report_payload(
     *,
     current_document: Document | None,
@@ -129,6 +171,36 @@ def build_bug_report_payload(
         "summary": summary,
         "body": "\n".join(details),
     }
+
+
+def build_support_issue_url(
+    payload: Mapping[str, str],
+    *,
+    source_app: str,
+    version: str,
+    platform_label: str,
+    diagnostics_note: str | None = None,
+) -> str:
+    return (
+        "https://github.com/Community-Access/support/issues/new?"
+        + urlencode(
+            {
+                "template": "product-feedback.yml",
+                "title": payload["summary"],
+                "source-app": source_app,
+                "category": "Bug report",
+                "version": version,
+                "platform": platform_label,
+                "summary": payload["summary"],
+                "happened": payload["body"],
+                "diagnostics": diagnostics_note
+                or (
+                    "If available, attach a diagnostics bundle created from Help -> "
+                    "Save Diagnostics..."
+                ),
+            }
+        )
+    )
 
 
 def collect_environment_info(

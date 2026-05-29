@@ -6,6 +6,8 @@ from pathlib import Path
 
 from quill.core.diagnostics import (
     build_bug_report_payload,
+    build_diagnostics_review_text,
+    build_support_issue_url,
     load_diagnostic_events,
     record_diagnostic_event,
     write_diagnostics_bundle,
@@ -61,3 +63,28 @@ def test_build_bug_report_payload_mentions_diagnostics() -> None:
 
     assert "Bug report:" in payload["summary"]
     assert "Save Diagnostics" in payload["body"]
+
+
+def test_build_diagnostics_review_text_mentions_hashing() -> None:
+    review = build_diagnostics_review_text(
+        settings=Settings(),
+        keymap={"file.open": "Ctrl+O"},
+        notifications=[],
+        current_document=Document(text="x", path=Path("C:/Docs/a.md")),
+        include_file_paths=False,
+    )
+
+    assert "Diagnostics Review" in review
+    assert "File path will be hashed" in review
+
+
+def test_build_support_issue_url_targets_support_hub() -> None:
+    url = build_support_issue_url(
+        {"summary": "Bug report: sample", "body": "Body"},
+        source_app="Quill",
+        version="1.0.0",
+        platform_label="Windows 11",
+    )
+
+    assert url.startswith("https://github.com/Community-Access/support/issues/new?")
+    assert "source-app=Quill" in url

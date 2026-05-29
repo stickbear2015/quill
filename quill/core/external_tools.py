@@ -11,6 +11,7 @@ from pathlib import Path
 class ExternalToolDefinition:
     tool_id: str
     name: str
+    category: str
     description: str
     capabilities: tuple[str, ...]
     bundled_subpath: str
@@ -40,6 +41,7 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
     ExternalToolDefinition(
         tool_id="pandoc",
         name="Pandoc",
+        category="conversion",
         description=(
             "General-purpose document conversion engine for moving between Word, "
             "Markdown, HTML, EPUB, and many other text-centric formats."
@@ -57,6 +59,7 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
     ExternalToolDefinition(
         tool_id="tesseract",
         name="Tesseract OCR",
+        category="conversion",
         description=(
             "Local optical character recognition for screenshots, scans, and image-heavy "
             "document workflows."
@@ -74,6 +77,7 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
     ExternalToolDefinition(
         tool_id="libreoffice",
         name="LibreOffice",
+        category="conversion",
         description=(
             "Optional office conversion helper for legacy and edge-case document imports."
         ),
@@ -89,6 +93,7 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
     ExternalToolDefinition(
         tool_id="ghostscript",
         name="Ghostscript",
+        category="conversion",
         description=(
             "PDF and PostScript helper for advanced render and conversion workflows."
         ),
@@ -100,6 +105,58 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
         executable_names=("gswin64c.exe", "gswin32c.exe", "gs"),
         website_url="https://ghostscript.com/",
         install_command="winget install --id ArtifexSoftware.GhostScript -e",
+    ),
+    ExternalToolDefinition(
+        tool_id="tidy_html5",
+        name="HTML Tidy",
+        category="validation",
+        description=(
+            "Native HTML validation and cleanup helper for checking and repairing HTML output."
+        ),
+        capabilities=(
+            "Validate HTML before export or handoff",
+            "Spot structural HTML issues without a browser dependency",
+            "Support future cleanup and repair previews inside Quill",
+        ),
+        bundled_subpath=r"tidy-html5\tidy.exe",
+        executable_names=("tidy.exe", "tidy"),
+        website_url="https://www.html-tidy.org/",
+        install_command="winget install --id HTACG.TidyHtml5 -e",
+    ),
+    ExternalToolDefinition(
+        tool_id="xmllint",
+        name="XML Lint",
+        category="validation",
+        description=(
+            "Lightweight XML and XHTML well-formedness checker for structured document validation."
+        ),
+        capabilities=(
+            "Validate XML and XHTML well-formedness",
+            "Help inspect EPUB internals and structured export output",
+            "Support future Quill validation workflows without Java or Node.js",
+        ),
+        bundled_subpath=r"xmllint\xmllint.exe",
+        executable_names=("xmllint.exe", "xmllint"),
+        website_url="https://gitlab.gnome.org/GNOME/libxml2",
+        install_command="winget install --id XMLSoft.XMLStarlet -e",
+    ),
+    ExternalToolDefinition(
+        tool_id="pymarkdownlnt",
+        name="PyMarkdown",
+        category="validation",
+        description=(
+            "Python-native Markdown linter for checking heading structure, spacing, "
+            "and authoring consistency."
+        ),
+        capabilities=(
+            "Lint Markdown without adding Node.js or Java",
+            "Support future Markdown validation and cleanup workflows",
+            "Flag authoring issues before Markdown leaves Quill",
+        ),
+        bundled_subpath=r"pymarkdownlnt\pymarkdownlnt.exe",
+        executable_names=("pymarkdown.exe", "pymarkdownlnt.exe", "pymarkdown"),
+        website_url="https://pymarkdown.readthedocs.io/",
+        install_command="pipx install pymarkdownlnt",
     ),
 )
 
@@ -149,6 +206,7 @@ def format_tool_status_report(statuses: list[ExternalToolStatus] | None = None) 
     lines = ["External Tools and Format Support", ""]
     for status in current_statuses:
         lines.append(f"## {status.name}")
+        lines.append(f"Category: {status.definition.category}")
         lines.append(status.definition.description)
         lines.append("")
         if status.installed:

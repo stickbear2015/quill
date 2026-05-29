@@ -31,6 +31,8 @@ from quill.core.commands import CommandRegistry
 from quill.core.contrast import render_contrast_report, validate_theme_contrast
 from quill.core.diagnostics import (
     build_bug_report_payload,
+    build_diagnostics_review_text,
+    build_support_issue_url,
     collect_environment_info,
     record_diagnostic_event,
     write_diagnostics_bundle,
@@ -5638,6 +5640,18 @@ class MainFrame:
                 "Future PDF conversion pipeline",
                 "Print-oriented and PostScript-heavy workflows",
             ),
+            "tidy_html5": (
+                "Future HTML validation",
+                "Check HTML exports and authoring output before handoff",
+            ),
+            "xmllint": (
+                "Future XML and XHTML validation",
+                "Check EPUB internals and structured markup for well-formedness",
+            ),
+            "pymarkdownlnt": (
+                "Future Markdown validation",
+                "Lint Markdown structure and style without Node.js or Java",
+            ),
         }
 
         def selected_status() -> object | None:
@@ -5656,6 +5670,7 @@ class MainFrame:
                 return
             touch_lines = touch_points.get(status.tool_id, ())
             lines = [status.definition.description, ""]
+            lines.append(f"Category: {status.definition.category}")
             if status.installed:
                 lines.append(f"Status: installed via {status.source}")
                 if status.path:
@@ -5671,6 +5686,14 @@ class MainFrame:
             if touch_lines:
                 lines.extend(["", "Suggested first touch points:"])
                 lines.extend(f"- {item}" for item in touch_lines)
+            if status.definition.category == "validation":
+                lines.extend(
+                    [
+                        "",
+                        "Why Quill recommends this:",
+                        "- It adds validation value without pulling in Node.js or Java.",
+                    ]
+                )
             lines.extend(["", f"Learn more: {status.definition.website_url}"])
             details.SetValue("\n".join(lines))
             copy_button.Enable(True)
@@ -5807,14 +5830,10 @@ class MainFrame:
 
     def save_diagnostics_bundle(self) -> None:
         wx = self._wx
-        include_paths = (
-            self._show_message_box(
-                "Include plain file paths in diagnostics? Choose No to hash paths instead.",
-                "Save Diagnostics",
-                wx.ICON_QUESTION | wx.YES_NO | wx.NO_DEFAULT,
-            )
-            == wx.YES
-        )
+        include_paths = self._review_diagnostics_export()
+        if include_paths is None:
+            self._set_status("Diagnostics export cancelled")
+            return
         default_name = f"quill-diagnostics-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.zip"
         with wx.FileDialog(
             self.frame,
@@ -5845,6 +5864,80 @@ class MainFrame:
         self._set_status(f"Saved diagnostics bundle to {bundle_path.name}")
 
     def report_bug(self) -> None:
+        review = self._review_bug_report()
+        if review is None:
+            self._set_status("Bug report cancelled")
+            return
+        payload, issue_url = review
+        clipboard_text = payload["body"]
+        self._copy_to_clipboard(clipboard_text)
+        webbrowser.open(issue_url)
+        self._record_notification("Opened support-hub bug report form", "support")
+        self._set_status(
+            "Opened bug report form and copied environment summary to clipboard"
+        )
+
+    def _review_diagnostics_export(self) -> bool | None:
+        wx = self._wx
+        dialog = wx.Dialog(self.frame, title="Review Diagnostics Export", size=(780, 560))
+        panel = wx.Panel(dialog)
+        root = wx.BoxSizer(wx.VERTICAL)
+        include_paths = wx.CheckBox(panel, label="Include plain file paths in the bundle")
+        review = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        copy_button = wx.Button(panel, label="Copy Summary")
+        continue_button = wx.Button(panel, id=wx.ID_OK, label="Continue")
+        cancel_button = wx.Button(panel, id=wx.ID_CANCEL, label="Cancel")
+
+        def refresh() -> None:
+            detection = detect_screen_reader()
+            review.SetValue(
+                build_diagnostics_review_text(
+                    settings=self.settings,
+                    keymap=self.keymap,
+                    notifications=self._notifications,
+                    current_document=self.document,
+                    include_file_paths=include_paths.GetValue(),
+                    extra_environment={
+                        "screen_reader": detection.name,
+                        "wx_version": self._wx.version(),
+                    },
+                )
+            )
+
+        include_paths.Bind(wx.EVT_CHECKBOX, lambda _e: refresh())
+        copy_button.Bind(
+            wx.EVT_BUTTON,
+            lambda _e: self._copy_to_clipboard(review.GetValue()),
+        )
+        continue_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_OK))
+        cancel_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_CANCEL))
+        root.Add(
+            wx.StaticText(
+                panel,
+                label=(
+                    "Review what Quill will include before writing the diagnostics zip. "
+                    "Nothing leaves your machine from this step."
+                ),
+            ),
+            0,
+            wx.ALL | wx.EXPAND,
+            8,
+        )
+        root.Add(include_paths, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        root.Add(review, 1, wx.ALL | wx.EXPAND, 8)
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        buttons.Add(copy_button, 0, wx.RIGHT, 6)
+        buttons.AddStretchSpacer(1)
+        buttons.Add(continue_button, 0, wx.RIGHT, 6)
+        buttons.Add(cancel_button, 0)
+        root.Add(buttons, 0, wx.ALL | wx.EXPAND, 8)
+        panel.SetSizer(root)
+        refresh()
+        if self._show_modal_dialog(dialog, "Review Diagnostics Export") != wx.ID_OK:
+            return None
+        return include_paths.GetValue()
+
+    def _review_bug_report(self) -> tuple[dict[str, str], str] | None:
         payload = build_bug_report_payload(
             current_document=self.document,
             extra_environment={
@@ -5852,36 +5945,49 @@ class MainFrame:
                 "wx_version": self._wx.version(),
             },
         )
-        clipboard_text = payload["body"]
-        self._copy_to_clipboard(clipboard_text)
-        from urllib.parse import urlencode
-
-        issue_url = (
-            "https://github.com/Community-Access/support/issues/new?"
-            + urlencode(
-                {
-                    "template": "product-feedback.yml",
-                    "title": payload["summary"],
-                    "source-app": "Quill",
-                    "category": "Bug report",
-                    "version": __version__,
-                    "platform": collect_environment_info()[
-                        "platform"
-                    ],
-                    "summary": payload["summary"],
-                    "happened": payload["body"],
-                    "diagnostics": (
-                        "If available, attach a diagnostics bundle created from "
-                        "Help -> Save Diagnostics..."
-                    ),
-                }
-            )
+        issue_url = build_support_issue_url(
+            payload,
+            source_app="Quill",
+            version=__version__,
+            platform_label=str(collect_environment_info()["platform"]),
         )
-        webbrowser.open(issue_url)
-        self._record_notification("Opened support-hub bug report form", "support")
-        self._set_status(
-            "Opened bug report form and copied environment summary to clipboard"
+        wx = self._wx
+        dialog = wx.Dialog(self.frame, title="Review Bug Report", size=(780, 560))
+        panel = wx.Panel(dialog)
+        root = wx.BoxSizer(wx.VERTICAL)
+        review = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        review.SetValue(
+            f"Summary: {payload['summary']}\n\n{payload['body']}\n\nDestination:\n{issue_url}"
         )
+        copy_button = wx.Button(panel, label="Copy Summary")
+        open_button = wx.Button(panel, id=wx.ID_OK, label="Open Support Form")
+        cancel_button = wx.Button(panel, id=wx.ID_CANCEL, label="Cancel")
+        copy_button.Bind(wx.EVT_BUTTON, lambda _e: self._copy_to_clipboard(payload["body"]))
+        open_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_OK))
+        cancel_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_CANCEL))
+        root.Add(
+            wx.StaticText(
+                panel,
+                label=(
+                    "Review the support report before Quill opens the Community Access "
+                    "support form in your browser."
+                ),
+            ),
+            0,
+            wx.ALL | wx.EXPAND,
+            8,
+        )
+        root.Add(review, 1, wx.ALL | wx.EXPAND, 8)
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        buttons.Add(copy_button, 0, wx.RIGHT, 6)
+        buttons.AddStretchSpacer(1)
+        buttons.Add(open_button, 0, wx.RIGHT, 6)
+        buttons.Add(cancel_button, 0)
+        root.Add(buttons, 0, wx.ALL | wx.EXPAND, 8)
+        panel.SetSizer(root)
+        if self._show_modal_dialog(dialog, "Review Bug Report") != wx.ID_OK:
+            return None
+        return payload, issue_url
 
     def show_keyboard_trap_snapshot(self) -> None:
         wx = self._wx

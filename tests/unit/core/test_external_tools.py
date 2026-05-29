@@ -49,3 +49,5 @@ def test_format_tool_status_report_mentions_install_command(monkeypatch) -> None
 
     assert "Pandoc" in report
     assert "Install command:" in report
+    assert "HTML Tidy" in report
+    assert "PyMarkdown" in report
