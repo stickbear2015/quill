@@ -425,7 +425,9 @@ def test_build_misspelling_navigator_nodes_uses_line_and_column() -> None:
     assert "wrng word" in nodes[0].preview
 
 
-def test_open_misspelling_list_jumps_to_selected_occurrence(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_open_misspelling_list_jumps_to_selected_occurrence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     frame = _build_frame("hello\nwrng word\n", insertion_point=0)
     item = Misspelling(word="wrng", start=6, end=10)
     frame._spell_dictionary = lambda: {"hello", "word"}  # type: ignore[method-assign]
