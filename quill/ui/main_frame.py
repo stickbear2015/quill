@@ -675,6 +675,12 @@ class MainFrame:
 
     def show(self) -> None:
         self.frame.Show(True)
+        # Bring the window to the front and focus the editor, so it doesn't open
+        # behind the launching console (screen-reader users land in the editor).
+        self.frame.Raise()
+        self.frame.RequestUserAttention()
+        if getattr(self, "editor", None) is not None:
+            self._wx.CallAfter(self.editor.SetFocus)
         if not self._startup_deferred_ran:
             self._startup_deferred_ran = True
             self._wx.CallAfter(self._run_deferred_startup_tasks)
