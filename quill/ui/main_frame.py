@@ -318,6 +318,8 @@ class _DocumentTab:
     panel: object
     editor: object
     document: Document
+    splitter: object = None
+    preview: object = None
 
 
 @dataclass(slots=True)
@@ -910,6 +912,12 @@ class MainFrame:
             "Preview",
             self.preview_in_app,
             self._binding_for("view.preview"),
+        )
+        self.commands.register(
+            "view.split_preview",
+            "Preview Side by Side",
+            self.toggle_side_preview,
+            self._binding_for("view.split_preview"),
         )
         self.commands.register(
             "view.browser_preview",
@@ -2178,6 +2186,7 @@ class MainFrame:
         self._id_toggle_intellisense_as_you_type = wx.NewIdRef()
         self._id_browser_preview = wx.NewIdRef()
         self._id_preview = wx.NewIdRef()
+        self._id_split_preview = wx.NewIdRef()
         self._id_start_with_no_document_open = wx.NewIdRef()
         self._id_dirty_title_text = wx.NewIdRef()
         self._id_dirty_title_asterisk = wx.NewIdRef()
@@ -2249,6 +2258,10 @@ class MainFrame:
         view_menu.Append(
             self._id_preview,
             self._menu_label("&Preview...", "view.preview"),
+        )
+        view_menu.Append(
+            self._id_split_preview,
+            self._menu_label("Preview &Side by Side", "view.split_preview"),
         )
         view_menu.Append(
             self._id_browser_preview,
@@ -3219,6 +3232,11 @@ class MainFrame:
         )
         self.frame.Bind(
             wx.EVT_MENU,
+            lambda _e: self.toggle_side_preview(),
+            id=self._id_split_preview,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
             lambda _e: self.preview_in_browser(),
             id=self._id_browser_preview,
         )
@@ -3908,6 +3926,7 @@ class MainFrame:
             "view.toggle_soft_wrap": self._id_toggle_soft_wrap,
             "view.toggle_find_wrap": self._id_toggle_find_wrap,
             "view.preview": self._id_preview,
+            "view.split_preview": self._id_split_preview,
             "view.browser_preview": self._id_browser_preview,
             "tools.ai_assistant": self._id_ai_assistant,
             "tools.ask_quill_chat": self._id_ask_quill_chat,
@@ -4114,17 +4133,22 @@ class MainFrame:
     def _create_document_tab(self, document: Document, select: bool = True) -> int:
         wx = self._wx
         panel = wx.Panel(self.notebook)
+        # The editor lives in a splitter so a live preview can be shown to its
+        # right (View → Preview Side by Side). It starts unsplit (editor only).
+        splitter = wx.SplitterWindow(panel, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
+        splitter.SetMinimumPaneSize(160)
         editor = wx.TextCtrl(
-            panel,
+            splitter,
             style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.TE_NOHIDESEL,
         )
+        splitter.Initialize(editor)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(editor, 1, wx.EXPAND)
+        sizer.Add(splitter, 1, wx.EXPAND)
         panel.SetSizer(sizer)
         if document.text:
             editor.ChangeValue(document.text)
         self._bind_editor_events(editor)
-        tab = _DocumentTab(panel=panel, editor=editor, document=document)
+        tab = _DocumentTab(panel=panel, editor=editor, document=document, splitter=splitter)
         self._document_tabs.append(tab)
         index = self.notebook.GetPageCount()
         self.notebook.AddPage(panel, document.name, select=select)
@@ -4267,6 +4291,7 @@ class MainFrame:
         if self._dictation.state == "listening" and self.settings.voice_commands_enabled:
             self._schedule_voice_command_scan()
         self._refresh_intellisense_popup()
+        self._refresh_side_preview()
         self._refresh_browser_preview()
         self._maybe_autosave()
         self._refresh_title()
@@ -11754,6 +11779,47 @@ class MainFrame:
 
         MarkdownPreviewDialog(self.frame, title, body, anchor).show()
         self._set_status("Opened preview")
+
+    def _active_tab(self):
+        index = self._active_tab_index if self._active_tab_index >= 0 else self._current_tab_index()
+        if 0 <= index < len(self._document_tabs):
+            return self._document_tabs[index]
+        return None
+
+    def toggle_side_preview(self) -> None:
+        """Show / hide a live preview to the right of the editor (split view)."""
+        tab = self._active_tab()
+        if tab is None or getattr(tab, "splitter", None) is None:
+            self._set_status("No document open")
+            return
+        splitter = tab.splitter
+        if tab.preview is not None and splitter.IsSplit():
+            splitter.Unsplit(tab.preview.control)
+            self._set_status("Preview hidden")
+            self.editor.SetFocus()
+            return
+        if tab.preview is None:
+            from quill.ui.preview_dialog import SidePreview
+
+            tab.preview = SidePreview(splitter)
+        sash = max(splitter.GetClientSize().x // 2, 200)
+        splitter.SplitVertically(tab.editor, tab.preview.control, sash)
+        self._update_side_preview(tab)
+        self._set_status("Preview shown on the right")
+
+    def _refresh_side_preview(self) -> None:
+        tab = self._active_tab()
+        if tab is None or tab.preview is None:
+            return
+        splitter = getattr(tab, "splitter", None)
+        if splitter is None or not splitter.IsSplit():
+            return
+        self._update_side_preview(tab)
+
+    def _update_side_preview(self, tab) -> None:
+        text = tab.editor.GetValue()
+        kind = guess_preview_kind(tab.document.path, text)
+        tab.preview.update(render_preview_body(text, kind))
 
     def _refresh_browser_preview(self) -> None:
         session = self._browser_preview_session
