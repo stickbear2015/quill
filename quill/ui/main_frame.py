@@ -93,6 +93,7 @@ from quill.core.format_ops import (
     toggle_line_comment,
     trim_trailing_whitespace,
 )
+from quill.core.heading_styles import HeadingStyle, apply_heading_style
 from quill.core.glow import build_audit_report, build_fix_report, fix_text
 from quill.core.guides import build_keyboard_reference, build_welcome_guide
 from quill.core.intake import (
@@ -1704,6 +1705,12 @@ class MainFrame:
             self._binding_for("format.increase_heading_level"),
         )
         self.commands.register(
+            "format.style_headings",
+            "Style Headings...",
+            self.style_headings,
+            self._binding_for("format.style_headings"),
+        )
+        self.commands.register(
             "format.upper_case",
             "Upper Case",
             self.format_upper_case,
@@ -2273,6 +2280,7 @@ class MainFrame:
         self._id_heading_6 = wx.NewIdRef()
         self._id_decrease_heading_level = wx.NewIdRef()
         self._id_increase_heading_level = wx.NewIdRef()
+        self._id_style_headings = wx.NewIdRef()
         self._id_upper_case = wx.NewIdRef()
         self._id_lower_case = wx.NewIdRef()
         self._id_title_case = wx.NewIdRef()
@@ -2383,6 +2391,11 @@ class MainFrame:
                 "Increase Level",
                 "format.increase_heading_level",
             ),
+        )
+        heading_menu.AppendSeparator()
+        heading_menu.Append(
+            self._id_style_headings,
+            self._menu_label("&Style Headings...", "format.style_headings"),
         )
         insert_menu.Append(
             self._id_insert_link,
@@ -3316,6 +3329,7 @@ class MainFrame:
             lambda _e: self.increase_heading_level(),
             id=self._id_increase_heading_level,
         )
+        self.frame.Bind(wx.EVT_MENU, lambda _e: self.style_headings(), id=self._id_style_headings)
         self.frame.Bind(
             wx.EVT_MENU,
             lambda _e: self.format_insert_bullet_list(),
@@ -3830,6 +3844,7 @@ class MainFrame:
             "edit.select_line": self._id_select_line,
             "format.decrease_heading_level": self._id_decrease_heading_level,
             "format.increase_heading_level": self._id_increase_heading_level,
+            "format.style_headings": self._id_style_headings,
             "format.bold": self._id_format_bold,
             "format.italic": self._id_format_italic,
             "format.upper_case": self._id_upper_case,
@@ -5370,6 +5385,7 @@ class MainFrame:
                 self._id_heading_4,
                 self._id_heading_5,
                 self._id_heading_6,
+                getattr(self, "_id_style_headings", None),
                 self._id_insert_bullet_list,
                 self._id_insert_numbered_list,
                 self._id_insert_task_list,
@@ -11383,6 +11399,111 @@ class MainFrame:
 
     def increase_heading_level(self) -> None:
         self._adjust_heading_level(1)
+
+    def style_headings(self) -> None:
+        if not self._feature_enabled("core.format"):
+            self._set_status("Heading tools are unavailable in this profile")
+            return
+        surface = self._active_markup_surface()
+        if surface is None:
+            self._set_status("Headings are only available in Markdown or HTML documents")
+            return
+        levels = self._prompt_heading_style_levels(surface)
+        if levels is None:
+            self._set_status("Heading styling cancelled")
+            return
+        style = self._prompt_heading_style()
+        if style is None:
+            self._set_status("Heading styling cancelled")
+            return
+        text = self.editor.GetValue()
+        updated, changed = apply_heading_style(text, markup_kind=surface, style=style, levels=levels)
+        if changed == 0:
+            self._set_status("No headings matched the selected level")
+            return
+        self._replace_document_text(updated)
+        self.document.set_text(updated)
+        self._set_status(f"Styled {changed} heading{'s' if changed != 1 else ''}")
+
+    def _prompt_heading_style_levels(self, surface: str) -> set[int] | None:
+        options = ["All heading levels", "Current heading level"]
+        choice = wx.GetSingleChoice(
+            "Choose which headings to style.",
+            "Style Headings",
+            options,
+            self.frame,
+        )
+        if not choice:
+            return None
+        if choice == "All heading levels":
+            return set(range(1, 7))
+        level = self._current_heading_level(surface)
+        if level is None:
+            self._set_status("Place the cursor on a heading line to style current level")
+            return None
+        return {level}
+
+    def _current_heading_level(self, surface: str) -> int | None:
+        text = self.editor.GetValue()
+        cursor = self.editor.GetInsertionPoint()
+        start, end = line_span(text, cursor)
+        line_text = text[start:end].strip()
+        if surface == "markdown":
+            match = re.match(r"^(#{1,6})\s+", line_text)
+            if match is None:
+                return None
+            return len(match.group(1))
+        match = re.match(r"^<h([1-6])(?:\s[^>]*)?>", line_text, flags=re.IGNORECASE)
+        if match is None:
+            return None
+        return int(match.group(1))
+
+    def _prompt_heading_style(self) -> HeadingStyle | None:
+        font_family = wx.GetTextFromUser(
+            "Font family (leave blank to keep existing):",
+            "Style Headings",
+            parent=self.frame,
+        )
+        if font_family is None:
+            return None
+        size_text = wx.GetTextFromUser(
+            "Font size in points (leave blank to keep existing):",
+            "Style Headings",
+            parent=self.frame,
+        )
+        if size_text is None:
+            return None
+        size_value: int | None = None
+        cleaned_size = size_text.strip()
+        if cleaned_size:
+            try:
+                parsed_size = int(cleaned_size)
+            except ValueError:
+                self._set_status("Heading style requires a whole-number font size")
+                return None
+            if parsed_size <= 0:
+                self._set_status("Heading style requires a positive font size")
+                return None
+            size_value = parsed_size
+        alignment_options = ["Keep existing", "Left", "Center", "Right", "Justify"]
+        alignment_choice = wx.GetSingleChoice(
+            "Text alignment:",
+            "Style Headings",
+            alignment_options,
+            self.frame,
+        )
+        if not alignment_choice:
+            return None
+        align_value = None if alignment_choice == "Keep existing" else alignment_choice.lower()
+        style = HeadingStyle(
+            font_family=font_family.strip() or None,
+            font_size_pt=size_value,
+            text_align=align_value,
+        )
+        if not style.declarations():
+            self._set_status("Specify at least one heading style option")
+            return None
+        return style
 
     def _adjust_heading_level(self, delta: int) -> None:
         if not self._feature_enabled("core.format"):

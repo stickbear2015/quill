@@ -27,6 +27,7 @@ Quill 0.1.2 Beta expands Quill's writing flow with prediction, snippets, browser
 - Added Markdown list editing flow updates: `Enter` continues list items, `Enter` on an empty marker exits the list, and `Tab`/`Shift+Tab` nest or promote list items.
 - Added a **List Manager** (`Ctrl+Alt+L`) under Format -> List for tree-based list restructuring (move, promote/demote, add, edit, delete).
 - Added structured **PowerPoint (.pptx) import** with slide titles as headings, bullet levels as nested lists, table extraction, and speaker-note extraction.
+- Added **Style Headings...** under Insert -> Heading to apply font family, size, and alignment to current-level or all headings in Markdown/HTML.
 - Removed duplicate path reporting by hiding the status-bar file path item when full path is already shown in the title bar.
 - Fixed intermittent unit-test file-locking in UI navigation tests by isolating `QUILL_DATA_DIR` per test.
 - Expanded docs and release notes for the complete 0.1.2 feature set.

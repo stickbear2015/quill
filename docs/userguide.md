@@ -281,6 +281,7 @@ Inline and structural formatting:
 - Italic
 - Insert Heading levels 1 through 6
 - Increase or decrease heading level
+- Style headings (font, size, alignment) for the current level or all levels
 - Insert bullet, numbered, and task lists
 - Insert code block
 - Insert footnote
@@ -549,6 +550,8 @@ Quill detects whether the current surface looks like Markdown, HTML, or plain te
 The heading tools do more than insert decoration. They help you maintain usable structure. The list tools speed up common authoring patterns without forcing you into a separate composer.
 
 Markdown list editing now follows editor-standard behavior: `Enter` continues the current bullet/numbered/task item, and `Enter` on an empty list marker exits the list. When the caret is on a list item, `Tab` nests it and `Shift+Tab` promotes it. For larger reorganizations, use **Format -> List -> List Manager...** (`Ctrl+Alt+L`) to move, promote/demote, add, edit, and delete list items from a tree view.
+
+For heading presentation control, open **Insert -> Heading -> Style Headings...**. You can style either all heading levels or the current heading level, then set font family, point size, and alignment. In Markdown documents, styled headings are written as HTML heading tags so the formatting is preserved.
 
 ### Tables, code blocks, and tags
 
