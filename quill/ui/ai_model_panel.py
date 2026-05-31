@@ -30,10 +30,23 @@ class AIModelDialog:
         self._open_connection = open_connection
 
         self.dialog = wx.Dialog(
-            parent, title="AI Model & Connection", style=wx.DEFAULT_DIALOG_STYLE
+            parent, title="AI Model & Connection", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         )
-        self.dialog.SetSize((540, 380))
+        self.dialog.SetSize((560, 520))
         root = wx.BoxSizer(wx.VERTICAL)
+
+        wrap = 520
+
+        def add_help(text: str) -> None:
+            label = wx.StaticText(self.dialog, label=text)
+            label.Wrap(wrap)
+            root.Add(label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 12)
+
+        add_help(
+            "Quill includes an on-device AI model that runs entirely on your computer — "
+            "private, offline, and free, with no account or setup. Choose one below; it "
+            "downloads automatically the first time you use it."
+        )
 
         rec = recommended_id()
         root.Add(
@@ -47,7 +60,7 @@ class AIModelDialog:
             12,
         )
 
-        root.Add(wx.StaticText(self.dialog, label="Model"), 0, wx.LEFT | wx.RIGHT, 12)
+        root.Add(wx.StaticText(self.dialog, label="On-device model"), 0, wx.LEFT | wx.RIGHT, 12)
         self._ids = ["auto", *MODELS.keys()]
         labels = [f"Recommended ({MODELS[rec].name})"]
         for model_id, spec in MODELS.items():
@@ -65,15 +78,26 @@ class AIModelDialog:
         root.Add(self.choice, 0, wx.EXPAND | wx.ALL, 12)
 
         self.status = wx.StaticText(self.dialog, label="")
-        root.Add(self.status, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 12)
+        root.Add(self.status, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 12)
 
+        # Optional: connect Ollama (local or cloud) for more models.
+        if self._open_connection is not None:
+            add_help(
+                "More options (optional): if you have Ollama installed — or an Ollama "
+                "Cloud key — you can connect it for more models. The on-device model above "
+                "works on its own; this is only if you want more."
+            )
+            self.connection_button = wx.Button(
+                self.dialog,
+                label="Connect Ollama or set up a cloud key (Connection Settings)...",
+            )
+            self.connection_button.Bind(wx.EVT_BUTTON, self._on_connection)
+            root.Add(self.connection_button, 0, wx.LEFT | wx.RIGHT | wx.TOP, 12)
+
+        root.AddStretchSpacer()
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.download_button = wx.Button(self.dialog, label="Download Now")
         buttons.Add(self.download_button, 0, wx.RIGHT, 8)
-        if self._open_connection is not None:
-            self.connection_button = wx.Button(self.dialog, label="Connection Settings...")
-            self.connection_button.Bind(wx.EVT_BUTTON, self._on_connection)
-            buttons.Add(self.connection_button, 0, wx.RIGHT, 8)
         buttons.AddStretchSpacer()
         buttons.Add(wx.Button(self.dialog, wx.ID_OK, label="Save"), 0, wx.RIGHT, 8)
         buttons.Add(wx.Button(self.dialog, wx.ID_CANCEL, label="Cancel"), 0)
