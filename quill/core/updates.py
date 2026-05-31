@@ -112,6 +112,39 @@ def _release_from_json(data: dict) -> GitHubRelease:
     )
 
 
+def fetch_releases(api_url: str = GITHUB_RELEASES_API, timeout: int = 10) -> list[GitHubRelease]:
+    """All non-draft GitHub releases (newest-first as GitHub returns them)."""
+    request = Request(
+        api_url,
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "Quill-Updater"},
+    )
+    with urlopen(request, timeout=timeout, context=_ssl_context()) as response:
+        payload = response.read().decode("utf-8", errors="strict")
+    raw = json.loads(payload)
+    if not isinstance(raw, list):
+        raise ValueError("GitHub releases payload must be a JSON array")
+    return [_release_from_json(r) for r in raw if isinstance(r, dict) and not r.get("draft")]
+
+
+def select_latest(
+    releases: list[GitHubRelease], include_prereleases: bool = False
+) -> GitHubRelease | None:
+    candidates = [r for r in releases if include_prereleases or not r.prerelease]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda r: _version_tuple(r.version))
+
+
+def find_release(releases: list[GitHubRelease], version: str) -> GitHubRelease | None:
+    """The release whose tag matches ``version`` (so we can tell if the running
+    build is itself a prerelease)."""
+    target = _version_tuple(version)
+    for release in releases:
+        if _version_tuple(release.version) == target:
+            return release
+    return None
+
+
 def parse_update_manifest(payload: str) -> UpdateManifest:
     raw = json.loads(payload)
     if not isinstance(raw, dict):
@@ -179,6 +212,9 @@ __all__ = [
     "URLError",
     "download_release_asset",
     "fetch_latest_release",
+    "fetch_releases",
+    "find_release",
+    "select_latest",
     "fetch_update_manifest",
     "is_newer_version",
     "parse_update_manifest",

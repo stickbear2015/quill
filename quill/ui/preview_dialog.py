@@ -295,7 +295,16 @@ class HtmlMessageDialog:
             self.view.SetName(title)
             self.view.Bind(webview.EVT_WEBVIEW_LOADED, lambda _e: setattr(self, "_loaded", True))
             self.view.Bind(webview.EVT_WEBVIEW_NAVIGATING, self._on_navigating)
-            self.view.SetPage(_preview_page(title, body_html), "")
+            # Escape inside the native WebView is swallowed; bridge it out to close.
+            try:
+                self.view.AddScriptMessageHandler("quill")
+                self.view.Bind(
+                    webview.EVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED,
+                    lambda _e: self._end(self._wx.ID_CANCEL),
+                )
+            except Exception:  # noqa: BLE001
+                pass
+            self.view.SetPage(_preview_page(title, body_html, escape_bridge=True), "")
             outer.Add(self.view, 1, wx.EXPAND)
         except Exception:  # noqa: BLE001
             self.view = None

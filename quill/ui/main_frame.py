@@ -273,8 +273,11 @@ from quill.core.updates import (
     UpdateManifest,
     download_release_asset,
     fetch_latest_release,
+    fetch_releases,
     fetch_update_manifest,
+    find_release,
     is_newer_version,
+    select_latest,
 )
 from quill.core.url_ops import format_content_length, host_for_url, is_cross_host_redirect
 from quill.core.yaml_structure import (
@@ -11155,12 +11158,7 @@ class MainFrame:
         beta = bool(getattr(self.settings, "beta_updates", False))
         self._set_status("Checking for updates...")
         try:
-            latest_any = fetch_latest_release(include_prereleases=True)
-            latest_stable = (
-                latest_any
-                if (latest_any is not None and not latest_any.prerelease)
-                else fetch_latest_release(include_prereleases=False)
-            )
+            releases = fetch_releases()
         except (URLError, ValueError, OSError) as error:
             if silent_no_update:
                 self._record_notification(f"Update check failed: {error}", "update")
@@ -11174,6 +11172,20 @@ class MainFrame:
             self._set_status("Update check failed")
             self._record_notification("Update check failed", "update")
             return
+
+        latest_any = select_latest(releases, include_prereleases=True)
+        latest_stable = select_latest(releases, include_prereleases=False)
+
+        # If the running build is itself a prerelease, the user is already a beta
+        # tester — put them on the beta channel automatically (no consent needed).
+        current_match = find_release(releases, current_version)
+        if not beta and current_match is not None and current_match.prerelease:
+            self.settings.beta_updates = True
+            save_settings(self.settings)
+            beta = True
+            self._record_notification(
+                "You're running a beta build, so beta updates are enabled.", "update"
+            )
 
         # The release for the user's current channel.
         target = latest_any if beta else latest_stable
