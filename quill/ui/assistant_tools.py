@@ -441,6 +441,7 @@ class AssistantConnectionDialog:
 
         self._settings = load_assistant_connection_settings()
         self._api_key = load_assistant_api_key()
+        self._api_key_revealed = False
         self.last_verification_ok: bool | None = None
         self.last_verification_message: str = "Not checked"
 
@@ -481,21 +482,25 @@ class AssistantConnectionDialog:
 
         self.model = wx.TextCtrl(panel)
         self.model.SetValue(self._settings.model)
+        self.model.SetName("Model")
         panel_sizer.Add(wx.StaticText(panel, label="Model"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         panel_sizer.Add(self.model, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
+        self.api_key_label = wx.StaticText(
+            panel,
+            label="API key (optional; stored encrypted with DPAPI)",
+        )
+        panel_sizer.Add(self.api_key_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+
+        self.api_key_row = wx.BoxSizer(wx.HORIZONTAL)
         self.api_key = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
         self.api_key.SetValue(self._api_key)
-        panel_sizer.Add(
-            wx.StaticText(
-                panel,
-                label="API key (optional; stored encrypted with DPAPI)",
-            ),
-            0,
-            wx.LEFT | wx.RIGHT | wx.TOP,
-            8,
-        )
-        panel_sizer.Add(self.api_key, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        self.api_key.SetName("API key")
+        self.api_key_row.Add(self.api_key, 1, wx.EXPAND | wx.RIGHT, 8)
+        self.reveal_api_key = wx.Button(panel, label="Reveal")
+        self.reveal_api_key.SetName("Reveal API key")
+        self.api_key_row.Add(self.reveal_api_key, 0)
+        panel_sizer.Add(self.api_key_row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         actions = wx.BoxSizer(wx.HORIZONTAL)
         self.verify_button = wx.Button(panel, label="Verify Connection")
@@ -523,6 +528,7 @@ class AssistantConnectionDialog:
         self.verify_button.Bind(wx.EVT_BUTTON, self._on_verify_connection)
         self.list_models_button.Bind(wx.EVT_BUTTON, self._on_list_models)
         self.recommend_button.Bind(wx.EVT_BUTTON, self._on_recommend_model)
+        self.reveal_api_key.Bind(wx.EVT_BUTTON, self._on_toggle_api_key_reveal)
         self._on_provider_changed(None)
 
     def _provider_choice_index(self, provider: str) -> int:
@@ -554,6 +560,34 @@ class AssistantConnectionDialog:
         cloud_default = default_host_for_provider("ollama_cloud")
         if not host_value or host_value in {local_default, cloud_default}:
             self.host.SetValue(default_host_for_provider(provider))
+        requires_key = provider in {"ollama_cloud", "custom"}
+        if provider == "ollama_cloud":
+            self.api_key_label.SetLabel("API key (Ollama Cloud; stored encrypted with DPAPI)")
+        else:
+            self.api_key_label.SetLabel("API key (optional; stored encrypted with DPAPI)")
+        self.api_key.Enable(requires_key)
+        self.reveal_api_key.Enable(requires_key)
+        if not requires_key and self._api_key_revealed:
+            self._set_api_key_revealed(False)
+        self.dialog.Layout()
+
+    def _on_toggle_api_key_reveal(self, _event: object) -> None:
+        self._set_api_key_revealed(not self._api_key_revealed)
+
+    def _set_api_key_revealed(self, revealed: bool) -> None:
+        value = self.api_key.GetValue()
+        parent = self.api_key.GetParent()
+        self.api_key_row.Detach(self.api_key)
+        self.api_key.Destroy()
+        style = 0 if revealed else self._wx.TE_PASSWORD
+        self.api_key = self._wx.TextCtrl(parent, style=style)
+        self.api_key.SetValue(value)
+        self.api_key.SetName("API key")
+        self.api_key_row.Insert(0, self.api_key, 1, self._wx.EXPAND | self._wx.RIGHT, 8)
+        self._api_key_revealed = revealed
+        self.reveal_api_key.SetLabel("Hide" if revealed else "Reveal")
+        self.reveal_api_key.SetName("Hide API key" if revealed else "Reveal API key")
+        self.dialog.Layout()
 
     def _on_verify_connection(self, _event: object) -> None:
         settings = self._current_settings()
