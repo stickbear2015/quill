@@ -8469,6 +8469,7 @@ class MainFrame:
         ("Taylor Arndt on GitHub", "https://github.com/taylorarndt"),
         ("Michael Doise on GitHub", "https://github.com/mikedoise"),
         ("Becky K on GitHub", "https://github.com/BeckyK102125"),
+        ("wx-accessible-webview on GitHub", "https://github.com/Community-Access/wx-accessible-webview"),
     )
 
     # Open-source projects Quill is built with (credited in About).
