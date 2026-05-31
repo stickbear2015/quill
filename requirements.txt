@@ -29,3 +29,10 @@ pyenchant>=3.3.0
 # Use llama-cpp-python CPU wheels to avoid source builds and Windows long-path failures.
 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 llama-cpp-python>=0.3.23
+
+# Dictation / voice input (mic permission required).
+SpeechRecognition>=3.16.1
+
+# Structured document import (Word/PowerPoint/Excel/Pages/PDF fallback).
+keynote-parser>=1.0
+markitdown[all]>=0.1.0
