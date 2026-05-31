@@ -1,0 +1,58 @@
+name: Docs artifacts
+
+# Whenever a docs/*.md source changes, regenerate the matching HTML + EPUB with
+# Pandoc and commit them back — so contributors don't have to install Pandoc or
+# run it by hand, and the docs artifact parity guard stays satisfied.
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "docs/**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Only one regeneration per branch at a time; cancel stale runs.
+concurrency:
+  group: docs-artifacts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+          # default GITHUB_TOKEN is persisted so we can push the regen commit back
+          persist-credentials: true
+
+      - name: Install Pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
+      - name: Regenerate HTML + EPUB from docs/*.md
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for md in docs/*.md; do
+            name="${md%.md}"
+            pandoc "$md" -f gfm -t html5 -s -o "${name}.html"
+            pandoc "$md" -f gfm -t epub3      -o "${name}.epub"
+          done
+
+      - name: Commit regenerated artifacts if they changed
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- docs)" ]; then
+            echo "Docs artifacts already up to date — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/*.html docs/*.epub
+          # [skip ci] avoids re-triggering; the commit only touches .html/.epub
+          # (not .md) so the docs/**.md path filter wouldn't re-fire anyway.
+          git commit -m "docs: regenerate HTML/EPUB artifacts [skip ci]"
+          git push origin "HEAD:${{ github.ref_name }}"
