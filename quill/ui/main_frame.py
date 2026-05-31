@@ -2984,11 +2984,9 @@ class MainFrame:
         ai_menu.Check(self._id_ai_enabled, load_ai_enabled())
         ai_menu.AppendSeparator()
         ai_menu.Append(self._id_ai_status_badge, "AI Status: Not checked")
-        ai_menu.Enable(self._id_ai_status_badge, False)
         ai_menu.Append(
             self._id_ai_status_detail, "AI Detail: Open AI Connection to verify settings"
         )
-        ai_menu.Enable(self._id_ai_status_detail, False)
         ai_menu.Append(
             self._id_ask_quill_chat,
             self._menu_label("Ask Quill &Chat...", "tools.ask_quill_chat"),
@@ -3356,12 +3354,12 @@ class MainFrame:
         )
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self._set_status("AI status is informational."),
+            lambda _e: self._refresh_ai_status(),
             id=self._id_ai_status_badge,
         )
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self._set_status("AI connection detail is informational."),
+            lambda _e: self.open_ai_preferences(),
             id=self._id_ai_status_detail,
         )
         self.frame.Bind(wx.EVT_MENU, self._on_toggle_ai_enabled, id=self._id_ai_enabled)
@@ -3395,7 +3393,7 @@ class MainFrame:
             lambda _e: self.open_ai_fix_grammar(),
             id=self._id_ai_fix_grammar,
         )
-        self._set_ai_menu_status_badge(None, "Not checked")
+        self._refresh_ai_status()
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.send_to_tray(), id=self._id_send_to_tray)
         self.frame.Bind(
             wx.EVT_MENU,
@@ -7892,8 +7890,12 @@ class MainFrame:
         else:
             self._set_status("AI connection settings cancelled")
 
-    def _set_ai_menu_status_badge(self, ready: bool | None, detail: str) -> None:
-        if ready is True:
+    def _set_ai_menu_status_badge(
+        self, ready: bool | None, detail: str, badge: str | None = None
+    ) -> None:
+        if badge is not None:
+            label = f"AI Status: {badge}"
+        elif ready is True:
             label = "AI Status: Ready"
         elif ready is False:
             label = "AI Status: Needs attention"
@@ -14003,7 +14005,29 @@ class MainFrame:
         enabled = bool(event.IsChecked())
         save_ai_enabled(enabled)
         self._apply_ai_menu_enabled()
+        self._refresh_ai_status()
         self._set_status("AI enabled" if enabled else "AI disabled")
+
+    def _refresh_ai_status(self) -> None:
+        """Check the active AI backend and update the AI Status badge (off-thread)."""
+        from quill.core.ai.model_manager import load_ai_enabled
+
+        if not load_ai_enabled():
+            self._set_ai_menu_status_badge(None, "AI is turned off.", badge="Off")
+            return
+        self._set_ai_menu_status_badge(None, "Checking the AI backend...", badge="Checking...")
+
+        def worker() -> None:
+            try:
+                from quill.core.ai.assistant import make_default_backend
+
+                ok, reason = make_default_backend().is_available()
+            except Exception as exc:  # noqa: BLE001
+                ok, reason = False, str(exc)
+            detail = "Ready." if ok else (reason or "Needs attention.")
+            self._wx.CallAfter(self._set_ai_menu_status_badge, bool(ok), detail)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _apply_ai_menu_enabled(self) -> None:
         """Enable/disable the AI menu items behind the 'Use Artificial Intelligence'
