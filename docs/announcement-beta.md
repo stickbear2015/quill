@@ -166,11 +166,12 @@ Quill 0.1.2 includes an expanded local-first AI surface:
 Connection workflows include:
 
 - verify connection
-- list models
-- provider selection (local and endpoint-driven)
+- list models with a search filter for fast narrowing
+- guided model recommendations based on local hardware and task framing
+- provider selection across local, cloud, and OpenAI-compatible endpoints
 - optional secret handling with platform protection where available
 
-Ollama Cloud onboarding is available directly in AI Connection settings. For users with API keys, Ollama Cloud currently offers free personal-use access with lower usage limits.
+AI Connection now includes first-class setup for OpenAI, Claude, OpenRouter, Google Gemini, and Microsoft Azure OpenAI alongside Ollama local/cloud. Most providers ship with smart default hosts so users can focus on key + model selection. Advanced OpenAI-compatible services remain available through custom endpoint mode.
 
 Automation support includes:
 

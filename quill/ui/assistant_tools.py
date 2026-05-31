@@ -10,11 +10,17 @@ from quill.core.assistant import (
 )
 from quill.core.assistant_ai import (
     AssistantConnectionSettings,
+    ModelRecommendation,
     default_host_for_provider,
+    default_model_for_provider,
+    filter_model_names,
+    list_assistant_models,
     load_assistant_api_key,
     load_assistant_connection_settings,
-    list_assistant_models,
-    recommended_models_for_provider,
+    provider_api_key_label,
+    provider_help_text,
+    provider_requires_api_key,
+    recommended_model_guidance,
     save_assistant_api_key,
     save_assistant_connection_settings,
     verify_assistant_connection,
@@ -420,12 +426,79 @@ class WritingAssistantDialog:
         self.dialog.EndModal(self._wx.ID_OK)
 
 
+class SearchableModelPickerDialog:
+    def __init__(self, parent: object, models: list[str]) -> None:
+        import wx
+
+        self._wx = wx
+        self.dialog = wx.Dialog(
+            parent,
+            title="Available Models",
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
+        self.dialog.SetSize((640, 520))
+        self._models = models
+        self._filtered_models = list(models)
+
+        root = wx.BoxSizer(wx.VERTICAL)
+        root.Add(wx.StaticText(self.dialog, label="Search models"), 0, wx.ALL, 8)
+        self.query = wx.TextCtrl(self.dialog, style=wx.TE_PROCESS_ENTER)
+        root.Add(self.query, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        self.listbox = wx.ListBox(self.dialog, choices=self._filtered_models)
+        root.Add(self.listbox, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        buttons = self.dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
+        if buttons is not None:
+            root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
+        self.dialog.SetSizer(root)
+
+        self.query.Bind(wx.EVT_TEXT, self._on_query_changed)
+        self.query.Bind(wx.EVT_TEXT_ENTER, self._on_query_enter)
+        self.listbox.Bind(wx.EVT_LISTBOX_DCLICK, self._on_double_click)
+        if self._filtered_models:
+            self.listbox.SetSelection(0)
+        self.query.SetFocus()
+
+    def _on_query_changed(self, _event: object) -> None:
+        query = self.query.GetValue()
+        self._filtered_models = filter_model_names(self._models, query)
+        self.listbox.Set(self._filtered_models)
+        if self._filtered_models:
+            self.listbox.SetSelection(0)
+
+    def _on_query_enter(self, _event: object) -> None:
+        if self._filtered_models:
+            self.dialog.EndModal(self._wx.ID_OK)
+
+    def _on_double_click(self, _event: object) -> None:
+        self.dialog.EndModal(self._wx.ID_OK)
+
+    def show_modal_and_get_selection(self) -> str:
+        try:
+            if self.dialog.ShowModal() != self._wx.ID_OK:
+                return ""
+            selection = self.listbox.GetSelection()
+            if selection == self._wx.NOT_FOUND:
+                return ""
+            if selection < 0 or selection >= len(self._filtered_models):
+                return ""
+            return self._filtered_models[selection].strip()
+        finally:
+            self.dialog.Destroy()
+
+
 class AssistantConnectionDialog:
     _PROVIDER_CHOICES: tuple[tuple[str, str], ...] = (
         ("off", "Off"),
         ("ollama", "Ollama (local)"),
+        ("openai", "OpenAI"),
+        ("claude", "Claude"),
+        ("openrouter", "OpenRouter"),
+        ("gemini", "Google Gemini"),
+        ("azure_openai", "Microsoft Azure OpenAI"),
         ("ollama_cloud", "Ollama Cloud (API key)"),
-        ("custom", "Custom HTTP"),
+        ("custom", "Custom OpenAI-compatible (advanced)"),
     )
 
     def __init__(self, parent: object) -> None:
@@ -437,7 +510,7 @@ class AssistantConnectionDialog:
             title="AI Connection Settings",
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
-        self.dialog.SetSize((700, 420))
+        self.dialog.SetSize((780, 520))
 
         self._settings = load_assistant_connection_settings()
         self._api_key = load_assistant_api_key()
@@ -450,8 +523,8 @@ class AssistantConnectionDialog:
             wx.StaticText(
                 self.dialog,
                 label=(
-                    "Ollama does not require a key for local use. If you connect to an "
-                    "authenticated endpoint, Quill stores the key with Windows DPAPI."
+                    "Select a provider, verify connection, then list/filter models. "
+                    "For supported cloud providers, default hosts are prefilled."
                 ),
             ),
             0,
@@ -474,9 +547,13 @@ class AssistantConnectionDialog:
             8,
         )
         panel_sizer.Add(self.provider, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        self.provider_hint = wx.StaticText(panel, label="")
+        panel_sizer.Add(self.provider_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.host = wx.TextCtrl(panel)
-        self.host.SetValue(self._settings.host or default_host_for_provider(self._settings.provider))
+        self.host.SetValue(
+            self._settings.host or default_host_for_provider(self._settings.provider)
+        )
         panel_sizer.Add(wx.StaticText(panel, label="Host URL"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         panel_sizer.Add(self.host, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
@@ -513,7 +590,9 @@ class AssistantConnectionDialog:
 
         self.connection_status = wx.StaticText(
             panel,
-            label="Tip: Verify Connection to confirm host/key and List Models to choose available models.",
+            label=(
+                "Tip: Verify first, then List Models and search to quickly pick the best model."
+            ),
         )
         panel_sizer.Add(self.connection_status, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
@@ -547,24 +626,32 @@ class AssistantConnectionDialog:
     def _current_settings(self) -> AssistantConnectionSettings:
         provider = self._provider_value()
         fallback_host = default_host_for_provider(provider)
+        fallback_model = default_model_for_provider(provider)
         return AssistantConnectionSettings(
             provider=provider,
             host=self.host.GetValue().strip() or fallback_host,
-            model=self.model.GetValue().strip() or "llama3.1",
+            model=self.model.GetValue().strip() or fallback_model,
         )
 
     def _on_provider_changed(self, _event: object | None) -> None:
         provider = self._provider_value()
         host_value = self.host.GetValue().strip()
-        local_default = default_host_for_provider("ollama")
-        cloud_default = default_host_for_provider("ollama_cloud")
-        if not host_value or host_value in {local_default, cloud_default}:
+        known_hosts = {
+            default_host_for_provider(name)
+            for name, _label in self._PROVIDER_CHOICES
+            if default_host_for_provider(name)
+        }
+        if not host_value or host_value in known_hosts:
             self.host.SetValue(default_host_for_provider(provider))
-        requires_key = provider in {"ollama_cloud", "custom"}
-        if provider == "ollama_cloud":
-            self.api_key_label.SetLabel("API key (Ollama Cloud; stored encrypted with DPAPI)")
-        else:
-            self.api_key_label.SetLabel("API key (optional; stored encrypted with DPAPI)")
+        model_value = self.model.GetValue().strip()
+        known_models = {
+            default_model_for_provider(name) for name, _label in self._PROVIDER_CHOICES
+        }
+        if not model_value or model_value in known_models:
+            self.model.SetValue(default_model_for_provider(provider))
+        requires_key = provider_requires_api_key(provider)
+        self.api_key_label.SetLabel(provider_api_key_label(provider))
+        self.provider_hint.SetLabel(provider_help_text(provider))
         self.api_key.Enable(requires_key)
         self.reveal_api_key.Enable(requires_key)
         if not requires_key and self._api_key_revealed:
@@ -609,31 +696,42 @@ class AssistantConnectionDialog:
             self._wx.MessageBox(message, "Model Discovery", self._wx.ICON_INFORMATION | self._wx.OK)
             return
 
-        picker = self._wx.SingleChoiceDialog(
-            self.dialog,
-            "Select a model for QUILL:",
-            "Available Models",
-            models,
-        )
-        try:
-            if picker.ShowModal() != self._wx.ID_OK:
-                return
-            selected = picker.GetStringSelection().strip()
-        finally:
-            picker.Destroy()
+        picker = SearchableModelPickerDialog(self.dialog, models)
+        selected = picker.show_modal_and_get_selection()
         if selected:
             self.model.SetValue(selected)
             self.connection_status.SetLabel(f"Selected model: {selected}")
+        else:
+            self.connection_status.SetLabel("Model selection cancelled.")
 
     def _on_recommend_model(self, _event: object) -> None:
         settings = self._current_settings()
-        recommendations = recommended_models_for_provider(settings.provider)
+        recommendations = recommended_model_guidance(settings.provider)
         if not recommendations:
             self.connection_status.SetLabel("No model recommendations available.")
             return
-        choice = recommendations[0]
-        self.model.SetValue(choice)
-        self.connection_status.SetLabel(f"Recommended model selected: {choice}")
+        labels = [f"{item.model} - {item.framing}: {item.reason}" for item in recommendations]
+        picker = self._wx.SingleChoiceDialog(
+            self.dialog,
+            "Choose a recommended model profile:",
+            "Model Recommendations",
+            labels,
+        )
+        try:
+            if picker.ShowModal() != self._wx.ID_OK:
+                self.connection_status.SetLabel("Recommendation selection cancelled.")
+                return
+            selected_index = picker.GetSelection()
+        finally:
+            picker.Destroy()
+        if selected_index < 0 or selected_index >= len(recommendations):
+            self.connection_status.SetLabel("Recommendation selection cancelled.")
+            return
+        selected: ModelRecommendation = recommendations[selected_index]
+        self.model.SetValue(selected.model)
+        self.connection_status.SetLabel(
+            f"Recommended model selected: {selected.model} ({selected.framing})"
+        )
 
     def show_modal(self) -> bool:
         self.dialog.CentreOnParent()

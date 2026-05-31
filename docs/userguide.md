@@ -350,14 +350,15 @@ Use **AI -> AI Connection...** or **Preferences -> AI Connection** to set provid
 
 AI connection flow:
 
-1. Choose provider (`Ollama (local)`, `Ollama Cloud (API key)`, or `Custom HTTP`).
+1. Choose provider (`Ollama (local)`, `OpenAI`, `Claude`, `OpenRouter`, `Google Gemini`, `Microsoft Azure OpenAI`, `Ollama Cloud`, or `Custom OpenAI-compatible`).
 2. Confirm host URL and model.
 3. Enter key only when your endpoint requires authentication.
 4. Use **Verify Connection** to test endpoint and credentials.
-5. Use **List Models** to fetch available models and select one.
-6. Save settings. Quill auto-runs verification and updates the AI status line in the AI menu.
+5. Use **List Models** to fetch endpoint models, then use the search box to filter quickly.
+6. Use **Recommend Model** to pick a model profile aligned to your hardware/task framing.
+7. Save settings. Quill auto-runs verification and updates the AI status line in the AI menu.
 
-Ollama Cloud onboarding is available in this same flow. If you use an Ollama Cloud API key, free personal-use access is available with lower usage limits.
+Most cloud providers are pre-configured with default host URLs so setup is key-first, not URL-first. For advanced OpenAI-compatible endpoints, use Custom and override host/model explicitly.
 
 Quill stores optional keys with Windows DPAPI and announces the verification result in plain language for immediate screen-reader feedback.
 
@@ -390,14 +391,15 @@ For release-safe beta validation, Word and CSV open in the normal plain-text edi
 Provider setup:
 
 1. Open `AI -> AI Connection...` (or `Preferences -> AI Connection`).
-2. Choose provider: `Ollama (local)`, `Ollama Cloud (API key)`, or `Custom HTTP`.
-3. Enter host and model.
+2. Choose provider: `Ollama (local)`, `OpenAI`, `Claude`, `OpenRouter`, `Google Gemini`, `Microsoft Azure OpenAI`, `Ollama Cloud`, or `Custom OpenAI-compatible`.
+3. Enter host and model (cloud defaults are prefilled; Azure requires your resource hostname).
 4. Enter API key only if required.
 5. Use `Verify Connection`.
-6. Use `List Models` to select from endpoint-reported models.
-7. Save settings. Quill auto-verifies and updates AI status/detail lines.
+6. Use `List Models` to select from endpoint-reported models with search filtering.
+7. Use `Recommend Model` for guided picks tuned for local hardware or cloud framing.
+8. Save settings. Quill auto-verifies and updates AI status/detail lines.
 
-Ollama Cloud onboarding is available here as well. Users with API keys can use the free personal-use tier, which has lower usage limits.
+Ollama Cloud onboarding remains available here as well. Users with API keys can use the free personal-use tier, which has lower usage limits.
 
 After save, Quill announces plain-language verification feedback (for example, ready, auth failure, timeout, or endpoint unreachable).
 

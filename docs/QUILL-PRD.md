@@ -2157,7 +2157,7 @@ A five-step welcome flow the first time Quill launches. Each step is a normal mo
 1. **Profile**: System, Word-like, Vim, Emacs.
 2. **Theme**: System, Light, Dark, High Contrast.
 3. **Spell-check languages**: multi-select from the bundled launch set; the active document language is added automatically when later opened.
-4. **AI provider**: Off (default), OpenAI, Azure OpenAI, Anthropic, Ollama. If a provider is picked, the API-key dialog opens; the key is stored via DPAPI (10.11). Network is never used without explicit per-action consent.
+4. **AI provider**: Off (default), Ollama local, Ollama Cloud, OpenAI, Azure OpenAI, Anthropic/Claude, OpenRouter, Gemini, or a custom OpenAI-compatible endpoint. Providers include sensible default hosts where possible; advanced custom mode allows manual endpoint override. If a provider is picked, the API-key dialog opens when required; the key is stored via DPAPI (10.11). Network is never used without explicit per-action consent.
 5. **Telemetry**: confirms it stays off (default). A short plain-language sentence explains what telemetry would collect if turned on later.
 
 The onboarding completion writes `%APPDATA%\Quill\onboarding-complete.json`. Re-running `Help → Run Onboarding Again` reopens the flow without resetting anything else.
@@ -3345,7 +3345,7 @@ The organising principle is simple: **v1.0 ships only Confidence A. Confidence B
 - **Linked-notes / wikilink editor (Obsidian-style).** Backlog.
 - **Per-file-class backup retention policy.** v1.0 ships a single global retention rule (5.13). v1.1 introduces per-format-class defaults (e.g. 100 backups for source code, 25 for long-form documents) once we have telemetry on user save patterns.
 - **Single-line compose box mode.** A small, screen-reader-optimised composer dialog whose Enter sends back to the main editor at the cursor. Useful for slow-speech users; needs user testing to confirm it is worth the surface area. Backlog for v1.1.
-- **Advanced model lifecycle in core app flow.** Quill now ships a local Writing Assistant shell, prompt presets, generated tool catalog, assistant onboarding, AI connection preferences, connection verification/model discovery actions, AI menu status-detail feedback, and sandboxed Python runner. Broader built-in model catalog lifecycle and background prefetch policy remain future work.
+- **Advanced model lifecycle in core app flow.** Quill now ships a local Writing Assistant shell, prompt presets, generated tool catalog, assistant onboarding, AI connection preferences, connection verification/model discovery actions, searchable model selection, provider-aware guided recommendations, AI menu status-detail feedback, and sandboxed Python runner. Broader built-in model catalog lifecycle and background prefetch policy remain future work.
 
 ### 17.4 Explicitly out of scope for Quill (any version unless re-evaluated)
 
@@ -3356,7 +3356,7 @@ Quill is opinionated about what it is *not*. The following are intentionally and
 - **Cloud-sync of documents.** Sync is for keymap and settings only (8.8). Document storage stays on the user's machine and chosen cloud-drive folder.
 - **Mobile, web, macOS, or Linux ports.** Cross-platform is post-v2 at earliest. The `core/` layer has no `wx` so it remains *possible*, not *committed*.
 - **Voice input / dictation.** Use Windows dictation; Quill does not reinvent the mic/STT stack. An opt-in Hey QUILL command layer may sit on top of dictation and dispatch existing Quill commands, but it stays silent and only listens while dictation is active.
-- **AI authoring assistant.** The current build exposes a local Writing Assistant shell, prompt presets, AI connection preferences, provider verification/model discovery, status-detail accessibility announcements, and a sandboxed Python tool. Longer-horizon autocomplete policy tuning and richer model-catalog management remain future work.
+- **AI authoring assistant.** The current build exposes a local Writing Assistant shell, prompt presets, AI connection preferences (Ollama local/cloud, OpenAI, Claude, OpenRouter, Gemini, Azure OpenAI, custom OpenAI-compatible), provider verification/model discovery, searchable model filtering, status-detail accessibility announcements, and a sandboxed Python tool. Longer-horizon autocomplete policy tuning and richer model-catalog management remain future work.
 - **Project workspaces and Find in Folder.** Deferred to v1.2 (see 17.2).
 - **Embedded media playback inside documents.** Out of scope for the editor.
 - **PDF form filling and signing.** Out of scope.
