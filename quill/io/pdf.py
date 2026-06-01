@@ -53,15 +53,13 @@ def format_pdf_document(path: Path | PdfExtractionResult) -> str:
             return "\n".join(header) + body
         if len(markitdown_text.strip()) > len(result.text.strip()):
             return (
-                "\n".join(
-                    [
-                        "# PDF Extract",
-                        "",
-                        "Engine: markitdown",
-                        "Quality score: 85/100",
-                        "",
-                    ]
-                )
+                "\n".join([
+                    "# PDF Extract",
+                    "",
+                    "Engine: markitdown",
+                    "Quality score: 85/100",
+                    "",
+                ])
                 + markitdown_text.rstrip()
                 + "\n"
             )

@@ -1,4 +1,5 @@
 """Abstract AI backend so the assistant is engine-agnostic."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

@@ -117,4 +117,3 @@ def delete_sticky_note(note_id: str) -> bool:
         return False
     save_sticky_notes(filtered)
     return True
-

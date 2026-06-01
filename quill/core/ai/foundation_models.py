@@ -5,6 +5,7 @@ download, no GPU server. Degrades gracefully when unavailable. Supports both
 plain text responses and an agentic ``decide`` step (guided generation) that
 chooses to answer, insert, replace, or run a Quill command.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -108,12 +109,14 @@ class FoundationModelsBackend(AIBackend):
 
         def run(budget: int) -> Any:
             context = document_text[:budget]
+
             async def _go() -> Any:
                 session = fm.LanguageModelSession(instructions=instructions)
                 return await session.respond(
                     f"Request: {user_message}\n\nDocument:\n{context}",
                     generating=decision_type,
                 )
+
             return asyncio.run(_go())
 
         raw = None

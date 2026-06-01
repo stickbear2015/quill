@@ -7,6 +7,7 @@ assistant to write in the user's voice. Stored locally in app data.
 This is prompt-based style conditioning (works today, on-device, no training).
 A future option is training a Foundation Models LoRA adapter from the samples.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

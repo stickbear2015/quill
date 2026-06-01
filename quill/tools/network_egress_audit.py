@@ -24,12 +24,10 @@ _PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 
 # Egress function names. A call whose function is one of these (by attribute or
 # bare name) counts as a network call for inventory purposes.
-_EGRESS_CALLEES = frozenset(
-    {
-        "urlopen",
-        "urlretrieve",
-    }
-)
+_EGRESS_CALLEES = frozenset({
+    "urlopen",
+    "urlretrieve",
+})
 
 # Reviewed, allowed egress sites: "<relative path>::<enclosing function>" mapped
 # to the reason the call is not silent. Update this when adding a network call.
@@ -53,23 +51,19 @@ _REVIEWED_EGRESS: dict[str, str] = {
         "Fetches release notes for an update the user is already reviewing."
     ),
     "core/updates.py::download_release_asset": (
-        "User chooses to download an offered update; verified TLS, visible "
-        "progress."
+        "User chooses to download an offered update; verified TLS, visible progress."
     ),
     "core/assistant_ai.py::_fetch_models_from_endpoint": (
         "User-initiated model discovery from the AI Connection dialog (Verify "
         "Connection / List Models). HTTPS uses a verified context."
     ),
     "core/ai/model_manager.py::_download": (
-        "User-initiated local AI model download; verified TLS for HTTPS, visible "
-        "progress callback."
+        "User-initiated local AI model download; verified TLS for HTTPS, visible progress callback."
     ),
 }
 
 
-def _enclosing_function_name(
-    tree: ast.AST, target: ast.AST
-) -> str:
+def _enclosing_function_name(tree: ast.AST, target: ast.AST) -> str:
     """Return the nearest enclosing def/async-def name for ``target``."""
     best = "<module>"
     for node in ast.walk(tree):

@@ -4,7 +4,11 @@ import re
 from dataclasses import dataclass
 
 from quill.core.spellcheck import suggest_words
-from quill.core.tagging import build_markdown_insertion, search_html_tag_choices, search_markdown_tag_choices
+from quill.core.tagging import (
+    build_markdown_insertion,
+    search_html_tag_choices,
+    search_markdown_tag_choices,
+)
 
 _WORD_PATTERN = re.compile(r"[A-Za-z][A-Za-z']*")
 
@@ -40,7 +44,10 @@ def extract_intellisense_context(text: str, cursor: int) -> IntellisenseContext 
         after_marker = line_prefix[html_marker + 1 :]
         if ">" not in after_marker:
             replacement_start = line_start + html_marker + 1
-            if replacement_start < cursor and text[replacement_start:replacement_start + 1] == "/":
+            if (
+                replacement_start < cursor
+                and text[replacement_start : replacement_start + 1] == "/"
+            ):
                 replacement_start += 1
             fragment = text[replacement_start:cursor]
             return IntellisenseContext(

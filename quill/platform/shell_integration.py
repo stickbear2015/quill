@@ -1,4 +1,5 @@
 """Platform-neutral shell/file-type integration (routes to the OS implementation)."""
+
 from __future__ import annotations
 
 import sys

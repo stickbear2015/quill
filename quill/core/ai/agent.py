@@ -5,6 +5,7 @@ text, or RUN one Quill command. Only a curated, safe, automatable subset of
 commands is offered for 'run' (no destructive or argument-heavy actions),
 constrained via guided generation so the model can only pick a valid id.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -43,9 +44,9 @@ SAFE_TOOL_IDS: tuple[str, ...] = (
 
 @dataclass(frozen=True, slots=True)
 class AgentDecision:
-    action: str          # one of ACTIONS
-    text: str = ""       # for answer / insert / replace
-    tool: str = ""       # command id when action == "run"
+    action: str  # one of ACTIONS
+    text: str = ""  # for answer / insert / replace
+    tool: str = ""  # command id when action == "run"
 
 
 def allowed_tools(registry: object, feature_manager: object | None = None) -> list[tuple[str, str]]:

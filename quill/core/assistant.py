@@ -194,9 +194,12 @@ def rank_assistant_tools(
 
 def _tool_for_command(command: Command) -> AssistantTool:
     category = _category_for_command(command.id)
-    dangerous = command.id.startswith(
-        ("file.", "edit.replace", "tools.report", "tools.shell_remove")
-    )
+    dangerous = command.id.startswith((
+        "file.",
+        "edit.replace",
+        "tools.report",
+        "tools.shell_remove",
+    ))
     requires_confirmation = dangerous or command.id in {
         "file.open",
         "file.save_as",

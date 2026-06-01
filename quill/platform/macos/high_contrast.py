@@ -3,6 +3,7 @@
 Counterpart to ``quill.platform.windows.high_contrast.is_high_contrast_enabled``.
 Reads the Universal Access preference; returns False if it can't be read.
 """
+
 from __future__ import annotations
 
 import subprocess

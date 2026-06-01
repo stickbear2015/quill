@@ -3,6 +3,7 @@
 The underlying module is pure Python and platform-independent; the handler the
 app installs decides how speech is produced (Prism / VoiceOver / status bar).
 """
+
 from __future__ import annotations
 
 from quill.platform.windows.sr_announce import (  # noqa: F401

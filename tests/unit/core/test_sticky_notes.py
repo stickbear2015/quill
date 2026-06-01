@@ -18,9 +18,7 @@ def test_sticky_note_title_uses_first_non_empty_line() -> None:
     assert sticky_note_title("") == "Untitled Note"
 
 
-def test_save_load_and_delete_sticky_note(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_save_load_and_delete_sticky_note(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store_path = tmp_path / "sticky-notes.json"
     monkeypatch.setattr(sticky_notes_module, "sticky_notes_path", lambda: store_path)
 

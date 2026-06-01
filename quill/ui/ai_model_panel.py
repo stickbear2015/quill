@@ -179,7 +179,10 @@ class AIModelDialog:
         self.dialog.CentreOnParent()
         apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
         try:
-            if show_modal_dialog(self.dialog, "AI Model & Connection") == wx.ID_OK and self.choice is not None:
+            if (
+                show_modal_dialog(self.dialog, "AI Model & Connection") == wx.ID_OK
+                and self.choice is not None
+            ):
                 save_model_choice(self._selected_id())
                 self._announce("Saved AI model choice")
         finally:

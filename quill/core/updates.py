@@ -270,14 +270,12 @@ def _validate_remote_url(url: str) -> None:
 def _trusted_update_hosts() -> set[str]:
     raw_hosts = os.getenv(_TRUSTED_HOSTS_ENV, "")
     trusted = {item.strip().lower() for item in raw_hosts.split(",") if item.strip()}
-    trusted.update(
-        {
-            "community-access.github.io",
-            "github.com",
-            "objects.githubusercontent.com",
-            "github-releases.githubusercontent.com",
-        }
-    )
+    trusted.update({
+        "community-access.github.io",
+        "github.com",
+        "objects.githubusercontent.com",
+        "github-releases.githubusercontent.com",
+    })
     return trusted
 
 

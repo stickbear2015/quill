@@ -151,4 +151,3 @@ def test_ocr_image_rejects_malicious_language(monkeypatch, tmp_path: Path) -> No
     )
     with pytest.raises(OcrLanguageError):
         ocr_image(tmp_path / "sample.png", language="--config")
-

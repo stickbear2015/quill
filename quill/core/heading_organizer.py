@@ -42,7 +42,9 @@ def validate_heading_sequence(
         return issues
     first = blocks[0]
     if first.level != 1:
-        issues.append(f"Heading order should start at H1 (found H{first.level}: {first.title or '(empty)'})")
+        issues.append(
+            f"Heading order should start at H1 (found H{first.level}: {first.title or '(empty)'})"
+        )
     h1_count = 0
     previous_level = 0
     for block in blocks:
@@ -79,7 +81,9 @@ def apply_heading_organizer_edits(
         if original is None:
             continue
         section = text[original.section_start : original.section_end]
-        rebuilt.append(_rewrite_first_heading(section, markup_kind, block.level, block.title, original))
+        rebuilt.append(
+            _rewrite_first_heading(section, markup_kind, block.level, block.title, original)
+        )
     rebuilt.append(text[last_end:])
     return "".join(rebuilt)
 
@@ -144,6 +148,8 @@ def _rewrite_first_heading(
             count=1,
         )
     if markup_kind == "html":
-        replacement = f"<h{normalized_level}{original.attributes}>{normalized_title}</h{normalized_level}>"
+        replacement = (
+            f"<h{normalized_level}{original.attributes}>{normalized_title}</h{normalized_level}>"
+        )
         return _HTML_HEADING_PATTERN.sub(replacement, section, count=1)
     return section

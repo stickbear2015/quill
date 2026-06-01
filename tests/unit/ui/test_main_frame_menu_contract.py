@@ -50,7 +50,7 @@ def test_update_toggle_is_in_help_menu_not_view_menu() -> None:
     source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
         encoding="utf-8"
     )
-    assert 'view_menu.AppendCheckItem(self._id_toggle_auto_check_updates' not in source
+    assert "view_menu.AppendCheckItem(self._id_toggle_auto_check_updates" not in source
     support_marker = 'support_menu.Append(self._id_check_updates, "Check for &Updates")'
     help_marker = 'help_menu.Append(self._id_check_updates, "Check for &Updates...")'
     assert support_marker in source

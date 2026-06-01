@@ -25,9 +25,7 @@ def test_assistant_connection_settings_round_trip(
     assert loaded.model == "gpt-4o-mini"
 
 
-def test_assistant_api_key_is_protected(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_assistant_api_key_is_protected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("QUILL_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(assistant_ai, "_save_api_key_with_credential_manager", lambda *_args: False)
     monkeypatch.setattr(assistant_ai, "_load_api_key_from_credential_manager", lambda: "")
@@ -91,13 +89,11 @@ def test_default_host_for_provider(provider: str, expected_host: str) -> None:
 
 
 def test_settings_accepts_new_provider() -> None:
-    settings = assistant_ai.AssistantConnectionSettings.from_dict(
-        {
-            "provider": "gemini",
-            "host": "https://generativelanguage.googleapis.com",
-            "model": "gemini-2.0-flash",
-        }
-    )
+    settings = assistant_ai.AssistantConnectionSettings.from_dict({
+        "provider": "gemini",
+        "host": "https://generativelanguage.googleapis.com",
+        "model": "gemini-2.0-flash",
+    })
     assert settings.provider == "gemini"
 
 
@@ -105,11 +101,13 @@ def test_list_assistant_models_reads_openai_shape(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(
         assistant_ai,
         "urlopen",
-        lambda *_args, **_kwargs: _FakeResponse(
-            {"data": [{"id": "gpt-4o-mini"}, {"id": "gpt-4.1"}]}
-        ),
+        lambda *_args, **_kwargs: _FakeResponse({
+            "data": [{"id": "gpt-4o-mini"}, {"id": "gpt-4.1"}]
+        }),
     )
-    settings = assistant_ai.AssistantConnectionSettings(provider="openai", host="https://api.openai.com")
+    settings = assistant_ai.AssistantConnectionSettings(
+        provider="openai", host="https://api.openai.com"
+    )
     models, error = assistant_ai.list_assistant_models(settings, api_key="x")
     assert error is None
     assert models == ["gpt-4o-mini", "gpt-4.1"]

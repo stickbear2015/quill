@@ -103,9 +103,7 @@ class CommandPaletteDialog:
         if labels:
             self.results.SetSelection(0)
             top = self._filtered_commands[0]
-            self.status.SetLabel(
-                f"{len(labels)} command(s). Top match: {top.title} ({top.id})"
-            )
+            self.status.SetLabel(f"{len(labels)} command(s). Top match: {top.title} ({top.id})")
             return
         self.status.SetLabel("No matching commands")
 
@@ -120,6 +118,7 @@ class CommandPaletteDialog:
             return
         command = self._filtered_commands[selected]
         self.status.SetLabel(f"Selected: {command.title} ({command.id})")
+
     def _run_selected(self) -> None:
         selected = self.results.GetSelection()
         if selected == self._wx.NOT_FOUND:

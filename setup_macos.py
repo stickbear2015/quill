@@ -7,15 +7,15 @@ Usage:
 
 Produces dist/Quill.app.
 """
-from setuptools import setup
-
-from quill import __version__
 
 # py2app's finalize_options aborts the build if the distribution carries
 # install_requires, which modern setuptools auto-populates from pyproject.toml's
 # [project.dependencies]. The .app bundles its own dependencies, so clear it
 # right before py2app's own check runs. (Also build with setuptools < 80.)
 import py2app.build_app as _py2app_build_app
+from setuptools import setup
+
+from quill import __version__
 
 _orig_py2app_finalize = _py2app_build_app.py2app.finalize_options
 

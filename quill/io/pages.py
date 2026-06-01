@@ -242,9 +242,7 @@ def _resolve_style_name(
         if archives_by_id:
             parent_id = str((super_style.get("parent") or {}).get("identifier", ""))
             if parent_id and parent_id in archives_by_id:
-                name = _resolve_style_name(
-                    archives_by_id[parent_id], archives_by_id, _depth + 1
-                )
+                name = _resolve_style_name(archives_by_id[parent_id], archives_by_id, _depth + 1)
                 if name:
                     return name
     return ""

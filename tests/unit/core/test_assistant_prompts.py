@@ -8,16 +8,14 @@ import quill.core.assistant_prompts as assistant_prompts
 
 
 def test_custom_prompt_round_trip_and_tag_dedup() -> None:
-    prompt = assistant_prompts.CustomPrompt.from_dict(
-        {
-            "id": "p-1",
-            "title": "  Refine Draft  ",
-            "template": "Rewrite {selection}",
-            "tags": ["editing", "editing", " style "],
-            "favorite": True,
-            "shortcut": "ctrl+alt+r",
-        }
-    )
+    prompt = assistant_prompts.CustomPrompt.from_dict({
+        "id": "p-1",
+        "title": "  Refine Draft  ",
+        "template": "Rewrite {selection}",
+        "tags": ["editing", "editing", " style "],
+        "favorite": True,
+        "shortcut": "ctrl+alt+r",
+    })
     assert prompt.prompt_id == "p-1"
     assert prompt.title == "Refine Draft"
     assert prompt.tags == ("editing", "style")

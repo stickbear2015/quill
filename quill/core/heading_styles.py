@@ -97,7 +97,9 @@ def _merge_style_attr(attrs: str, style: HeadingStyle) -> str:
     declarations = style.declarations()
     if not declarations:
         return attrs
-    style_match = re.search(r"""style\s*=\s*["'](?P<value>[^"']*)["']""", attrs, flags=re.IGNORECASE)
+    style_match = re.search(
+        r"""style\s*=\s*["'](?P<value>[^"']*)["']""", attrs, flags=re.IGNORECASE
+    )
     declaration_map: dict[str, str] = {}
     if style_match is not None:
         existing = style_match.group("value")
@@ -113,7 +115,7 @@ def _merge_style_attr(attrs: str, style: HeadingStyle) -> str:
     merged_style = "; ".join(f"{key}: {value}" for key, value in declaration_map.items())
     if style_match is not None:
         start, end = style_match.span()
-        attrs = f"{attrs[:start]}style=\"{merged_style}\"{attrs[end:]}"
+        attrs = f'{attrs[:start]}style="{merged_style}"{attrs[end:]}'
         return attrs
     spacer = "" if not attrs or attrs.startswith(" ") else " "
-    return f"{attrs}{spacer} style=\"{merged_style}\""
+    return f'{attrs}{spacer} style="{merged_style}"'

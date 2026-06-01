@@ -1,4 +1,5 @@
 """Platform-neutral high-contrast detection (routes to the OS implementation)."""
+
 from __future__ import annotations
 
 import sys

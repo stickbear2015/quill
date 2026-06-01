@@ -16,11 +16,16 @@ def autosave_document(document: Document, session_id: str, max_snapshots: int = 
 
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     key = _document_key(document)
-    target = autosave_root / f"{key}-{stamp}.snap"
-    counter = 1
+    # Always carry a zero-padded counter suffix so that, when two saves land in
+    # the same microsecond stamp (the Windows clock is coarse), the filenames
+    # still sort in write order. A bare "{key}-{stamp}.snap" would sort *after*
+    # "{key}-{stamp}-000.snap" because '.' > '-', which previously made
+    # latest_autosave return the older snapshot.
+    counter = 0
+    target = autosave_root / f"{key}-{stamp}-{counter:03d}.snap"
     while target.exists():
-        target = autosave_root / f"{key}-{stamp}-{counter:03d}.snap"
         counter += 1
+        target = autosave_root / f"{key}-{stamp}-{counter:03d}.snap"
     with target.open("w", encoding=document.encoding, newline="") as file_handle:
         file_handle.write(document.text)
 

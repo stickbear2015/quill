@@ -67,9 +67,7 @@ def _backend_with_response(response: object) -> LlamaCppBackend:
 
 
 def test_complete_extracts_well_formed_content() -> None:
-    backend = _backend_with_response(
-        {"choices": [{"message": {"content": "  hello world  "}}]}
-    )
+    backend = _backend_with_response({"choices": [{"message": {"content": "  hello world  "}}]})
     assert backend.respond("hi") == "hello world"
 
 
@@ -89,4 +87,3 @@ def test_complete_handles_missing_choices(monkeypatch) -> None:
 def test_complete_treats_null_content_as_empty() -> None:
     backend = _backend_with_response({"choices": [{"message": {"content": None}}]})
     assert backend.respond("hi") == ""
-

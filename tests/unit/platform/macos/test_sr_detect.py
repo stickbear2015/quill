@@ -4,7 +4,9 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS VoiceOver detection is macOS-only")
+pytestmark = pytest.mark.skipif(
+    sys.platform != "darwin", reason="macOS VoiceOver detection is macOS-only"
+)
 
 from quill.platform.macos.sr_detect import ScreenReaderDetection, detect_screen_reader
 

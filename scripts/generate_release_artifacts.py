@@ -49,13 +49,11 @@ def build_sbom(pyproject: Path, include_optional: bool = False) -> dict[str, obj
         }
     ]
     for name in dependency_names:
-        components.append(
-            {
-                "name": name,
-                "type": "library",
-                "version": _installed_version(name),
-            }
-        )
+        components.append({
+            "name": name,
+            "type": "library",
+            "version": _installed_version(name),
+        })
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",

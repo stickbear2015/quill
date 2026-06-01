@@ -9,6 +9,7 @@ Model resolution order:
   2. the first ``*.gguf`` found in ``<app data>/models``.
 Recommended default model: Phi-4-mini (Q4); Llama 3.2 1B for low-end machines.
 """
+
 from __future__ import annotations
 
 import json

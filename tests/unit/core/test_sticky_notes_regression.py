@@ -80,20 +80,18 @@ def test_body_trailing_whitespace_is_trimmed(store: Path) -> None:
 def test_load_skips_malformed_entries(store: Path) -> None:
     # Mix valid and invalid records: non-dict, missing id, missing timestamps.
     store.write_text(
-        json.dumps(
-            [
-                {
-                    "id": "ok",
-                    "title": "Valid",
-                    "body": "x",
-                    "created_at": "2026-01-01T00:00:00+00:00",
-                    "updated_at": "2026-01-01T00:00:00+00:00",
-                },
-                "not a dict",
-                {"title": "no id", "body": "y", "created_at": "t", "updated_at": "t"},
-                {"id": "no-timestamps", "title": "z", "body": "z"},
-            ]
-        ),
+        json.dumps([
+            {
+                "id": "ok",
+                "title": "Valid",
+                "body": "x",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+            },
+            "not a dict",
+            {"title": "no id", "body": "y", "created_at": "t", "updated_at": "t"},
+            {"id": "no-timestamps", "title": "z", "body": "z"},
+        ]),
         encoding="utf-8",
     )
     notes = load_sticky_notes()
@@ -107,17 +105,15 @@ def test_load_handles_non_list_payload(store: Path) -> None:
 
 def test_load_backfills_missing_title_from_body(store: Path) -> None:
     store.write_text(
-        json.dumps(
-            [
-                {
-                    "id": "n1",
-                    "title": "",
-                    "body": "  \nDerived title\nrest",
-                    "created_at": "2026-01-01T00:00:00+00:00",
-                    "updated_at": "2026-01-01T00:00:00+00:00",
-                }
-            ]
-        ),
+        json.dumps([
+            {
+                "id": "n1",
+                "title": "",
+                "body": "  \nDerived title\nrest",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+            }
+        ]),
         encoding="utf-8",
     )
     assert load_sticky_notes()[0].title == "Derived title"

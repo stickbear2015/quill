@@ -53,6 +53,7 @@ dev = [
   "pytest>=9.0.3",
   "pytest-xdist>=3.6",
   "pytest-timeout>=2.4.0",
+  "pytest-cov>=5.0",
   "ruff>=0.6",
   "mypy>=2.1.0",
 ]
@@ -86,6 +87,18 @@ log_level = "INFO"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Vendored, generated, and distribution trees are not first-party source and
+# must not be linted or format-checked.
+extend-exclude = [
+    "build",
+    "windows-distribution",
+    "installer-smoke",
+    "installer-smoke-2",
+    "release-dist-0.1-final",
+    "release-dist-0.1-r2",
+    "kokoro",
+    "tmp",
+]
 
 [tool.ruff.format]
 preview = true
@@ -97,6 +110,14 @@ select = ["E", "F", "I", "UP", "B"]
 "scripts/build_windows_distribution.py" = ["E501"]
 "scripts/local_ai_editing_proof.py" = ["E501"]
 "tests/unit/core/ai/test_foundation_models.py" = ["E402", "E501"]
+# py2app requires patching finalize_options before importing the platform
+# shell-integration module, so that import is deliberately late.
+"setup_macos.py" = ["E402"]
+# macOS-only platform tests import the module under test after a
+# sys.platform skip guard, so the import is deliberately not at the top.
+"tests/unit/platform/macos/test_high_contrast.py" = ["E402"]
+"tests/unit/platform/macos/test_keychain.py" = ["E402"]
+"tests/unit/platform/macos/test_sr_detect.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"

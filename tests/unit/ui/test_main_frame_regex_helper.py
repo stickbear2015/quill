@@ -8,11 +8,12 @@ def test_regex_helper_uses_accessible_dialog_controls() -> None:
         encoding="utf-8"
     )
     assert "def show_regex_helper(self) -> None:" in source
-    assert "wx.Dialog(self.frame, title=\"Regex Helper\"" in source
+    assert "wx.Dialog(" in source
+    assert 'title="Regex Helper"' in source
     assert "wx.ListBox(panel, choices=[item[0] for item in recipes])" in source
     assert "wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)" in source
-    assert "wx.Button(panel, label=\"Preview\")" in source
-    assert "wx.Button(panel, label=\"Copy Pattern\")" in source
+    assert 'wx.Button(panel, label="Preview")' in source
+    assert 'wx.Button(panel, label="Copy Pattern")' in source
 
 
 def test_regex_helper_supports_preview_and_copy_actions() -> None:

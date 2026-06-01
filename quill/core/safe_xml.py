@@ -11,6 +11,7 @@ installed, a conservative fallback rejects any document that declares a DTD or
 custom entities before falling back to the stdlib parser, so an attack payload
 is refused rather than expanded.
 """
+
 from __future__ import annotations
 
 import re

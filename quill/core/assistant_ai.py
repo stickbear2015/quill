@@ -34,9 +34,14 @@ _SUPPORTED_PROVIDERS = {
     "azure_openai",
     "custom",
 }
-_CLOUD_PROVIDERS = frozenset(
-    {"openai", "claude", "openrouter", "gemini", "azure_openai", "ollama_cloud"}
-)
+_CLOUD_PROVIDERS = frozenset({
+    "openai",
+    "claude",
+    "openrouter",
+    "gemini",
+    "azure_openai",
+    "ollama_cloud",
+})
 
 
 @dataclass(slots=True)
@@ -57,14 +62,12 @@ class AssistantConnectionSettings:
         provider = str(data.get("provider", "ollama")).strip().lower()
         if provider not in _SUPPORTED_PROVIDERS:
             provider = "ollama"
-        host = (
-            str(data.get("host", default_host_for_provider(provider))).strip()
-            or default_host_for_provider(provider)
-        )
-        model = (
-            str(data.get("model", default_model_for_provider(provider))).strip()
-            or default_model_for_provider(provider)
-        )
+        host = str(
+            data.get("host", default_host_for_provider(provider))
+        ).strip() or default_host_for_provider(provider)
+        model = str(
+            data.get("model", default_model_for_provider(provider))
+        ).strip() or default_model_for_provider(provider)
         return cls(provider=provider, host=host, model=model)
 
 
@@ -419,9 +422,11 @@ def _most_significant_error(errors: list[_FetchError]) -> _FetchError | None:
         return None
     ranked = sorted(
         errors,
-        key=lambda err: _CATEGORY_PRIORITY.index(err.category)
-        if err.category in _CATEGORY_PRIORITY
-        else len(_CATEGORY_PRIORITY),
+        key=lambda err: (
+            _CATEGORY_PRIORITY.index(err.category)
+            if err.category in _CATEGORY_PRIORITY
+            else len(_CATEGORY_PRIORITY)
+        ),
     )
     return ranked[0]
 
@@ -515,9 +520,7 @@ def _fetch_models_from_endpoint(
             _message_for_category(category, endpoint=endpoint, reason=exc.reason),
         )
     except TimeoutError:
-        return [], _FetchError(
-            "timeout", _message_for_category("timeout", endpoint=endpoint)
-        )
+        return [], _FetchError("timeout", _message_for_category("timeout", endpoint=endpoint))
     except json.JSONDecodeError:
         return [], _FetchError(
             "bad_response", _message_for_category("bad_response", endpoint=endpoint)

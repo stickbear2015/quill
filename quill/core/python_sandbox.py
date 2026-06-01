@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import base64
-import io
 import json
 import os
 import subprocess
@@ -13,27 +12,24 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-
-ALLOWED_IMPORTS: frozenset[str] = frozenset(
-    {
-        "collections",
-        "dataclasses",
-        "datetime",
-        "decimal",
-        "fractions",
-        "functools",
-        "heapq",
-        "itertools",
-        "json",
-        "math",
-        "operator",
-        "re",
-        "statistics",
-        "string",
-        "textwrap",
-        "typing",
-    }
-)
+ALLOWED_IMPORTS: frozenset[str] = frozenset({
+    "collections",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "fractions",
+    "functools",
+    "heapq",
+    "itertools",
+    "json",
+    "math",
+    "operator",
+    "re",
+    "statistics",
+    "string",
+    "textwrap",
+    "typing",
+})
 
 _SANDBOX_BOOTSTRAP = textwrap.dedent(
     """
@@ -188,11 +184,15 @@ def run_python_sandbox(
         "outline": outline,
         "allowed_imports": sorted(ALLOWED_IMPORTS),
     }
-    env = {key: value for key, value in os.environ.items() if key in {"SystemRoot", "WINDIR", "PATH", "TEMP", "TMP", "COMSPEC", "PATHEXT"}}
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key in {"SystemRoot", "WINDIR", "PATH", "TEMP", "TMP", "COMSPEC", "PATHEXT"}
+    }
     env.update({
-        "QUILL_SANDBOX_PAYLOAD": base64.b64encode(
-            json.dumps(payload).encode("utf-8")
-        ).decode("ascii"),
+        "QUILL_SANDBOX_PAYLOAD": base64.b64encode(json.dumps(payload).encode("utf-8")).decode(
+            "ascii"
+        ),
         "PYTHONIOENCODING": "utf-8",
         "PYTHONDONTWRITEBYTECODE": "1",
     })
@@ -218,7 +218,9 @@ def run_python_sandbox(
         return PythonSandboxResult("", "", "", "Execution timed out", True, 124, elapsed)
     assert completed is not None
     if not completed.stdout:
-        return PythonSandboxResult("", completed.stderr, "", "No result returned", False, completed.returncode, elapsed)
+        return PythonSandboxResult(
+            "", completed.stderr, "", "No result returned", False, completed.returncode, elapsed
+        )
     try:
         payload_data = json.loads(completed.stdout)
     except json.JSONDecodeError as error:

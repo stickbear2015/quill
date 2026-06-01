@@ -335,13 +335,11 @@ def _format_pdf(path: Path) -> tuple[str, dict[str, object]]:
     if markitdown_document is None:
         return text, metadata
 
-    metadata.update(
-        {
-            "engine": f"{result.engine} + markitdown",
-            "quality_score": max(result.quality_score, 85),
-            "markitdown_used": True,
-        }
-    )
+    metadata.update({
+        "engine": f"{result.engine} + markitdown",
+        "quality_score": max(result.quality_score, 85),
+        "markitdown_used": True,
+    })
     return markitdown_document.text, metadata
 
 

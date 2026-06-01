@@ -101,3 +101,33 @@ jobs:
       - name: Audit network egress
         run: |
           pytest -q tests\unit\tools\test_network_egress_audit.py
+
+  security-checks:
+    # GATE-8: the static security invariants must hold. This runs the hardened-
+    # XML / banned-pattern check, the verified-TLS audit, the secret-redaction
+    # (no-plaintext-secret) diagnostics suite, the safe-archive decompression-cap
+    # suite, the sandbox-policy suite, and the OCR argument allowlist. Dependency
+    # vulnerability auditing (pip-audit strict) runs in the SBOM job above.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Hardened-XML / banned-pattern check
+        run: |
+          python -m quill.tools.check_banned_patterns
+      - name: Static security invariant suites
+        run: |
+          pytest -q `
+            tests\unit\core\test_net_tls.py `
+            tests\unit\core\test_diagnostics.py `
+            tests\unit\core\test_safe_xml.py `
+            tests\unit\core\test_safe_archive.py `
+            tests\unit\core\test_python_sandbox.py `
+            tests\unit\io\test_ocr.py
+

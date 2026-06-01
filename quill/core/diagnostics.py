@@ -161,16 +161,14 @@ def build_diagnostics_review_text(
             lines.append("- Plain file path included")
         else:
             lines.append("- File path will be hashed before export")
-    lines.extend(
-        [
-            "",
-            f"Quill version: {metadata['quill_version']}",
-            f"Platform: {metadata['platform']}",
-            f"Python: {metadata['python_version']}",
-            f"Keymap entries: {len(keymap)}",
-            f"Settings keys: {len(redact_settings(settings))}",
-        ]
-    )
+    lines.extend([
+        "",
+        f"Quill version: {metadata['quill_version']}",
+        f"Platform: {metadata['platform']}",
+        f"Python: {metadata['python_version']}",
+        f"Keymap entries: {len(keymap)}",
+        f"Settings keys: {len(redact_settings(settings))}",
+    ])
     return "\n".join(lines)
 
 
@@ -193,9 +191,8 @@ def build_bug_report_payload(
             document_label = name
     summary = (summary_override or "").strip() or f"Bug report: {document_label}"
     happened_text = (
-        (happened or "").strip()
-        or "Please describe what happened and what you expected to happen."
-    )
+        happened or ""
+    ).strip() or "Please describe what happened and what you expected to happen."
     expected_text = (expected or "").strip() or "Please describe the expected behavior."
     steps_text = (steps or "").strip() or "Please list steps to reproduce."
     diagnostics_text = (diagnostics_note or "").strip() or (
@@ -234,26 +231,18 @@ def build_support_issue_url(
     platform_label: str,
     diagnostics_note: str | None = None,
 ) -> str:
-    return (
-        "https://github.com/Community-Access/support/issues/new?"
-        + urlencode(
-            {
-                "template": "product-feedback.yml",
-                "title": payload["summary"],
-                "source-app": source_app,
-                "category": "Bug report",
-                "version": version,
-                "platform": platform_label,
-                "summary": payload["summary"],
-                "happened": payload["body"],
-                "diagnostics": diagnostics_note
-                or (
-                    "If available, attach a diagnostics bundle created from Help -> "
-                    "Save Diagnostics..."
-                ),
-            }
-        )
-    )
+    return "https://github.com/Community-Access/support/issues/new?" + urlencode({
+        "template": "product-feedback.yml",
+        "title": payload["summary"],
+        "source-app": source_app,
+        "category": "Bug report",
+        "version": version,
+        "platform": platform_label,
+        "summary": payload["summary"],
+        "happened": payload["body"],
+        "diagnostics": diagnostics_note
+        or ("If available, attach a diagnostics bundle created from Help -> Save Diagnostics..."),
+    })
 
 
 def collect_environment_info(

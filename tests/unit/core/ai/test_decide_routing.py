@@ -1,6 +1,7 @@
 """Decision sanitization: the model's raw choice is constrained before it can
 touch the document or run a tool. These guard the 'tool issues' class of bugs —
 a hallucinated action, an unlisted/destructive tool id, or malformed output."""
+
 from __future__ import annotations
 
 import json

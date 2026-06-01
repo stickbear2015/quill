@@ -35,12 +35,41 @@ _CONTEXT_BUDGETS = (6000, 3000, 1200, 0)
 # heading?" mentions a noun ("heading") but is conversational; keying on verbs
 # keeps it in chat while still catching real requests ("write…", "add…").
 _DOC_INTENT_TERMS = (
-    "write", "add ", "insert", "draft", "compose", "continue", "append",
-    "generate", "create", "outline", "expand", "elaborate",
-    "rewrite", "rephrase", "reword", "revise", "edit ", "fix ", "correct",
-    "shorten", "lengthen", "simplify", "improve", "polish", "translate",
-    "summarize", "make it", "make this", "make the", "turn this", "turn it",
-    "replace", "reformat", "proofread", "tighten",
+    "write",
+    "add ",
+    "insert",
+    "draft",
+    "compose",
+    "continue",
+    "append",
+    "generate",
+    "create",
+    "outline",
+    "expand",
+    "elaborate",
+    "rewrite",
+    "rephrase",
+    "reword",
+    "revise",
+    "edit ",
+    "fix ",
+    "correct",
+    "shorten",
+    "lengthen",
+    "simplify",
+    "improve",
+    "polish",
+    "translate",
+    "summarize",
+    "make it",
+    "make this",
+    "make the",
+    "turn this",
+    "turn it",
+    "replace",
+    "reformat",
+    "proofread",
+    "tighten",
 )
 
 
@@ -48,6 +77,7 @@ def _has_document_intent(message: str) -> bool:
     """True if the message explicitly asks to write to or edit the document."""
     low = (message or "").lower()
     return any(term in low for term in _DOC_INTENT_TERMS)
+
 
 _OPERATION_PROMPTS: dict[str, str] = {
     "rewrite": "Rewrite the following text to be clear and well written. "

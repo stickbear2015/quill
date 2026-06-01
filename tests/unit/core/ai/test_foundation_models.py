@@ -4,7 +4,9 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="Apple Foundation Models is macOS-only")
+pytestmark = pytest.mark.skipif(
+    sys.platform != "darwin", reason="Apple Foundation Models is macOS-only"
+)
 
 from quill.core.ai.foundation_models import FoundationModelsBackend
 

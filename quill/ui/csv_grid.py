@@ -263,10 +263,8 @@ class CsvGridSurface:
             return self.text_ctrl.GetValue()
         rows: list[list[str]] = []
         for row_index in range(self.grid.GetNumberRows()):
-            rows.append(
-                [
-                    self.grid.GetCellValue(row_index, col_index)
-                    for col_index in range(self.grid.GetNumberCols())
-                ]
-            )
+            rows.append([
+                self.grid.GetCellValue(row_index, col_index)
+                for col_index in range(self.grid.GetNumberCols())
+            ])
         return serialize_csv_rows(rows, self._delimiter)

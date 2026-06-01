@@ -12,8 +12,14 @@ def test_apply_heading_style_to_markdown_all_levels() -> None:
         levels={1, 2},
     )
     assert changed == 2
-    assert '<h1 style="font-family: Calibri; font-size: 20pt; text-align: center">Title</h1>' in updated
-    assert '<h2 style="font-family: Calibri; font-size: 20pt; text-align: center">Child</h2>' in updated
+    assert (
+        '<h1 style="font-family: Calibri; font-size: 20pt; text-align: center">Title</h1>'
+        in updated
+    )
+    assert (
+        '<h2 style="font-family: Calibri; font-size: 20pt; text-align: center">Child</h2>'
+        in updated
+    )
 
 
 def test_apply_heading_style_to_markdown_specific_level() -> None:

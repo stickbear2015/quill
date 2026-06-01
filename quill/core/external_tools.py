@@ -94,9 +94,7 @@ TOOL_DEFINITIONS: tuple[ExternalToolDefinition, ...] = (
         tool_id="ghostscript",
         name="Ghostscript",
         category="conversion",
-        description=(
-            "PDF and PostScript helper for advanced render and conversion workflows."
-        ),
+        description=("PDF and PostScript helper for advanced render and conversion workflows."),
         capabilities=(
             "Improve PDF-related conversion pipelines",
             "Support print-oriented and PostScript-heavy workflows",

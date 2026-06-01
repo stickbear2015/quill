@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from html.parser import HTMLParser
-import re
 
 from quill.core.document import Document
-from quill.io.pandoc import PandocConversionError, PandocUnavailableError, convert_document_with_pandoc
+from quill.io.pandoc import (
+    PandocConversionError,
+    PandocUnavailableError,
+    convert_document_with_pandoc,
+)
 
 
 def _normalize_whitespace(value: str) -> str:
@@ -47,7 +51,8 @@ def _linearize_markdown_tables(text: str) -> str:
                 row_index += 1
                 if len(row_cells) == len(header_cells):
                     pairs = [
-                        f"{header}: {value}" for header, value in zip(header_cells, row_cells)
+                        f"{header}: {value}"
+                        for header, value in zip(header_cells, row_cells, strict=True)
                     ]
                     output.append(f"Row {row_index}: " + "; ".join(pairs))
                 else:
@@ -178,7 +183,10 @@ class _AccessibleWordHtmlParser(HTMLParser):
             self.lines.append("Headers: " + " | ".join(cells))
             return
         if self._table_headers and len(self._table_headers) == len(cells):
-            pairs = [f"{header}: {value}" for header, value in zip(self._table_headers, cells)]
+            pairs = [
+                f"{header}: {value}"
+                for header, value in zip(self._table_headers, cells, strict=True)
+            ]
             self.lines.append(f"Row {self._row_index}: " + "; ".join(pairs))
             return
         self.lines.append(f"Row {self._row_index}: " + " | ".join(cells))

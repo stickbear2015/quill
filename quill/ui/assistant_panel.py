@@ -12,6 +12,7 @@ of the page so the user stays in the web view to type. A plain wx ListBox +
 text field is the fallback when no WebView backend is available. Generation runs
 off the UI thread.
 """
+
 from __future__ import annotations
 
 import threading
@@ -138,12 +139,16 @@ class AskQuillChatDialog:
     def _build_fallback_input(self, outer) -> None:
         """List box transcript + wx text field, for when no WebView backend exists."""
         wx = self._wx
-        outer.Add(wx.StaticText(self.dialog, label="Conversation"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14)
+        outer.Add(
+            wx.StaticText(self.dialog, label="Conversation"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14
+        )
         self.messages = wx.ListBox(self.dialog, style=wx.LB_SINGLE | wx.LB_NEEDED_SB)
         self.messages.SetName("Conversation")
         outer.Add(self.messages, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 14)
 
-        outer.Add(wx.StaticText(self.dialog, label="Suggestions"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14)
+        outer.Add(
+            wx.StaticText(self.dialog, label="Suggestions"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14
+        )
         suggestions = wx.WrapSizer(wx.HORIZONTAL)
         for text in SUGGESTED_PROMPTS:
             button = wx.Button(self.dialog, label=text)
@@ -152,7 +157,9 @@ class AskQuillChatDialog:
             self._suggestion_buttons.append(button)
         outer.Add(suggestions, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 14)
 
-        outer.Add(wx.StaticText(self.dialog, label="Your message"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14)
+        outer.Add(
+            wx.StaticText(self.dialog, label="Your message"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14
+        )
         input_row = wx.BoxSizer(wx.HORIZONTAL)
         self.input = wx.TextCtrl(self.dialog, style=wx.TE_PROCESS_ENTER)
         self.input.SetName("Your message to Quill")
@@ -287,7 +294,11 @@ class AskQuillChatDialog:
         elif action in ("insert", "replace") and text:
             self._last_response = text
             self._pending = (action, text, "")
-            verb = "insert this at the cursor" if action == "insert" else "replace the selection with this"
+            verb = (
+                "insert this at the cursor"
+                if action == "insert"
+                else "replace the selection with this"
+            )
             proposal = f"I'd like to {verb} (approve to apply):\n{text}"
             self._append("Quill", proposal)
             self._announce_incoming(text, prefix="Quill proposal")

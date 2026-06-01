@@ -228,14 +228,12 @@ def dependency_requirements_from_pyproject(
     for normalized, row in sorted(rows.items()):
         scopes = sorted(row["scope"]) if isinstance(row["scope"], set) else []
         declared = sorted(row["declared"]) if isinstance(row["declared"], set) else []
-        output.append(
-            {
-                "dependency": normalized,
-                "display_name": str(row["display_name"]),
-                "scope": ", ".join(scopes),
-                "declared": " | ".join(declared),
-            }
-        )
+        output.append({
+            "dependency": normalized,
+            "display_name": str(row["display_name"]),
+            "scope": ", ".join(scopes),
+            "declared": " | ".join(declared),
+        })
     return output
 
 
@@ -267,18 +265,16 @@ def build_dependency_notices(
         if version == "unknown":
             declared = row["declared"]
             version = f"not-installed ({requirement_specifier(declared.split(' | ')[0])})"
-        output.append(
-            {
-                "name": display_name,
-                "dependency": dependency,
-                "scope": row["scope"],
-                "declared": row["declared"],
-                "version": version,
-                "license": license_name,
-                "homepage": source_url,
-                "notes": _DEPENDENCY_USAGE_NOTES.get(dependency, ""),
-            }
-        )
+        output.append({
+            "name": display_name,
+            "dependency": dependency,
+            "scope": row["scope"],
+            "declared": row["declared"],
+            "version": version,
+            "license": license_name,
+            "homepage": source_url,
+            "notes": _DEPENDENCY_USAGE_NOTES.get(dependency, ""),
+        })
     return output
 
 
@@ -299,16 +295,14 @@ def render_dependency_notice_table(rows: Iterable[dict[str, str]]) -> str:
             link_md = "—"
         lines.append(
             "| "
-            + " | ".join(
-                [
-                    _escape_table_cell(row["name"]),
-                    _escape_table_cell(row["scope"]),
-                    _escape_table_cell(row["version"]),
-                    _escape_table_cell(row["license"]),
-                    _escape_table_cell(link_md),
-                    _escape_table_cell(row["declared"]),
-                ]
-            )
+            + " | ".join([
+                _escape_table_cell(row["name"]),
+                _escape_table_cell(row["scope"]),
+                _escape_table_cell(row["version"]),
+                _escape_table_cell(row["license"]),
+                _escape_table_cell(link_md),
+                _escape_table_cell(row["declared"]),
+            ])
             + " |"
         )
     return "\n".join(lines)
@@ -328,16 +322,14 @@ def render_bundled_component_table(rows: Iterable[dict[str, str]]) -> str:
         source_path = row["source"] or "—"
         lines.append(
             "| "
-            + " | ".join(
-                [
-                    _escape_table_cell(row["name"]),
-                    _escape_table_cell(row["scope"]),
-                    _escape_table_cell(row["version"]),
-                    _escape_table_cell(row["license"]),
-                    _escape_table_cell(link_md),
-                    _escape_table_cell(source_path),
-                ]
-            )
+            + " | ".join([
+                _escape_table_cell(row["name"]),
+                _escape_table_cell(row["scope"]),
+                _escape_table_cell(row["version"]),
+                _escape_table_cell(row["license"]),
+                _escape_table_cell(link_md),
+                _escape_table_cell(source_path),
+            ])
             + " |"
         )
     return "\n".join(lines)

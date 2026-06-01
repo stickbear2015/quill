@@ -31,17 +31,11 @@ def test_render_word_accessible_preview_falls_back_to_markdown_text() -> None:
 
 
 def test_render_word_accessible_preview_linearizes_markdown_tables() -> None:
-  markdown = (
-    "# Budget\n\n"
-    "| Item | Amount |\n"
-    "| --- | --- |\n"
-    "| Revenue | 1200 |\n"
-    "| Cost | 400 |\n"
-  )
+    markdown = "# Budget\n\n| Item | Amount |\n| --- | --- |\n| Revenue | 1200 |\n| Cost | 400 |\n"
 
-  preview = render_word_accessible_preview(markdown, None)
+    preview = render_word_accessible_preview(markdown, None)
 
-  assert "Table 1" in preview
-  assert "Headers: Item | Amount" in preview
-  assert "Row 1: Item: Revenue; Amount: 1200" in preview
-  assert "Row 2: Item: Cost; Amount: 400" in preview
+    assert "Table 1" in preview
+    assert "Headers: Item | Amount" in preview
+    assert "Row 1: Item: Revenue; Amount: 1200" in preview
+    assert "Row 2: Item: Cost; Amount: 400" in preview

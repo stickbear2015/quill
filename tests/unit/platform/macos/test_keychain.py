@@ -5,7 +5,9 @@ import uuid
 
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS Keychain (security CLI) is macOS-only")
+pytestmark = pytest.mark.skipif(
+    sys.platform != "darwin", reason="macOS Keychain (security CLI) is macOS-only"
+)
 
 from quill.platform.macos import keychain
 
@@ -26,4 +28,4 @@ def test_protect_unprotect_facade() -> None:
         assert token.startswith("macos-keychain:")
         assert keychain.unprotect_secret(token) == "super-secret"
     finally:
-        keychain.delete_secret(token[len("macos-keychain:"):])
+        keychain.delete_secret(token[len("macos-keychain:") :])

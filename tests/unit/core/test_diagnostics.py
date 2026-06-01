@@ -138,17 +138,15 @@ def test_diagnostics_bundle_redacts_log_secrets(monkeypatch, tmp_path: Path) -> 
 def test_sanitize_log_text_redacts_broadened_secret_shapes() -> None:
     from quill.core.diagnostics import _sanitize_log_text
 
-    raw = "\n".join(
-        [
-            "password: hunter2",
-            "client_secret=abcdEF1234567890",
-            "token = my-very-long-token-value",
-            "x-goog-api-key: GOOGSECRETVALUE123",
-            "google=AIzaSyA1234567890123456789012345678901234",
-            "aws=AKIAABCDEFGHIJKLMNOP",
-            "github=ghp_0123456789abcdefghijklmnopqrstuvwx",
-        ]
-    )
+    raw = "\n".join([
+        "password: hunter2",
+        "client_secret=abcdEF1234567890",
+        "token = my-very-long-token-value",
+        "x-goog-api-key: GOOGSECRETVALUE123",
+        "google=AIzaSyA1234567890123456789012345678901234",
+        "aws=AKIAABCDEFGHIJKLMNOP",
+        "github=ghp_0123456789abcdefghijklmnopqrstuvwx",
+    ])
     sanitized = _sanitize_log_text(raw)
     for leaked in (
         "hunter2",

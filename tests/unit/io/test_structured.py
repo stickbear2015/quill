@@ -2,7 +2,6 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
-from quill.core.document import Document
 from quill.io.pdf import PdfExtractionResult
 from quill.io.structured import read_structured_document
 
@@ -231,6 +230,7 @@ def test_read_structured_pages_gracefully_handles_missing_deps(tmp_path: Path, m
 
     # Mock both Pages readers to fail (simulating missing deps)
     from unittest.mock import Mock
+
     from quill.io import pages
 
     monkeypatch.setattr(
@@ -269,11 +269,7 @@ def test_pptx_slide_table_blocks_renders_multiple_body_rows() -> None:
     xml = (
         f'<p:root xmlns:a="{a}" '
         f'xmlns:p="{_PPTX_NAMESPACES["p"]}">'
-        "<a:tbl>"
-        + _row("H1", "H2")
-        + _row("A", "B")
-        + _row("C", "D")
-        + "</a:tbl></p:root>"
+        "<a:tbl>" + _row("H1", "H2") + _row("A", "B") + _row("C", "D") + "</a:tbl></p:root>"
     )
     root = ET.fromstring(xml)
 
@@ -285,4 +281,3 @@ def test_pptx_slide_table_blocks_renders_multiple_body_rows() -> None:
     assert block[1] == "| --- | --- |"
     assert "| A | B |" in block
     assert "| C | D |" in block
-

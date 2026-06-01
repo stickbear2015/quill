@@ -74,15 +74,13 @@ def rank_commands(
         if score <= 0:
             continue
         entry = usage.get(command.id, PaletteUsage(0, 0))
-        scored.append(
-            (
-                score,
-                entry.count,
-                entry.last_used_epoch,
-                command.title.lower(),
-                command,
-            )
-        )
+        scored.append((
+            score,
+            entry.count,
+            entry.last_used_epoch,
+            command.title.lower(),
+            command,
+        ))
     scored.sort(key=lambda item: (-item[0], -item[1], -item[2], item[3]))
     return [item[4] for item in scored]
 

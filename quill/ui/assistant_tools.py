@@ -233,10 +233,7 @@ class PromptStudioDialog:
         right.Add(
             wx.StaticText(
                 self.dialog,
-                label=(
-                    "Template (variables: {selection} {document} "
-                    "{tone} {audience} {goal})"
-                ),
+                label=("Template (variables: {selection} {document} {tone} {audience} {goal})"),
             ),
             0,
             wx.LEFT | wx.RIGHT | wx.TOP,
@@ -1283,9 +1280,7 @@ class AssistantConnectionDialog:
         if not host_value or host_value in known_hosts:
             self.host.SetValue(default_host_for_provider(provider))
         model_value = self.model.GetValue().strip()
-        known_models = {
-            default_model_for_provider(name) for name, _label in self._PROVIDER_CHOICES
-        }
+        known_models = {default_model_for_provider(name) for name, _label in self._PROVIDER_CHOICES}
         fallback_model = default_model_for_provider(provider)
         if not model_value or model_value in known_models:
             model_value = fallback_model

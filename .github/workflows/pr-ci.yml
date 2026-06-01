@@ -1,0 +1,76 @@
+name: PR CI
+
+# GATE-2: the required pull-request pipeline. This workflow runs the lint, test,
+# coverage-floor, and characterization jobs. Scoped strict typing, the
+# banned-pattern gate, and the no-silent-network audit run in Security CI;
+# the accessibility suite and docs-artifact check run in Accessibility CI.
+# Branch protection should require all of these checks before merge.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Check formatting
+        run: |
+          ruff format --check .
+      - name: Lint
+        # E501 (line-length) cleanup is tracked under CQ-18 in Tier 4 and is
+        # excluded here so the gate reflects what is already clean; every other
+        # rule (undefined names, imports, bugbear, pyupgrade) is enforced.
+        run: |
+          ruff check . --ignore E501
+
+  unit-tests:
+    # GATE-5: the full suite must pass and coverage of quill/core and quill/io
+    # may not fall below the floor. Raise the floor as coverage improves; never
+    # lower it.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Run unit and accessibility tests with coverage floor
+        run: |
+          pytest tests\unit tests\accessibility -q `
+            --cov=quill.core --cov=quill.io `
+            --cov-report=term-missing:skip-covered `
+            --cov-fail-under=70
+
+  characterization:
+    # GATE-6: the MainFrame public surface is frozen so decomposition stays
+    # behavior-preserving. Regenerate the snapshot deliberately with
+    # 'python -m quill.tools.ui_surface --write' when the surface changes.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Verify MainFrame characterization snapshot
+        run: |
+          pytest -q tests\unit\ui\test_main_frame_characterization.py

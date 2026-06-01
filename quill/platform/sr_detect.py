@@ -1,4 +1,5 @@
 """Platform-neutral screen-reader detection (routes to the OS implementation)."""
+
 from __future__ import annotations
 
 import sys
@@ -16,7 +17,7 @@ else:  # pragma: no cover - other platforms
         name: str
         source: str
 
-    def detect_screen_reader(process_snapshot: str | None = None) -> "ScreenReaderDetection":
+    def detect_screen_reader(process_snapshot: str | None = None) -> ScreenReaderDetection:
         return ScreenReaderDetection(detected=False, name="none", source="")
 
 

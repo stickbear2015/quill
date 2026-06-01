@@ -48,7 +48,9 @@ DECTALK_VOICE_COMMANDS: dict[str, str] = {
     "kit": "[:nk]",
 }
 
-DECTALK_RELEASE_ZIP_URL = "https://github.com/dectalk/dectalk/releases/download/2023-10-30/vs2022.zip"
+DECTALK_RELEASE_ZIP_URL = (
+    "https://github.com/dectalk/dectalk/releases/download/2023-10-30/vs2022.zip"
+)
 
 KOKORO_VOICES: list[tuple[str, str]] = [
     ("af_heart", "Heart (American Female, warm)"),
@@ -215,6 +217,7 @@ def discover_espeak_executable(configured_path: str = "") -> Path | None:
             if probe.exists():
                 return probe.resolve()
     import shutil as _shutil
+
     found = _shutil.which("espeak-ng")
     if found:
         return Path(found).resolve()
@@ -241,9 +244,7 @@ def discover_melotts_executable(configured_path: str = "") -> Path | None:
 
 
 def discover_chatterbox_executable(configured_path: str = "") -> Path | None:
-    validated = _validate_configured_executable(
-        configured_path, ("chatterbox.exe", "chatterbox")
-    )
+    validated = _validate_configured_executable(configured_path, ("chatterbox.exe", "chatterbox"))
     if validated is not None:
         return validated
     app_root = os.environ.get("QUILL_APP_ROOT", "").strip()
@@ -260,9 +261,7 @@ def discover_chatterbox_executable(configured_path: str = "") -> Path | None:
 
 
 def discover_openvoice_executable(configured_path: str = "") -> Path | None:
-    validated = _validate_configured_executable(
-        configured_path, ("openvoice.exe", "openvoice")
-    )
+    validated = _validate_configured_executable(configured_path, ("openvoice.exe", "openvoice"))
     if validated is not None:
         return validated
     app_root = os.environ.get("QUILL_APP_ROOT", "").strip()
@@ -362,13 +361,27 @@ def synthesize_with_espeak(
         raise ReadAloudUnavailableError("eSpeak-NG executable was not found")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     bounded_rate = max(80, min(450, int(rate)))
-    command = [str(executable_path), "-v", voice, "-s", str(bounded_rate), "-w", str(output_path), text]
+    command = [
+        str(executable_path),
+        "-v",
+        voice,
+        "-s",
+        str(bounded_rate),
+        "-w",
+        str(output_path),
+        text,
+    ]
     completed = subprocess.run(command, capture_output=True, check=False)
     if completed.returncode != 0:
         raw = completed.stderr or completed.stdout or b""
-        detail = raw.decode("utf-8", errors="replace").strip() if isinstance(raw, bytes) else str(raw).strip()
+        detail = (
+            raw.decode("utf-8", errors="replace").strip()
+            if isinstance(raw, bytes)
+            else str(raw).strip()
+        )
         raise ReadAloudUnavailableError(
-            f"eSpeak-NG failed: {detail}" if detail
+            f"eSpeak-NG failed: {detail}"
+            if detail
             else f"eSpeak-NG exited with code {completed.returncode}."
         )
 
@@ -402,7 +415,8 @@ def _synthesize_with_cli_engine(
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout or "").strip()
         raise ReadAloudUnavailableError(
-            f"{engine_label} failed: {detail}" if detail
+            f"{engine_label} failed: {detail}"
+            if detail
             else f"{engine_label} exited with code {completed.returncode}."
         )
 
@@ -503,7 +517,11 @@ def synthesize_to_file_with_dectalk(
     voice_cmd = DECTALK_VOICE_COMMANDS.get(voice.strip().lower(), "")
     bounded_rate = max(75, min(650, int(rate)))
     payload = f"{voice_cmd} [:ra {bounded_rate}] {text}".strip()
-    dict_file = dictionary_path.expanduser() if dictionary_path is not None else executable_path.parent / "dtalk_us.dic"
+    dict_file = (
+        dictionary_path.expanduser()
+        if dictionary_path is not None
+        else executable_path.parent / "dtalk_us.dic"
+    )
     create_no_window = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".txt", delete=False, encoding="utf-8", errors="replace"
@@ -527,9 +545,7 @@ def synthesize_to_file_with_dectalk(
             check=False,
         )
         if completed.returncode != 0:
-            raise ReadAloudUnavailableError(
-                f"DECtalk exited with code {completed.returncode}."
-            )
+            raise ReadAloudUnavailableError(f"DECtalk exited with code {completed.returncode}.")
     finally:
         try:
             tmp_path.unlink(missing_ok=True)
@@ -691,9 +707,15 @@ class ReadAloudController:
                 "eSpeak-NG executable was not found. "
                 "Install eSpeak-NG or configure the path in Read Aloud Settings."
             )
-        if normalized_engine == "melotts" and discover_melotts_executable(melotts_executable) is None:
+        if (
+            normalized_engine == "melotts"
+            and discover_melotts_executable(melotts_executable) is None
+        ):
             raise ReadAloudUnavailableError("MeloTTS executable was not found")
-        if normalized_engine == "chatterbox" and discover_chatterbox_executable(chatterbox_executable) is None:
+        if (
+            normalized_engine == "chatterbox"
+            and discover_chatterbox_executable(chatterbox_executable) is None
+        ):
             raise ReadAloudUnavailableError("Chatterbox executable was not found")
         if normalized_engine == "openvoice":
             if not openvoice_consent:
@@ -721,37 +743,52 @@ class ReadAloudController:
             try:
                 if normalized_engine == "pyttsx3":
                     self._run_pyttsx3(
-                        spans, text,
-                        voice_id=voice_id, rate=rate, volume=volume, pitch=pitch,
+                        spans,
+                        text,
+                        voice_id=voice_id,
+                        rate=rate,
+                        volume=volume,
+                        pitch=pitch,
                         on_progress=on_progress,
                     )
                 elif normalized_engine == "dectalk":
                     self._run_dectalk(
-                        spans, text,
-                        executable=discover_dectalk_executable(dectalk_executable) or Path(dectalk_executable).expanduser(),
+                        spans,
+                        text,
+                        executable=discover_dectalk_executable(dectalk_executable)
+                        or Path(dectalk_executable).expanduser(),
                         voice_id=dectalk_voice,
                         rate=dectalk_rate,
-                        dictionary_path=Path(dectalk_dictionary).expanduser() if dectalk_dictionary.strip() else None,
+                        dictionary_path=Path(dectalk_dictionary).expanduser()
+                        if dectalk_dictionary.strip()
+                        else None,
                         on_progress=on_progress,
                     )
                 elif normalized_engine == "piper":
                     self._run_piper_live(
-                        spans, text,
-                        executable=discover_piper_executable(piper_executable) or Path(piper_executable).expanduser(),
+                        spans,
+                        text,
+                        executable=discover_piper_executable(piper_executable)
+                        or Path(piper_executable).expanduser(),
                         model=Path(piper_model).expanduser(),
                         on_progress=on_progress,
                     )
                 elif normalized_engine == "kokoro":
                     self._run_kokoro_live(
-                        spans, text,
-                        voice=kokoro_voice, speed=kokoro_speed,
+                        spans,
+                        text,
+                        voice=kokoro_voice,
+                        speed=kokoro_speed,
                         on_progress=on_progress,
                     )
                 elif normalized_engine == "espeak":
                     self._run_espeak_live(
-                        spans, text,
-                        executable=discover_espeak_executable(espeak_executable) or Path(espeak_executable).expanduser(),
-                        voice=espeak_voice, rate=espeak_rate,
+                        spans,
+                        text,
+                        executable=discover_espeak_executable(espeak_executable)
+                        or Path(espeak_executable).expanduser(),
+                        voice=espeak_voice,
+                        rate=espeak_rate,
                         on_progress=on_progress,
                     )
                 elif normalized_engine == "melotts":
@@ -886,12 +923,10 @@ class ReadAloudController:
         candidates: list[Path] = []
         if dictionary_path is not None:
             candidates.append(dictionary_path)
-        candidates.extend(
-            [
-                working_dir / "dic" / "dtalk_us.dic",
-                working_dir / "dtalk_us.dic",
-            ]
-        )
+        candidates.extend([
+            working_dir / "dic" / "dtalk_us.dic",
+            working_dir / "dtalk_us.dic",
+        ])
         source = next((path for path in candidates if path.exists()), None)
         if source is None:
             raise ReadAloudUnavailableError(

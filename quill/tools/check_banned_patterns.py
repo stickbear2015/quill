@@ -128,9 +128,10 @@ class _BareWxVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         value = node.value
         if isinstance(value, ast.Name) and value.id == "wx" and not self._bound("wx"):
-            self.violations.append(
-                (node.lineno, "bare 'wx.' usage; bind 'wx = self._wx' in this scope first")
-            )
+            self.violations.append((
+                node.lineno,
+                "bare 'wx.' usage; bind 'wx = self._wx' in this scope first",
+            ))
         self.generic_visit(node)
 
 

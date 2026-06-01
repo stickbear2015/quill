@@ -5,6 +5,7 @@ Users pick a model in Settings (default = "Recommended", chosen from RAM); the
 GGUF is downloaded automatically on first use into ``<app data>/models``. No
 manual file handling. Standard library only (urllib) — no extra dependencies.
 """
+
 from __future__ import annotations
 
 import os
@@ -97,6 +98,7 @@ def choose_model_spec() -> ModelSpec:
 
 # --- saved choice (a Settings value) --------------------------------------
 
+
 def _choice_path() -> Path:
     return app_data_dir() / "ai" / _CHOICE_FILE
 
@@ -118,6 +120,7 @@ def save_model_choice(model_id: str) -> None:
 
 
 # --- AI on/off (a Settings value, set during onboarding) -------------------
+
 
 def _ai_enabled_path() -> Path:
     return app_data_dir() / "ai" / "ai-enabled.json"
@@ -143,6 +146,7 @@ def resolve_spec(choice: str | None = None) -> ModelSpec:
 
 
 # --- download / resolution -------------------------------------------------
+
 
 def models_dir() -> Path:
     return app_data_dir() / "models"

@@ -31,4 +31,7 @@ def test_intellisense_suggests_html_and_markdown_tags() -> None:
     _, markdown_suggestions = build_intellisense_suggestions("heading", 7, set(), limit=4)
 
     assert any(item.kind == "html" and item.inserted_text == "div>" for item in html_suggestions)
-    assert any(item.kind == "markdown" and item.inserted_text.startswith("#") for item in markdown_suggestions)
+    assert any(
+        item.kind == "markdown" and item.inserted_text.startswith("#")
+        for item in markdown_suggestions
+    )

@@ -12,8 +12,10 @@ class _FakeCommand:
 class _FakeRegistry:
     def __init__(self) -> None:
         self.ran: list[str] = []
-        self._cmds = [_FakeCommand("format.heading_1", "Heading 1"),
-                      _FakeCommand("edit.undo", "Undo")]
+        self._cmds = [
+            _FakeCommand("format.heading_1", "Heading 1"),
+            _FakeCommand("edit.undo", "Undo"),
+        ]
 
     def list(self, feature_manager=None):
         return self._cmds

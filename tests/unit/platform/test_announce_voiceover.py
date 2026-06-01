@@ -4,6 +4,7 @@ On macOS the announcement engine must hand text to VoiceOver via the
 accessibility API and must NEVER fall back to pyttsx3 (the system voice), which
 would talk over VoiceOver. See the darwin branch in AnnouncementEngine.announce.
 """
+
 from __future__ import annotations
 
 import quill.platform.macos.announce as macos_announce

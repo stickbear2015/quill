@@ -23,11 +23,7 @@ def test_clean_tree_has_no_violations() -> None:
 def test_bare_wx_without_local_binding_is_flagged() -> None:
     # The BUG-2 class: wx is never imported at module scope, so this is a
     # NameError at runtime.
-    source = (
-        "class Frame:\n"
-        "    def do(self):\n"
-        "        return wx.GetTextFromUser('x')\n"
-    )
+    source = "class Frame:\n    def do(self):\n        return wx.GetTextFromUser('x')\n"
     violations = _bare_wx_violations(source)
     assert len(violations) == 1
     assert "bare 'wx.'" in violations[0][1]

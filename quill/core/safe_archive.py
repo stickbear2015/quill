@@ -6,6 +6,7 @@ module opens archives behind a guard that rejects any archive whose total
 declared uncompressed size, or whose per-entry compression ratio, exceeds safe
 limits before any entry is read.
 """
+
 from __future__ import annotations
 
 import zipfile

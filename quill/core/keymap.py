@@ -315,6 +315,7 @@ KEYBOARD_PACKS: dict[str, KeyboardPack] = {
     ),
 }
 
+
 def keymap_path() -> Path:
     return app_data_dir() / "keymap.json"
 

@@ -5,24 +5,20 @@ from types import SimpleNamespace
 
 from quill.core import read_aloud as read_aloud_module
 from quill.core.read_aloud import (
-    ReadAloudUnavailableError,
     ReadAloudController,
+    ReadAloudUnavailableError,
+    discover_espeak_executable,
     discover_piper_executable,
     list_dectalk_voices,
-    list_voices,
-    sentence_spans,
-    synthesize_with_piper,
-)
-from quill.core.read_aloud import (
-    ESPEAK_ENGLISH_VOICES,
-    KOKORO_VOICES,
-    discover_espeak_executable,
     list_espeak_english_voices,
     list_kokoro_voices,
     list_piper_voices,
+    list_voices,
+    sentence_spans,
     synthesize_to_file_with_dectalk,
     synthesize_to_file_with_pyttsx3,
     synthesize_with_espeak,
+    synthesize_with_piper,
 )
 
 
@@ -214,6 +210,7 @@ def test_synthesize_with_piper_raises_for_failure(monkeypatch, tmp_path: Path) -
 # eSpeak-NG helpers
 # ---------------------------------------------------------------------------
 
+
 def test_list_espeak_english_voices_covers_key_variants() -> None:
     voices = list_espeak_english_voices()
     ids = [v.id for v in voices]
@@ -282,6 +279,7 @@ def test_synthesize_with_espeak_raises_on_failure(monkeypatch, tmp_path: Path) -
 # Kokoro helpers
 # ---------------------------------------------------------------------------
 
+
 def test_list_kokoro_voices_has_american_and_british() -> None:
     voices = list_kokoro_voices()
     ids = [v.id for v in voices]
@@ -298,6 +296,7 @@ def test_list_kokoro_voices_default_is_af_heart() -> None:
 
 def test_synthesize_with_kokoro_raises_when_package_missing(monkeypatch, tmp_path: Path) -> None:
     import builtins
+
     real_import = builtins.__import__
 
     def _block(name, *args, **kwargs):
@@ -307,6 +306,7 @@ def test_synthesize_with_kokoro_raises_when_package_missing(monkeypatch, tmp_pat
 
     monkeypatch.setattr(builtins, "__import__", _block)
     from quill.core.read_aloud import synthesize_with_kokoro
+
     try:
         synthesize_with_kokoro("Hello", tmp_path / "out.wav")
     except ReadAloudUnavailableError as exc:
@@ -318,6 +318,7 @@ def test_synthesize_with_kokoro_raises_when_package_missing(monkeypatch, tmp_pat
 # ---------------------------------------------------------------------------
 # Pyttsx3 file synthesis helper
 # ---------------------------------------------------------------------------
+
 
 def test_synthesize_to_file_with_pyttsx3_saves_file(monkeypatch, tmp_path: Path) -> None:
     output = tmp_path / "speech.wav"
@@ -350,6 +351,7 @@ def test_synthesize_to_file_with_pyttsx3_saves_file(monkeypatch, tmp_path: Path)
 # DECtalk file synthesis helper
 # ---------------------------------------------------------------------------
 
+
 def test_synthesize_to_file_with_dectalk_calls_wav_flag(monkeypatch, tmp_path: Path) -> None:
     exe = tmp_path / "speak.exe"
     exe.write_text("binary", encoding="utf-8")
@@ -377,6 +379,7 @@ def test_synthesize_to_file_with_dectalk_calls_wav_flag(monkeypatch, tmp_path: P
 # Piper voice list from directory
 # ---------------------------------------------------------------------------
 
+
 def test_list_piper_voices_finds_onnx_files(tmp_path: Path) -> None:
     (tmp_path / "en_US-amy-medium.onnx").write_text("model", encoding="utf-8")
     (tmp_path / "en_GB-alan-low.onnx").write_text("model", encoding="utf-8")
@@ -395,8 +398,10 @@ def test_list_piper_voices_empty_when_no_dir() -> None:
 # Settings round-trip: new fields
 # ---------------------------------------------------------------------------
 
+
 def test_settings_round_trip_all_engine_fields() -> None:
     from quill.core.settings import Settings
+
     data = {
         "read_aloud_engine": "espeak",
         "read_aloud_espeak_voice": "en-gb",
@@ -416,12 +421,14 @@ def test_settings_round_trip_all_engine_fields() -> None:
 
 def test_settings_rejects_unknown_engine() -> None:
     from quill.core.settings import Settings
+
     s = Settings.from_dict({"read_aloud_engine": "bananavoice"})
     assert s.read_aloud_engine == "pyttsx3"
 
 
 def test_settings_clamps_espeak_rate() -> None:
     from quill.core.settings import Settings
+
     s_low = Settings.from_dict({"read_aloud_espeak_rate": 10})
     s_high = Settings.from_dict({"read_aloud_espeak_rate": 999})
     assert s_low.read_aloud_espeak_rate == 80
@@ -430,6 +437,7 @@ def test_settings_clamps_espeak_rate() -> None:
 
 def test_settings_clamps_kokoro_speed() -> None:
     from quill.core.settings import Settings
+
     s_low = Settings.from_dict({"read_aloud_kokoro_speed": 0.1})
     s_high = Settings.from_dict({"read_aloud_kokoro_speed": 5.0})
     assert s_low.read_aloud_kokoro_speed == 0.5
@@ -440,11 +448,14 @@ def test_settings_clamps_kokoro_speed() -> None:
 # Controller: all engines reach error when executable missing
 # ---------------------------------------------------------------------------
 
+
 def test_controller_espeak_raises_when_not_found() -> None:
     controller = ReadAloudController()
     try:
         controller.start(
-            "Hello", 0, "",
+            "Hello",
+            0,
+            "",
             engine_name="espeak",
             espeak_executable="/nonexistent/espeak-ng.exe",
             espeak_voice="en",
@@ -461,7 +472,9 @@ def test_controller_piper_raises_when_model_missing(tmp_path: Path) -> None:
     controller = ReadAloudController()
     try:
         controller.start(
-            "Hello", 0, "",
+            "Hello",
+            0,
+            "",
             engine_name="piper",
             piper_executable=str(exe),
             piper_model="/nonexistent/voice.onnx",

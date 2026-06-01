@@ -9,6 +9,7 @@ referenced by an account label. A DPAPI-shaped ``protect_secret`` /
 
 Uses the ``security`` CLI so there is no third-party dependency.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -57,6 +58,7 @@ def delete_secret(account: str, service: str = DEFAULT_SERVICE) -> None:
 
 # DPAPI-shaped facade -------------------------------------------------------
 
+
 def protect_secret(secret: str, entropy: bytes = b"quill-credential") -> str:
     """Store ``secret`` in the Keychain and return an opaque locator token."""
     account = f"{entropy.decode('utf-8', 'replace')}.{uuid.uuid4().hex}"
@@ -68,7 +70,7 @@ def unprotect_secret(encoded: str, entropy: bytes = b"quill-credential") -> str:
     """Resolve a locator token produced by :func:`protect_secret`."""
     if not encoded.startswith(_TOKEN_PREFIX):
         raise KeychainError("Not a macOS Keychain locator token")
-    account = encoded[len(_TOKEN_PREFIX):]
+    account = encoded[len(_TOKEN_PREFIX) :]
     secret = get_secret(account)
     if secret is None:
         raise KeychainError(f"No Keychain item for account {account!r}")

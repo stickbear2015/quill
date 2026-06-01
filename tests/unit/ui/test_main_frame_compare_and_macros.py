@@ -80,9 +80,10 @@ def test_menu_command_activity_records_known_command_id() -> None:
 def test_compare_session_builds_and_navigates_differences() -> None:
     frame = _build_frame("line1\nline2\n")
 
-    started = frame._start_compare_session(
-        [("left.txt", "line1\nline2\n"), ("right.txt", "line1\nLINE2\n")]
-    )
+    started = frame._start_compare_session([
+        ("left.txt", "line1\nline2\n"),
+        ("right.txt", "line1\nLINE2\n"),
+    ])
 
     assert started is True
     assert frame._compare_session is not None

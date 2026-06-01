@@ -62,13 +62,11 @@ def build_audit_report(document_name: str, text: str, markup: str, scope_label: 
         f"Automatically fixable: {fixable}",
     ]
     if not findings:
-        lines.extend(
-            [
-                "",
-                "No deterministic GLOW findings detected in this scope.",
-                "The document is ready for deeper human review and export checks.",
-            ]
-        )
+        lines.extend([
+            "",
+            "No deterministic GLOW findings detected in this scope.",
+            "The document is ready for deeper human review and export checks.",
+        ])
         return "\n".join(lines).rstrip() + "\n"
     lines.extend(["", "Findings:"])
     for index, finding in enumerate(findings, start=1):
@@ -330,10 +328,12 @@ def _fix_html(text: str) -> tuple[str, list[GlowFix]]:
     if updated != text:
         fixes.append(GlowFix('Added lang="en" to the html element'))
         text = updated
+
     def add_alt(match: re.Match[str]) -> str:
         attributes = match.group(1).rstrip()
         space = " " if attributes else ""
         return f'<img{space}{attributes} alt="">'
+
     updated = re.sub(
         r"<img\b((?:(?!\balt\s*=)[^>])*)>",
         add_alt,
@@ -341,7 +341,7 @@ def _fix_html(text: str) -> tuple[str, list[GlowFix]]:
         flags=re.IGNORECASE,
     )
     if updated != text:
-        fixes.append(GlowFix('Added empty alt attributes to img elements missing alt text'))
+        fixes.append(GlowFix("Added empty alt attributes to img elements missing alt text"))
     return updated, fixes
 
 

@@ -51,7 +51,9 @@ def build_email_clipboard_payload(
     )
 
 
-def copy_email_clipboard(payload: EmailClipboardPayload, output_format: EmailClipboardFormat) -> bool:
+def copy_email_clipboard(
+    payload: EmailClipboardPayload, output_format: EmailClipboardFormat
+) -> bool:
     if os.name != "nt":
         return False
     if _user32 is None or _kernel32 is None:
@@ -60,9 +62,15 @@ def copy_email_clipboard(payload: EmailClipboardPayload, output_format: EmailCli
     unicode_text = _encode_wide_null(payload.text)
     clipboard_items: list[tuple[int, bytes]] = [(_CF_UNICODETEXT, unicode_text)]
     if output_format == "html" and payload.html_fragment is not None:
-        clipboard_items.append((_register_clipboard_format(_HTML_FORMAT_NAME), _build_cf_html(payload.html_fragment)))
+        clipboard_items.append((
+            _register_clipboard_format(_HTML_FORMAT_NAME),
+            _build_cf_html(payload.html_fragment),
+        ))
     if output_format == "rtf" and payload.rtf_fragment is not None:
-        clipboard_items.append((_register_clipboard_format(_RTF_FORMAT_NAME), payload.rtf_fragment.encode("ascii", errors="ignore") + b"\x00"))
+        clipboard_items.append((
+            _register_clipboard_format(_RTF_FORMAT_NAME),
+            payload.rtf_fragment.encode("ascii", errors="ignore") + b"\x00",
+        ))
 
     if not _user32.OpenClipboard(None):
         return False
@@ -104,7 +112,7 @@ def _encode_wide_null(text: str) -> bytes:
 
 def _build_cf_html(fragment: str) -> bytes:
     html_document = (
-        "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>"
+        '<!doctype html><html><head><meta charset="utf-8"></head><body>'
         f"<!--StartFragment-->{fragment}<!--EndFragment-->"
         "</body></html>"
     )

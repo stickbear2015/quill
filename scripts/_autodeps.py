@@ -37,7 +37,7 @@ def main() -> int:
 
     old_hash = ""
     try:
-        with open(stamp, "r", encoding="utf-8") as handle:
+        with open(stamp, encoding="utf-8") as handle:
             old_hash = handle.read().strip()
     except OSError:
         pass

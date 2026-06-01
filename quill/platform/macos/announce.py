@@ -4,6 +4,7 @@ Uses NSAccessibility's announcement notification via pyobjc when available.
 If pyobjc isn't installed, falls back to a no-op so imports never fail. Intended
 to back the app's announce handler on macOS (see issue #29 / #42).
 """
+
 from __future__ import annotations
 
 

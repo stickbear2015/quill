@@ -4,6 +4,7 @@ Lets the user teach Quill their writing voice: add samples (paste, or learn
 from the current document), then build a style guide with the on-device model.
 When enabled, the assistant writes in that style. Stored locally.
 """
+
 from __future__ import annotations
 
 import threading
@@ -34,7 +35,9 @@ class TrainStyleDialog:
 
         outer.Add(
             wx.StaticText(self.dialog, label="Add a writing sample"),
-            0, wx.LEFT | wx.RIGHT, 14,
+            0,
+            wx.LEFT | wx.RIGHT,
+            14,
         )
         self.sample = wx.TextCtrl(self.dialog, style=wx.TE_MULTILINE)
         self.sample.SetName("Writing sample")

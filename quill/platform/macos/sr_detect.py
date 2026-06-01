@@ -3,6 +3,7 @@
 Mirrors the public surface of ``quill.platform.windows.sr_detect`` so call
 sites can dispatch by platform without special-casing the return type.
 """
+
 from __future__ import annotations
 
 import subprocess

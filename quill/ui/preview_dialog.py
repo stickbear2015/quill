@@ -25,6 +25,8 @@ from quill.ui.dialog_contract import apply_modal_ids, show_modal_dialog
 try:
     from wx_accessible_webview import (
         AccessibleHtmlDialog as _LibraryAccessibleHtmlDialog,
+    )
+    from wx_accessible_webview import (
         SidePreview,
     )
 
@@ -84,9 +86,7 @@ except ImportError:
             self.dialog.SetSizer(outer)
             self.dialog.Bind(
                 wx.EVT_CHAR_HOOK,
-                lambda e: self._end(wx.ID_CANCEL)
-                if e.GetKeyCode() == wx.WXK_ESCAPE
-                else e.Skip(),
+                lambda e: self._end(wx.ID_CANCEL) if e.GetKeyCode() == wx.WXK_ESCAPE else e.Skip(),
             )
 
         def _end(self, return_id: int) -> None:
@@ -109,8 +109,9 @@ except ImportError:
     class SidePreview:  # type: ignore[no-redef]
         """Minimal wx.html fallback live-preview pane."""
 
-        def __init__(self, parent: object, *, title: str = "Preview", on_return=None, **_kw) -> None:
-            import wx
+        def __init__(
+            self, parent: object, *, title: str = "Preview", on_return=None, **_kw
+        ) -> None:
             import wx.html as wxhtml
 
             self._view = wxhtml.HtmlWindow(parent)
@@ -183,6 +184,7 @@ class HtmlMessageDialog:
 
     def show_modal(self) -> int:
         return self._dialog.show_modal()
+
 
 __all__ = ["HtmlMessageDialog", "SidePreview", "MarkdownPreviewDialog"]
 

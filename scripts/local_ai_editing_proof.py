@@ -207,10 +207,7 @@ def run_proof(
     print(f"Estimated RAM use: {est:.2f} GB")
 
     if max_ram_gb is not None and est > max_ram_gb:
-        print(
-            "FAIL: Estimated RAM exceeds limit "
-            f"({est:.2f} GB > {max_ram_gb:.2f} GB)."
-        )
+        print(f"FAIL: Estimated RAM exceeds limit ({est:.2f} GB > {max_ram_gb:.2f} GB).")
         return 3
 
     try:

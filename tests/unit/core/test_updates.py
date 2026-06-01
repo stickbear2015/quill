@@ -22,15 +22,13 @@ def _signed_payload(version: str, download_url: str, published_at: str, notes: s
         canonical.encode("utf-8"),
         "sha256",
     ).hexdigest()
-    return json.dumps(
-        {
-            "version": version,
-            "download_url": download_url,
-            "published_at": published_at,
-            "notes": notes,
-            "signature": signature,
-        }
-    )
+    return json.dumps({
+        "version": version,
+        "download_url": download_url,
+        "published_at": published_at,
+        "notes": notes,
+        "signature": signature,
+    })
 
 
 def test_parse_update_manifest_accepts_valid_signature() -> None:
@@ -46,15 +44,13 @@ def test_parse_update_manifest_accepts_valid_signature() -> None:
 
 
 def test_parse_update_manifest_rejects_bad_signature() -> None:
-    payload = json.dumps(
-        {
-            "version": "1.2.3",
-            "download_url": "https://community-access.github.io/quill/releases/download/v1.2.3/Quill-Setup.exe",
-            "published_at": "2026-05-01",
-            "notes": "Fixes.",
-            "signature": "bad",
-        }
-    )
+    payload = json.dumps({
+        "version": "1.2.3",
+        "download_url": "https://community-access.github.io/quill/releases/download/v1.2.3/Quill-Setup.exe",
+        "published_at": "2026-05-01",
+        "notes": "Fixes.",
+        "signature": "bad",
+    })
     try:
         parse_update_manifest(payload)
     except ValueError as exc:

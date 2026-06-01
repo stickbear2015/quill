@@ -7,6 +7,7 @@ registered at runtime (the Windows registry model). This module produces the
 runtime association via ``duti`` when present. It mirrors the public surface of
 ``quill.platform.windows.shell_integration`` so call sites can be platform-neutral.
 """
+
 from __future__ import annotations
 
 import shutil

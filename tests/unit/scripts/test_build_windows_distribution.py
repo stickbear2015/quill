@@ -87,7 +87,9 @@ def test_build_inno_setup_script_mentions_portable_bundle() -> None:
     assert "DisableDirPage=no" in script
     assert "InfoAfterFile=..\\portable\\README.txt" in script
     assert "aiassistant" in script
-    assert 'Name: "pandoc"; Description: "Install bundled Pandoc for document conversion";' in script
+    assert (
+        'Name: "pandoc"; Description: "Install bundled Pandoc for document conversion";' in script
+    )
     assert 'Name: "speechdectalk"; Description: "Install bundled DECtalk runtime";' in script
     assert 'Name: "speechdectalk\\voices"; Description: "DECtalk voice selection";' in script
     assert 'Name: "speechdectalk\\voices\\all_voices"; Description: "All DECtalk voices";' in script
@@ -104,45 +106,101 @@ def test_build_inno_setup_script_mentions_portable_bundle() -> None:
     assert 'Name: "speechkokoro"; Description: "Install bundled Kokoro voices/models";' in script
     assert 'Name: "speechpiper"; Description: "Install bundled Piper voices/models";' in script
     assert 'Name: "speechmelotts"; Description: "Install bundled MeloTTS voices/models";' in script
-    assert 'Name: "speechchatterbox"; Description: "Install bundled Chatterbox voices/models";' in script
-    assert 'Name: "speechopenvoice"; Description: "Install bundled OpenVoice voices/models";' in script
+    assert (
+        'Name: "speechchatterbox"; Description: "Install bundled Chatterbox voices/models";'
+        in script
+    )
+    assert (
+        'Name: "speechopenvoice"; Description: "Install bundled OpenVoice voices/models";' in script
+    )
     assert (
         'Excludes: "docs\\announcement-beta.md,docs\\QUILL-PRD.md,tools\\pandoc\\*,tools\\speech\\dectalk\\*,tools\\speech\\espeak-ng\\*,tools\\speech\\kokoro\\*,tools\\speech\\piper\\*,tools\\speech\\melotts\\*,tools\\speech\\chatterbox\\*,tools\\speech\\openvoice\\*"'
         in script
     )
     assert 'Source: "..\\portable\\tools\\pandoc\\*"; DestDir: "{app}\\tools\\pandoc";' in script
-    assert 'Components: pandoc' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\*"; DestDir: "{app}\\tools\\speech\\dectalk";' in script
+    assert "Components: pandoc" in script
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\*"; DestDir: "{app}\\tools\\speech\\dectalk";'
+        in script
+    )
     assert 'Excludes: "voices\\*"; Components: speechdectalk' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices";' in script
-    assert 'Components: speechdectalk\\voices\\all_voices' in script
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices";'
+        in script
+    )
+    assert "Components: speechdectalk\\voices\\all_voices" in script
     assert "Check: not WizardIsComponentSelected('speechdectalk\\voices\\all_voices')" in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\paul\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\paul";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\harry\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\harry";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\dennis\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\dennis";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\frank\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\frank";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\betty\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\betty";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\ursula\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\ursula";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\rita\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\rita";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\wendy\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\wendy";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\kit\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\kit";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\espeak-ng\\*"; DestDir: "{app}\\tools\\speech\\espeak-ng";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\kokoro\\*"; DestDir: "{app}\\tools\\speech\\kokoro";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\piper\\*"; DestDir: "{app}\\tools\\speech\\piper";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\melotts\\*"; DestDir: "{app}\\tools\\speech\\melotts";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\chatterbox\\*"; DestDir: "{app}\\tools\\speech\\chatterbox";' in script
-    assert 'Source: "..\\portable\\tools\\speech\\openvoice\\*"; DestDir: "{app}\\tools\\speech\\openvoice";' in script
-    assert 'Components: speechdectalk' in script
-    assert 'Components: speechespeak' in script
-    assert 'Components: speechkokoro' in script
-    assert 'Components: speechpiper' in script
-    assert 'Components: speechmelotts' in script
-    assert 'Components: speechchatterbox' in script
-    assert 'Components: speechopenvoice' in script
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\paul\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\paul";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\harry\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\harry";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\dennis\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\dennis";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\frank\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\frank";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\betty\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\betty";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\ursula\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\ursula";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\rita\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\rita";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\wendy\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\wendy";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\dectalk\\voices\\kit\\*"; DestDir: "{app}\\tools\\speech\\dectalk\\voices\\kit";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\espeak-ng\\*"; DestDir: "{app}\\tools\\speech\\espeak-ng";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\kokoro\\*"; DestDir: "{app}\\tools\\speech\\kokoro";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\piper\\*"; DestDir: "{app}\\tools\\speech\\piper";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\melotts\\*"; DestDir: "{app}\\tools\\speech\\melotts";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\chatterbox\\*"; DestDir: "{app}\\tools\\speech\\chatterbox";'
+        in script
+    )
+    assert (
+        'Source: "..\\portable\\tools\\speech\\openvoice\\*"; DestDir: "{app}\\tools\\speech\\openvoice";'
+        in script
+    )
+    assert "Components: speechdectalk" in script
+    assert "Components: speechespeak" in script
+    assert "Components: speechkokoro" in script
+    assert "Components: speechpiper" in script
+    assert "Components: speechmelotts" in script
+    assert "Components: speechchatterbox" in script
+    assert "Components: speechopenvoice" in script
     assert "Writing Assistant Setup" in script
     assert "User Guide" in script
     assert "python\\pythonw.exe" in script
-    assert "Parameters: \"-m quill\"" in script
+    assert 'Parameters: "-m quill"' in script
     assert "Check: FileExists(ExpandConstant('{app}\\python\\pythonw.exe'))" in script
     assert "Check: not FileExists(ExpandConstant('{app}\\python\\pythonw.exe'))" in script
     assert "Beta Announcement" not in script

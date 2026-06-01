@@ -47,12 +47,10 @@ def test_load_keymap_merges_overrides(monkeypatch: pytest.MonkeyPatch, tmp_path:
 
 
 def test_merge_keymaps_ignores_conflicting_bindings() -> None:
-    merged = keymap_module.merge_keymaps(
-        {
-            "app.command_palette": "Ctrl+Shift+P",
-            "view.preview": "Ctrl+Shift+P",
-        }
-    )
+    merged = keymap_module.merge_keymaps({
+        "app.command_palette": "Ctrl+Shift+P",
+        "view.preview": "Ctrl+Shift+P",
+    })
     assert merged["app.command_palette"] == "Ctrl+Shift+P"
     assert merged["view.preview"] == DEFAULT_KEYMAP["view.preview"]
     assert _duplicates(merged) == {}
@@ -135,12 +133,10 @@ def test_browser_preview_shortcut_is_available() -> None:
 
 
 def test_legacy_preview_conflict_migrates_to_in_app_preview() -> None:
-    merged = keymap_module.merge_keymaps(
-        {
-            "view.preview": "Ctrl+Shift+P",
-            "view.browser_preview": "Ctrl+Shift+V",
-        }
-    )
+    merged = keymap_module.merge_keymaps({
+        "view.preview": "Ctrl+Shift+P",
+        "view.browser_preview": "Ctrl+Shift+V",
+    })
     assert merged["view.preview"] == "Ctrl+Shift+V"
     assert merged["view.browser_preview"] == "Ctrl+Shift+Grave, V"
 

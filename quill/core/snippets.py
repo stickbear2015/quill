@@ -211,12 +211,7 @@ def search_snippets(snippets: list[Snippet], query: str) -> list[Snippet]:
             starts_with_name.append(snippet)
         elif any(needle in tag for tag in tags):
             tag_matches.append(snippet)
-        elif (
-            needle in name
-            or needle in trigger
-            or needle in description
-            or needle in body
-        ):
+        elif needle in name or needle in trigger or needle in description or needle in body:
             other_matches.append(snippet)
     return [
         *sorted(exact_trigger, key=lambda item: item.name.lower()),
