@@ -16980,7 +16980,7 @@ class MainFrame:
 
     def _prompt_heading_style_levels(self, surface: str) -> set[int] | None:
         options = ["All heading levels", "Current heading level"]
-        choice = wx.GetSingleChoice(
+        choice = self._wx.GetSingleChoice(
             "Choose which headings to style.",
             "Style Headings",
             options,
@@ -17012,14 +17012,14 @@ class MainFrame:
         return int(match.group(1))
 
     def _prompt_heading_style(self) -> HeadingStyle | None:
-        font_family = wx.GetTextFromUser(
+        font_family = self._wx.GetTextFromUser(
             "Font family (leave blank to keep existing):",
             "Style Headings",
             parent=self.frame,
         )
         if font_family is None:
             return None
-        size_text = wx.GetTextFromUser(
+        size_text = self._wx.GetTextFromUser(
             "Font size in points (leave blank to keep existing):",
             "Style Headings",
             parent=self.frame,
@@ -17039,7 +17039,7 @@ class MainFrame:
                 return None
             size_value = parsed_size
         alignment_options = ["Keep existing", "Left", "Center", "Right", "Justify"]
-        alignment_choice = wx.GetSingleChoice(
+        alignment_choice = self._wx.GetSingleChoice(
             "Text alignment:",
             "Style Headings",
             alignment_options,
