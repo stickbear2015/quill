@@ -201,6 +201,9 @@ def _build_frame(text: str, insertion_point: int = 0) -> MainFrame:
             "dirty_title_style": "text",
             "status_bar_order": ["message", "line_column", "mode", "selection", "file_path"],
             "status_bar_hidden": ["selection"],
+            # Keep the browse-mode prewarm a no-op in the shared harness: these
+            # tests don't exercise it, and it otherwise needs wx/CallLater wiring.
+            "browse_mode_preload_cache": False,
         },
     )()
     return frame
@@ -1223,6 +1226,9 @@ def test_prompt_search_defers_focus_and_uses_modal_ids() -> None:
 
         def CreateButtonSizer(self, _style: int) -> _ButtonSizer:
             return _ButtonSizer()
+
+        def FindWindowById(self, _window_id: int) -> _Button:
+            return _Button()
 
         def SetAffirmativeId(self, value: int) -> None:
             self.affirmative_id = value

@@ -252,7 +252,9 @@ class _WebFormDialog:
             self._native_controls[name] = control
         buttons = self.dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
         if buttons is not None:
-            ok_button = buttons.FindWindowById(wx.ID_OK)
+            # FindWindowById is a Window method, not a sizer method — calling it
+            # on the sizer crashes on Windows with AttributeError.
+            ok_button = self.dialog.FindWindowById(wx.ID_OK)
             if ok_button is not None:
                 ok_button.SetLabel(self._save_label)
             sizer.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)

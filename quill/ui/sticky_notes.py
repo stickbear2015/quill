@@ -156,7 +156,10 @@ class StickyNoteEditorDialog:
         sizer.Add(self._native_body, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 8)
         buttons = self.dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
         if buttons is not None:
-            ok_button = buttons.FindWindowById(wx.ID_OK)
+            # FindWindowById is a Window method, not a sizer method (buttons are
+            # children of the dialog) — calling it on the sizer crashes on
+            # Windows with AttributeError.
+            ok_button = self.dialog.FindWindowById(wx.ID_OK)
             if ok_button is not None:
                 ok_button.SetLabel("Save")
             sizer.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)

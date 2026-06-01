@@ -11558,7 +11558,7 @@ class MainFrame:
         buttons = dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
         ok_button = None
         if buttons is not None:
-            ok_button = buttons.FindWindowById(wx.ID_OK)
+            ok_button = dialog.FindWindowById(wx.ID_OK)
         layout = wx.BoxSizer(wx.VERTICAL)
         layout.Add(splitter, 1, wx.EXPAND | wx.ALL, 8)
         if buttons is not None:
@@ -15352,13 +15352,13 @@ class MainFrame:
 
         buttons = dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
         if buttons is not None:
-            ok_button = buttons.FindWindowById(wx.ID_OK)
+            # FindWindowById is a Window method, not a sizer method (buttons are
+            # children of the dialog) — calling it on the sizer crashes on
+            # Windows with AttributeError.
+            ok_button = dialog.FindWindowById(wx.ID_OK)
             if ok_button is not None:
                 ok_button.SetDefault()
             root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
-            ok_button = buttons.FindWindowById(wx.ID_OK)
-            if ok_button is not None:
-                ok_button.SetDefault()
         apply_modal_ids(dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
 
         panel.SetSizer(root)
