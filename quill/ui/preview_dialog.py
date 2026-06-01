@@ -132,38 +132,38 @@ def _build_accessible_dialog_body(
     *,
     start_anchor: str | None = None,
 ) -> str:
-    """Add keyboard hardening for modal HTML reading surfaces.
+    """Optionally inject an anchor-scroll script into an HTML dialog body.
 
-    Avoid forcing DOM focus into the content region on load: screen readers
-    commonly expose HTML in a virtual cursor/browse mode, and forced focus can
-    interfere with arrow-key reading in that mode.
+    The wx-accessible-webview library owns the WebView document structure,
+    focus management, and keyboard bridging inside its dialogs.  Do not add
+    focus calls, tabindex overrides, or keydown listeners here — they fight
+    the library's own DOM and prevent screen readers (JAWS/NVDA) from entering
+    virtual cursor mode.
+
+    The only Quill-specific addition is scrolling to a heading anchor when
+    ``MarkdownPreviewDialog`` is opened with ``start_anchor`` set.
     """
+    if not start_anchor:
+        return body_html or ""
 
-    safe_anchor = json.dumps(start_anchor) if start_anchor else "null"
+    safe_anchor = json.dumps(start_anchor)
     script = (
         "<script>(function(){"
         "window.addEventListener('load',function(){"
-        "var c=document.getElementById('content');"
-        "if(c){c.setAttribute('role','document');c.setAttribute('tabindex','-1');}"
-        f"var a={safe_anchor};"
-        "if(a){var n=document.getElementById(a);if(n){n.scrollIntoView();}}"
+        f"var n=document.getElementById({safe_anchor});"
+        "if(n){n.scrollIntoView();}"
         "});"
-        "document.addEventListener('keydown',function(e){"
-        "if(e.key!=='Enter'){return;}"
-        "var el=document.activeElement;"
-        "if(!el){return;}"
-        "var tag=(el.tagName||'').toLowerCase();"
-        "var interactive=(tag==='a'||tag==='button'||tag==='input'||"
-        "tag==='select'||tag==='textarea'||!!el.isContentEditable);"
-        "if(!interactive){e.preventDefault();}"
-        "},true);"
         "})();</script>"
     )
     return (body_html or "") + script
 
 
 class HtmlMessageDialog:
-    """Quill wrapper around AccessibleHtmlDialog with content-focus hardening."""
+    """Thin Quill alias for AccessibleHtmlDialog.
+
+    Passes ``body_html`` straight to the library — the library wraps it in
+    ``<main id="content">`` and handles all focus and keyboard logic.
+    """
 
     def __init__(
         self,
@@ -176,7 +176,7 @@ class HtmlMessageDialog:
         self._dialog = AccessibleHtmlDialog(
             parent,
             title,
-            _build_accessible_dialog_body(body_html),
+            body_html or "",
             buttons,
             **kwargs,
         )
