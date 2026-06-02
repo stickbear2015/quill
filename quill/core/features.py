@@ -601,6 +601,7 @@ def feature_for_command(command_id: str) -> str:
         "edit.select_block": "core.edit",
         "edit.expand_selection": "core.edit",
         "edit.shrink_selection": "core.edit",
+        "edit.selection_actions": "core.edit",
         "edit.select_to_start_of_line": "core.edit",
         "edit.select_to_end_of_line": "core.edit",
         "edit.select_to_start_of_document": "core.edit",

@@ -134,6 +134,7 @@ _PACK_LABELS: dict[str, str] = {
     "edit.select_line": "Select Line",
     "edit.expand_selection": "Expand Selection",
     "edit.shrink_selection": "Shrink Selection",
+    "edit.selection_actions": "Selection Actions",
     "edit.undo": "Undo",
     "file.new": "New",
     "file.open": "Open",

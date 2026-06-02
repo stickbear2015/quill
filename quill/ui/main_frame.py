@@ -275,7 +275,13 @@ from quill.core.recovery import (
 )
 from quill.core.search import SearchOptions, SearchPatternError, find_matches, replace_all
 from quill.core.search_history import add_search_term, load_search_history
-from quill.core.selection import block_span, expand_selection, line_span, paragraph_span
+from quill.core.selection import (
+    block_span,
+    expand_selection,
+    line_span,
+    paragraph_span,
+    selection_scope,
+)
 from quill.core.sessions import (
     active_index_from_session,
     add_recent_session,
@@ -2124,6 +2130,12 @@ class MainFrame:
             "Shrink Selection",
             self.shrink_selection,
             self._binding_for("edit.shrink_selection"),
+        )
+        self.commands.register(
+            "edit.selection_actions",
+            "Selection Actions",
+            self.quill_key_selection_actions,
+            self._binding_for("edit.selection_actions"),
         )
         self.commands.register(
             "edit.select_to_start_of_line",
@@ -5252,6 +5264,20 @@ class MainFrame:
                     self._quill_key_prefix_started_at = 0.0
                     self._enter_quill_key_mode()
                     return True
+                # SEL-3: with text selected, the QUILL key offers scope-aware
+                # actions. Pressing A after the prefix opens the actions surface.
+                if (
+                    not event.ControlDown()
+                    and not event.AltDown()
+                    and not event.ShiftDown()
+                    and key_code in (ord("A"), ord("a"))
+                    and self._has_active_selection()
+                ):
+                    self._quill_key_prefix_pending = False
+                    self._quill_key_prefix_started_at = 0.0
+                    self._refresh_statusbar()
+                    self.quill_key_selection_actions()
+                    return True
                 self._quill_key_prefix_pending = False
                 self._quill_key_prefix_started_at = 0.0
                 self._refresh_statusbar()
@@ -5259,7 +5285,12 @@ class MainFrame:
             if self._quill_key_prefix_matches(event):
                 self._quill_key_prefix_pending = True
                 self._quill_key_prefix_started_at = time.monotonic()
-                self._set_status_quiet("QUILL key prefix active. Press N for browse mode")
+                message = "QUILL key prefix active. Press N for browse mode"
+                if self._has_active_selection():
+                    message = (
+                        "QUILL key prefix active. Press N for browse mode, A for selection actions"
+                    )
+                self._set_status_quiet(message)
                 self._refresh_statusbar()
                 return True
             return False
@@ -17136,6 +17167,86 @@ class MainFrame:
         from quill.core.announcements import format_announcement
 
         self._set_status(format_announcement("Shrank", "selection", count=words, unit="word"))
+
+    def _has_active_selection(self) -> bool:
+        editor = getattr(self, "editor", None)
+        get_selection = getattr(editor, "GetSelection", None)
+        if not callable(get_selection):
+            return False
+        start, end = get_selection()
+        return start != end
+
+    def _selection_action_specs(
+        self, scope: str, surface: str | None
+    ) -> list[tuple[str, Callable[[], None]]]:
+        """Build the scope-aware list of actions for the current selection (SEL-3).
+
+        The list adapts to what is selected: case and clipboard actions always
+        apply, Markdown/HTML emphasis appears only on a markup surface, and the
+        line-oriented actions (sort, indent, comment) appear only for multi-line
+        selections where they are meaningful.
+        """
+        multiline = scope in {"line", "lines", "paragraph", "block", "document"}
+        specs: list[tuple[str, Callable[[], None]]] = [
+            ("Copy", lambda: self.editor.Copy()),
+            ("Cut", lambda: self.editor.Cut()),
+            ("Upper case", self.format_upper_case),
+            ("Lower case", self.format_lower_case),
+            ("Title case", self.format_title_case),
+            ("Sentence case", self.format_sentence_case),
+            ("Toggle case", self.format_toggle_case),
+        ]
+        if surface is not None:
+            specs.append(("Bold", self.format_bold))
+            specs.append(("Italic", self.format_italic))
+        specs.append(("Expand selection", self.expand_selection))
+        specs.append(("Shrink selection", self.shrink_selection))
+        if multiline:
+            specs.append(("Sort lines ascending", self.sort_lines_ascending))
+            specs.append(("Sort lines descending", self.sort_lines_descending))
+            specs.append(("Indent", self.format_indent))
+            specs.append(("Outdent", self.format_outdent))
+            specs.append(("Toggle line comment", self.format_toggle_line_comment))
+        return specs
+
+    def quill_key_selection_actions(self) -> None:
+        """Offer scope-aware actions for the active selection (SEL-3).
+
+        Invoked from the QUILL key when text is selected. Presents an accessible
+        stock choice dialog whose actions match the selection's structural scope,
+        then runs the chosen action against the existing, tested commands.
+        """
+        wx = self._wx
+        start, end = self.editor.GetSelection()
+        if start == end:
+            self._set_status("Select text first to use selection actions")
+            return
+        text = self.editor.GetValue()
+        scope = selection_scope(text, start, end)
+        surface = self._active_markup_surface()
+        specs = self._selection_action_specs(scope, surface)
+        labels = [label for label, _action in specs]
+        word_count = len(text[start:end].split())
+        from quill.core.announcements import pluralize
+
+        title = f"Selection actions ({scope}, {pluralize(word_count, 'word')})"
+        with wx.SingleChoiceDialog(
+            self.frame,
+            "Choose an action for the selection:",
+            title,
+            choices=labels,
+        ) as dialog:
+            if hasattr(dialog, "SetSelection"):
+                dialog.SetSelection(0)
+            apply_modal_ids(dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+            if self._show_modal_dialog(dialog, title) != wx.ID_OK:
+                self._set_status("Selection actions cancelled")
+                return
+            chosen = dialog.GetStringSelection()
+        for label, action in specs:
+            if label == chosen:
+                action()
+                return
 
     def select_to_start_of_line(self) -> None:
         text = self.editor.GetValue()

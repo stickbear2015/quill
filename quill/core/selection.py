@@ -135,3 +135,31 @@ def expand_selection(text: str, start: int, end: int) -> tuple[int, int, str] | 
     if start > 0 or end < length:
         return 0, length, "document"
     return None
+
+
+def selection_scope(text: str, start: int, end: int) -> str:
+    """Classify the current selection by its structural scope.
+
+    Returns one of ``"none"`` (empty selection), ``"word"``, ``"line"``,
+    ``"sentence"``, ``"paragraph"``, ``"block"``, ``"document"`` (the whole
+    text), ``"lines"`` (a multi-line span that is not one of the named
+    structures), or ``"span"`` (an arbitrary single-line span). The label is
+    used to offer scope-aware selection actions (SEL-3).
+    """
+    length = len(text)
+    start = max(0, min(start, length))
+    end = max(0, min(end, length))
+    if start > end:
+        start, end = end, start
+    if start == end:
+        return "none"
+    if start == 0 and end == length:
+        return "document"
+    cursor = start
+    for label, span_fn in _EXPANSION_LEVELS:
+        span_start, span_end = span_fn(text, cursor)  # type: ignore[operator]
+        if span_start == start and span_end == end:
+            return label
+    if "\n" in text[start:end]:
+        return "lines"
+    return "span"

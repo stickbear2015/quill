@@ -1500,9 +1500,19 @@ and stack-based shrink.</td>
 <td>Scope-aware selection actions surface</td>
 <td>Selection</td>
 <td>M</td>
-<td>Todo</td>
-<td>With a selection active, the QUILL key offers scope-aware
-actions.</td>
+<td>Done</td>
+<td>With text selected, the QUILL key prefix then <code>A</code> opens
+an accessible stock choice dialog of actions tailored to the selection’s
+structural scope (<code>quill/core/selection.selection_scope</code>
+classifies it as word / line / sentence / paragraph / block / lines /
+document). Case and clipboard actions always appear, Markdown/HTML
+emphasis appears only on a markup surface, and line-oriented actions
+(sort, indent, toggle comment) appear only for multi-line selections;
+the chosen action runs the existing tested command. The prefix status
+line advertises the <code>A</code> action whenever a selection is
+active. Covered by core scope tests and UI tests for the action list,
+the chosen-action dispatch, the no-selection message, and the
+prefix-then-<code>A</code> wiring.</td>
 </tr>
 <tr>
 <td>OCR-1</td>
@@ -5055,10 +5065,10 @@ CQ-16) are counted once, in their primary tier.</p>
 <td>Tier 2</td>
 <td>Flagship experience</td>
 <td>44</td>
-<td>7</td>
-<td>37</td>
-<td>QK-2, QK-9, NAV-1, NAV-4, SEL-3, OCR-1..5, AGENT-1, AI-7, AI-1,
-AI-6, AI-13, AI-15, AI-17, AI-14, AI-16, SET-1..7, FEAT-19, WATCH-1..7,
+<td>8</td>
+<td>36</td>
+<td>QK-2, QK-9, NAV-1, NAV-4, OCR-1..5, AGENT-1, AI-7, AI-1, AI-6,
+AI-13, AI-15, AI-17, AI-14, AI-16, SET-1..7, FEAT-19, WATCH-1..7,
 FLAG-3, FLAG-4, DLG-1</td>
 </tr>
 <tr>
@@ -5100,8 +5110,8 @@ CQ-23, CQ-24, LINUX-2</td>
 <td><strong>Total</strong></td>
 <td>All tiers</td>
 <td><strong>166</strong></td>
-<td><strong>30</strong></td>
-<td><strong>136</strong></td>
+<td><strong>31</strong></td>
+<td><strong>135</strong></td>
 <td></td>
 </tr>
 </tbody>

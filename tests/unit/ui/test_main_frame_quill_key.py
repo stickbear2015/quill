@@ -148,3 +148,32 @@ def test_quill_key_timeout_reads_settings() -> None:
     frame.settings.quill_key_timeout_seconds = -5
     # Out-of-range values clamp to a non-negative timeout.
     assert frame._quill_key_timeout() == 0.0
+
+
+def test_prefix_then_a_opens_selection_actions_when_text_selected() -> None:
+    # SEL-3: with a selection active, the QUILL key prefix then A opens the
+    # scope-aware selection actions surface instead of falling through.
+    frame = _build_frame()
+    frame.editor = SimpleNamespace(GetSelection=lambda: (0, 5))
+    opened: list[str] = []
+    frame.quill_key_selection_actions = lambda: opened.append("actions")  # type: ignore[method-assign]
+
+    frame._handle_quill_key_mode_event(_Event(_BACKTICK, ctrl=True, shift=True))
+    handled = frame._handle_quill_key_mode_event(_Event(ord("A")))
+
+    assert handled is True
+    assert opened == ["actions"]
+    assert frame._quill_key_mode_active is False
+
+
+def test_prefix_then_a_without_selection_does_not_open_actions() -> None:
+    frame = _build_frame()
+    frame.editor = SimpleNamespace(GetSelection=lambda: (3, 3))
+    opened: list[str] = []
+    frame.quill_key_selection_actions = lambda: opened.append("actions")  # type: ignore[method-assign]
+
+    frame._handle_quill_key_mode_event(_Event(_BACKTICK, ctrl=True, shift=True))
+    frame._handle_quill_key_mode_event(_Event(ord("A")))
+
+    assert opened == []
+

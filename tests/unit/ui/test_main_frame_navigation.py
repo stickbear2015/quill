@@ -1057,6 +1057,74 @@ def test_go_to_bookmark_without_bookmarks_announces() -> None:
     assert frame._status_message == "No bookmarks available. Bookmarks are named jump points."
 
 
+def test_selection_action_specs_adapt_to_scope() -> None:
+    frame = _build_frame("alpha beta gamma", insertion_point=0)
+
+    word_labels = [label for label, _action in frame._selection_action_specs("word", None)]
+    assert "Upper case" in word_labels
+    assert "Sort lines ascending" not in word_labels
+    assert "Bold" not in word_labels
+
+    block_labels = [label for label, _action in frame._selection_action_specs("block", "markdown")]
+    assert "Sort lines ascending" in block_labels
+    assert "Toggle line comment" in block_labels
+    assert "Bold" in block_labels
+
+
+def test_quill_key_selection_actions_runs_chosen_action() -> None:
+    frame = _build_frame("alpha beta gamma", insertion_point=0)
+    frame.editor.SetSelection(0, 5)  # "alpha"
+    frame._active_markup_surface = lambda: None  # type: ignore[method-assign]
+    called: list[str] = []
+    frame.format_upper_case = lambda: called.append("upper")  # type: ignore[method-assign]
+
+    class _ChoiceDialog:
+        def __init__(
+            self, _parent: object, _message: str, _caption: str, choices: list[str]
+        ) -> None:
+            self.choices = choices
+            self.selection = -1
+
+        def __enter__(self) -> _ChoiceDialog:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def SetSelection(self, selection: int) -> None:
+            self.selection = selection
+
+        def SetAffirmativeId(self, _value: int) -> None:
+            return None
+
+        def SetEscapeId(self, _value: int) -> None:
+            return None
+
+        def GetStringSelection(self) -> str:
+            return "Upper case"
+
+    frame._wx = type(
+        "WX",
+        (),
+        {"SingleChoiceDialog": _ChoiceDialog, "ID_OK": 1, "ID_CANCEL": 0},
+    )()
+    frame._show_modal_dialog = lambda _dialog, _label: 1  # type: ignore[method-assign]
+
+    frame.quill_key_selection_actions()
+
+    assert called == ["upper"]
+
+
+def test_quill_key_selection_actions_without_selection_announces() -> None:
+    frame = _build_frame("alpha beta gamma", insertion_point=3)
+    frame.editor.SetSelection(3, 3)
+    frame._wx = type("WX", (), {"ID_OK": 1, "ID_CANCEL": 0})()
+
+    frame.quill_key_selection_actions()
+
+    assert frame._status_message == "Select text first to use selection actions"
+
+
 def test_previous_misspelling_jumps_to_prior_item() -> None:
     frame = _build_frame(
         "wrng\nhello\nlaterbad\n",

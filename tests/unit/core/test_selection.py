@@ -3,6 +3,7 @@ from quill.core.selection import (
     expand_selection,
     line_span,
     paragraph_span,
+    selection_scope,
     word_span,
 )
 
@@ -92,3 +93,36 @@ def test_expand_selection_strictly_grows_each_step() -> None:
         start, end, _scope = result
         assert (end - start) > previous_len
         previous_len = end - start
+
+
+def test_selection_scope_reports_none_for_empty_selection() -> None:
+    assert selection_scope("alpha beta", 3, 3) == "none"
+
+
+def test_selection_scope_recognizes_word() -> None:
+    text = "alpha beta gamma"
+    start, end = word_span(text, 7)
+    assert selection_scope(text, start, end) == "word"
+
+
+def test_selection_scope_recognizes_line() -> None:
+    text = "first line\nsecond line here\nthird"
+    start, end = line_span(text, 13)
+    assert text[start:end] == "second line here"
+    assert selection_scope(text, start, end) == "line"
+
+
+def test_selection_scope_recognizes_document() -> None:
+    text = "all of it"
+    assert selection_scope(text, 0, len(text)) == "document"
+
+
+def test_selection_scope_reports_lines_for_multi_line_span() -> None:
+    text = "alpha\nbeta\ngamma\ndelta"
+    # A span covering parts of two lines that is not a named structure.
+    assert selection_scope(text, 2, 8) == "lines"
+
+
+def test_selection_scope_reports_span_for_arbitrary_single_line() -> None:
+    text = "alpha beta gamma"
+    assert selection_scope(text, 2, 9) == "span"

@@ -146,6 +146,7 @@
   "previous_document",
   "previous_misspelling",
   "print_document",
+  "quill_key_selection_actions",
   "redo",
   "reload_from_disk",
   "remove_duplicate_lines",
