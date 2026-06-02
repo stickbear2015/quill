@@ -13513,6 +13513,7 @@ class MainFrame:
                 openvoice_voice=self.settings.read_aloud_openvoice_voice,
                 openvoice_rate=self.settings.read_aloud_openvoice_rate,
                 openvoice_consent=self.settings.read_aloud_openvoice_consent,
+                sentence_pause_ms=self.settings.read_aloud_sentence_pause_ms,
                 on_progress=lambda progress_start, progress_end: self._wx.CallAfter(
                     self._on_read_aloud_progress,
                     progress_start,

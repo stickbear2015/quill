@@ -633,6 +633,7 @@ class ReadAloudController:
         self._stop_event = threading.Event()
         self._pause_event = threading.Event()
         self._lock = threading.Lock()
+        self._sentence_pause_ms = 0
 
     @property
     def state(self) -> str:
@@ -675,6 +676,7 @@ class ReadAloudController:
         openvoice_voice: str = "en-base",
         openvoice_rate: int = 180,
         openvoice_consent: bool = False,
+        sentence_pause_ms: int = 0,
         end: int | None = None,
         on_progress: Callable[[int, int], None] | None = None,
         on_state_change: Callable[[str], None] | None = None,
@@ -728,6 +730,7 @@ class ReadAloudController:
         if normalized_engine not in _valid_engines:
             raise ReadAloudUnavailableError(f"Unsupported read-aloud engine: {normalized_engine}")
         self.stop()
+        self._sentence_pause_ms = max(0, int(sentence_pause_ms))
         spans = [span for span in sentence_spans(text) if span.end > cursor]
         if end is not None:
             spans = [span for span in spans if span.start < end]
@@ -842,6 +845,24 @@ class ReadAloudController:
         self._thread = threading.Thread(target=worker, daemon=True)
         self._thread.start()
 
+    def _inter_sentence_pause(self) -> None:
+        """Wait the configured gap between sentences, interruptibly.
+
+        Returns immediately if no pause is configured or as soon as a stop or
+        pause is requested so the gap never delays a stop/pause response.
+        """
+        pause_ms = self._sentence_pause_ms
+        if pause_ms <= 0:
+            return
+        deadline = time.monotonic() + pause_ms / 1000.0
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return
+            if self._stop_event.is_set() or self._pause_event.is_set():
+                return
+            time.sleep(min(0.05, remaining))
+
     def _run_pyttsx3(
         self,
         spans: list[SentenceSpan],
@@ -866,12 +887,16 @@ class ReadAloudController:
                     engine.setProperty("pitch", int(pitch))
                 except Exception:  # noqa: BLE001
                     pass
+            first = True
             for span in spans:
                 if self._stop_event.is_set() or self._pause_event.is_set():
                     break
                 sentence = text[span.start : span.end].strip()
                 if not sentence:
                     continue
+                if not first:
+                    self._inter_sentence_pause()
+                first = False
                 if on_progress is not None:
                     on_progress(span.start, span.end)
                 engine.say(sentence)
@@ -894,12 +919,16 @@ class ReadAloudController:
     ) -> None:
         working_dir = executable.parent
         self._ensure_dectalk_dictionary(working_dir, dictionary_path)
+        first = True
         for span in spans:
             if self._stop_event.is_set() or self._pause_event.is_set():
                 break
             sentence = text[span.start : span.end].strip()
             if not sentence:
                 continue
+            if not first:
+                self._inter_sentence_pause()
+            first = False
             if on_progress is not None:
                 on_progress(span.start, span.end)
             payload = self._build_dectalk_payload(sentence, voice_id, rate)
@@ -998,12 +1027,16 @@ class ReadAloudController:
         generate_sentence_wav: Callable[[str, Path], None],
     ) -> None:
         """Generate per-sentence WAV then play via winsound."""
+        first = True
         for span in spans:
             if self._stop_event.is_set() or self._pause_event.is_set():
                 break
             sentence = text[span.start : span.end].strip()
             if not sentence:
                 continue
+            if not first:
+                self._inter_sentence_pause()
+            first = False
             if on_progress is not None:
                 on_progress(span.start, span.end)
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as fh:
@@ -1086,12 +1119,16 @@ class ReadAloudController:
     ) -> None:
         """eSpeak-NG plays audio directly - track process for pause/stop."""
         create_no_window = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        first = True
         for span in spans:
             if self._stop_event.is_set() or self._pause_event.is_set():
                 break
             sentence = text[span.start : span.end].strip()
             if not sentence:
                 continue
+            if not first:
+                self._inter_sentence_pause()
+            first = False
             if on_progress is not None:
                 on_progress(span.start, span.end)
             bounded_rate = max(80, min(450, int(rate)))

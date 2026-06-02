@@ -94,7 +94,62 @@ def test_read_aloud_controller_speaks_sentences(monkeypatch) -> None:
     assert engine.spoken == ["One.", "Two!"]
 
 
-def test_list_dectalk_voices_has_expected_defaults() -> None:
+def test_inter_sentence_pause_zero_returns_immediately() -> None:
+    import time
+
+    controller = ReadAloudController()
+    controller._sentence_pause_ms = 0
+    start = time.monotonic()
+    controller._inter_sentence_pause()
+    assert time.monotonic() - start < 0.05
+
+
+def test_inter_sentence_pause_waits_configured_gap() -> None:
+    import time
+
+    controller = ReadAloudController()
+    controller._sentence_pause_ms = 120
+    start = time.monotonic()
+    controller._inter_sentence_pause()
+    elapsed = time.monotonic() - start
+    assert elapsed >= 0.1
+
+
+def test_inter_sentence_pause_interrupted_by_stop() -> None:
+    import time
+
+    controller = ReadAloudController()
+    controller._sentence_pause_ms = 5000
+    controller._stop_event.set()
+    start = time.monotonic()
+    controller._inter_sentence_pause()
+    assert time.monotonic() - start < 0.2
+
+
+def test_start_records_sentence_pause(monkeypatch) -> None:
+    class FakeEngine:
+        def getProperty(self, name: str):  # noqa: N802
+            return []
+
+        def setProperty(self, name: str, value: object) -> None:  # noqa: N802
+            return None
+
+        def say(self, text: str) -> None:
+            return None
+
+        def runAndWait(self) -> None:  # noqa: N802
+            return None
+
+        def stop(self) -> None:
+            return None
+
+    monkeypatch.setattr(read_aloud_module, "pyttsx3", SimpleNamespace(init=lambda: FakeEngine()))
+    controller = ReadAloudController()
+    controller.start("One. Two!", 0, "voice-1", sentence_pause_ms=250)
+    if controller._thread is not None:
+        controller._thread.join(timeout=1)
+    assert controller._sentence_pause_ms == 250
+
     voices = list_dectalk_voices()
     assert voices
     assert voices[0].id == "paul"
