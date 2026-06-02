@@ -4791,7 +4791,7 @@ Not required for 1.0.</td>
 <td>Accessible subscription sign-in (no pasted API key)</td>
 <td>AI</td>
 <td>M</td>
-<td>Todo</td>
+<td>In progress</td>
 <td>Derived from the Pi research (see <code>pi.md</code>). Add a guided,
 fully keyboard-and-screen-reader login that lets a user authenticate
 with an existing provider subscription via an interactive flow (for
@@ -4801,7 +4801,29 @@ from Pi: “sign in with the subscription you already have” rather than
 “paste a 51-character secret you cannot see.” Credentials in DPAPI,
 explicit consent, no silent network, registered in the GATE-9 egress
 audit. Sits behind the AIBackend boundary (AI-13) and reuses the
-connection error taxonomy (AI-17).</td>
+connection error taxonomy (AI-17). <strong>Delivered:</strong>
+<code>quill/core/ai/device_login.py</code> is a complete, wx-free,
+strict-typed OAuth 2.0 Device Authorization Grant (RFC 8628) state
+machine. <code>request_device_code</code> starts the flow;
+<code>announce_device_code</code> speaks the screen-reader instruction
+(“open <url> in your browser and enter the code WDJB-MJHT; this code
+expires in about 15 minutes.”); <code>poll_once</code> classifies the
+provider’s reply into pending / slow_down / authorized / denied /
+expired / error; <code>run_device_login</code> drives the full polling
+loop honoring the provider <code>interval</code>, backing off on
+<code>slow_down</code>, and stopping at <code>expires_in</code>,
+returning the terminal result; <code>describe_login_result</code> speaks
+the outcome. Every network exchange is an <strong>injected</strong>
+<code>poster</code>, so the engine adds no new
+<code>urlopen</code>/<code>urlretrieve</code> site to the GATE-9 egress
+inventory and is fully tested without a live endpoint (7 tests covering
+parse, state classification, success-after-pending, slow-down back-off,
+deadline expiry, denial, and the spoken announcements). ruff + strict
+mypy clean. <strong>In progress (honest):</strong> the flow state
+machine is complete and tested, but the real HTTPS poster, the DPAPI
+token storage, the consent surface, and the AIBackend (AI-13) wiring are
+not yet built, so no live subscription sign-in ships and this row stays
+In progress.</td>
 </tr>
 <tr>
 <td>AI-20</td>
@@ -5903,12 +5925,12 @@ the third table and are not part of either 1.0 list.</p>
 <td>Tier 2 — Flagship</td>
 <td>In progress</td>
 <td>SET-2, SET-3, MENU-1, MENU-5, AGENT-1, OCR-1, OCR-3, OCR-4, CTX-1,
-DICT-2, FEAT-19, DLG-1, AI-20, AI-22, AI-24</td>
+DICT-2, FEAT-19, DLG-1, AI-20, AI-22, AI-24, AI-19</td>
 </tr>
 <tr>
 <td>Tier 2 — Flagship</td>
 <td>Todo</td>
-<td>AI-19</td>
+<td>(none)</td>
 </tr>
 <tr>
 <td>Tier 4 — Structural health</td>
