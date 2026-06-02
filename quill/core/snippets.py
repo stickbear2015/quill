@@ -144,14 +144,23 @@ def starter_pack_snippets(name: str) -> list[Snippet]:
     ]
 
 
-def load_snippet_library(path: Path | None = None) -> SnippetLibrary:
-    target = path or snippet_library_path()
-    if not target.exists():
+def snippet_library_from_dict(payload: object) -> SnippetLibrary:
+    """Reconstruct a :class:`SnippetLibrary` from a serialized mapping.
+
+    Mirrors the parsing in :func:`load_snippet_library` so a library read from
+    a share package or any in-memory dict is validated identically to one read
+    from disk.  Malformed entries are skipped rather than raising.
+    """
+    if not isinstance(payload, dict):
         return SnippetLibrary(version=_DEFAULT_LIBRARY_VERSION, snippets=[])
-    payload = json.loads(target.read_text(encoding="utf-8"))
     version = int(payload.get("version", _DEFAULT_LIBRARY_VERSION))
     snippets: list[Snippet] = []
-    for item in payload.get("snippets", []):
+    raw_snippets = payload.get("snippets", [])
+    if not isinstance(raw_snippets, list):
+        raw_snippets = []
+    for item in raw_snippets:
+        if not isinstance(item, dict):
+            continue
         tags_raw = item.get("tags", [])
         if isinstance(tags_raw, list):
             tags = [str(tag).strip() for tag in tags_raw if str(tag).strip()]
@@ -170,6 +179,14 @@ def load_snippet_library(path: Path | None = None) -> SnippetLibrary:
         if snippet.id and snippet.name and snippet.trigger and snippet.body:
             snippets.append(snippet)
     return SnippetLibrary(version=version, snippets=snippets)
+
+
+def load_snippet_library(path: Path | None = None) -> SnippetLibrary:
+    target = path or snippet_library_path()
+    if not target.exists():
+        return SnippetLibrary(version=_DEFAULT_LIBRARY_VERSION, snippets=[])
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    return snippet_library_from_dict(payload)
 
 
 def save_snippet_library(library: SnippetLibrary, path: Path | None = None) -> Path:

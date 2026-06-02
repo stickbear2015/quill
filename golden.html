@@ -1845,7 +1845,7 @@ DOC-7 in Tier 6 and is not part of this functional row.</td>
 <td>One Export and Back Up dialog with a shareable-profile mode</td>
 <td>Settings</td>
 <td>M</td>
-<td>In progress</td>
+<td>Done</td>
 <td><code>open_share_export_dialog</code> (Tools &gt; Customize &gt;
 <strong>Export and Back Up…</strong>) is the single accessible front
 door: a radio group picks <strong>Share a profile
@@ -1859,19 +1859,21 @@ SHARE-3) provably refuses to emit private data into a
 through a <code>wx.FileDialog</code> with the correct extension, honors
 the A11Y-4 contract via <code>apply_modal_ids</code> + the
 panel/outer-sizer + <code>SetDefault</code> surface, and announces what
-was written. Remaining: the package format already supports keymap,
-snippets, macros, watch profiles, dictionary, style models, and UI
-layout, but only the <strong>settings groups</strong> and
-<strong>features/profile</strong> sections are wired into the offer list
-today; the remaining section serializers and a live include-count still
-need wiring before this is Done.</td>
+was written. The wx-free <code>quill/ui/share_dialogs.py</code> offer
+layer now serializes <strong>all eight shareable sections</strong> —
+settings groups, features/profile, keymap (offered only when customized
+away from defaults), snippets, macros, watch profiles, personal
+dictionary, and writing-style models — each gathered only when its store
+actually holds content, so the checklist reflects exactly what is
+present. Eleven logic tests cover offers, privacy, and round-trips
+(<code>tests/unit/ui/test_share_dialogs.py</code>).</td>
 </tr>
 <tr>
 <td>SHARE-2</td>
 <td>One Import and Restore dialog with the same two modes</td>
 <td>Settings</td>
 <td>M</td>
-<td>In progress</td>
+<td>Done</td>
 <td><code>open_share_import_dialog</code> (Tools &gt; Customize &gt;
 <strong>Import or Restore…</strong>) mirrors SHARE-1: a
 <code>wx.FileDialog</code> opens a <code>.quillprofile</code> or
@@ -1884,12 +1886,18 @@ rolls it back automatically if any section fails, imported settings flow
 through the shared <code>_settings_dialog_apply_refresh</code>
 persist-and-refresh path, and import notes/warnings surface in a
 follow-up message. Honors the A11Y-4 contract via
-<code>apply_modal_ids</code>. Remaining: the merge-vs-replace
-distinction between <strong>Import a profile</strong> and
-<strong>Restore a backup</strong> is not yet behaviorally separated,
-FLAG-1 feature-flag dependency resolution/announcement on import is not
-yet wired, and (as with SHARE-1) only settings and features sections are
-applied today.</td>
+<code>apply_modal_ids</code>. The mode is now behaviorally separated: a
+<code>.quillprofile</code> <strong>merges</strong> (keymap overlay,
+snippets overlaid by id with incoming winning, macros overlaid by name,
+watch profiles added when absent, style samples combined, dictionary
+words added) while a <code>.quillbackup</code> <strong>replaces</strong>
+each store wholesale; the personal dictionary is intentionally additive
+in both modes since there is no public “forget all” API (documented in
+<code>_apply_dictionary</code>). FLAG-1 is wired: when importing
+features auto-enables a dependency, each forced-on feature is announced
+as “Enabled X to satisfy a feature dependency.” Covered by backup
+round-trip, profile-merge, and dependency-announcement tests in
+<code>tests/unit/ui/test_share_dialogs.py</code>.</td>
 </tr>
 <tr>
 <td>SHARE-3</td>
@@ -5640,10 +5648,10 @@ CQ-16) are counted once, in their primary tier.</p>
 <td>Tier 2</td>
 <td>Flagship experience</td>
 <td>58</td>
-<td>39</td>
-<td>19</td>
-<td>OCR-1..5, AGENT-1, AI-19, AI-20, AI-22, AI-24, SET-2, SET-3,
-SHARE-1..2, CTX-1, DICT-2, FEAT-19, FLAG-3, DLG-1</td>
+<td>41</td>
+<td>17</td>
+<td>OCR-1..5, AGENT-1, AI-19, AI-20, AI-22, AI-24, SET-2, SET-3, CTX-1,
+DICT-2, FEAT-19, FLAG-3, DLG-1</td>
 </tr>
 <tr>
 <td>Tier 4</td>
@@ -5667,8 +5675,8 @@ CQ-14, CQ-23, CQ-24, LINUX-2</td>
 <td><strong>1.0 subtotal</strong></td>
 <td>Tiers 1, 2, 4, 6 (the QUILL 1.0 scope)</td>
 <td><strong>144</strong></td>
-<td><strong>76</strong></td>
-<td><strong>68</strong></td>
+<td><strong>78</strong></td>
+<td><strong>66</strong></td>
 <td></td>
 </tr>
 <tr>
@@ -5708,8 +5716,8 @@ LINUX-1, ECO-1, L10N-1, COLLAB-1</td>
 <td><strong>Total</strong></td>
 <td>All tiers (1.0 + 2.0)</td>
 <td><strong>186</strong></td>
-<td><strong>76</strong></td>
-<td><strong>110</strong></td>
+<td><strong>78</strong></td>
+<td><strong>108</strong></td>
 <td></td>
 </tr>
 </tbody>
@@ -5754,7 +5762,7 @@ the third table and are not part of either 1.0 list.</p>
 <tr>
 <td>Tier 2 — Flagship</td>
 <td>In progress</td>
-<td>SET-2, SET-3, SHARE-1, SHARE-2, MENU-1, MENU-5, AGENT-1</td>
+<td>SET-2, SET-3, MENU-1, MENU-5, AGENT-1</td>
 </tr>
 <tr>
 <td>Tier 2 — Flagship</td>
@@ -5803,8 +5811,8 @@ GATE-8, GATE-9, FLAG-1, FLAG-2</td>
 <td>QK-1, QK-2, QK-3, QK-4, QK-5, QK-9, NAV-1, NAV-4, NAV-5, SEL-1,
 SEL-2, SEL-3, AI-1, AI-6, AI-7, AI-13, AI-14, AI-15, AI-16, AI-17,
 AI-21, AI-23, WATCH-1, WATCH-2, WATCH-3, WATCH-4, WATCH-5, WATCH-6,
-WATCH-7, SET-1, SET-4, SET-5, SET-6, SET-7, SHARE-3, FLAG-4, MENU-3,
-DICT-1</td>
+WATCH-7, SET-1, SET-4, SET-5, SET-6, SET-7, SHARE-1, SHARE-2, SHARE-3,
+FLAG-4, MENU-3, DICT-1</td>
 </tr>
 <tr>
 <td>Tier 4 — Structural health</td>
@@ -5866,6 +5874,54 @@ note), and A11Y-1 (announcement grammar). The GATE-3/CQ-7 cleanup also
 incidentally cleared the <code>quill/core</code> and
 <code>quill/io</code> portion of the TYPE-1..8 zone, though those formal
 rows stay open until each is individually verified and closed.</p>
+<h4
+id="sharing-dialogs-completed-share-1-and-share-2-landed-done">2026-06-09:
+Sharing dialogs completed — SHARE-1 and SHARE-2 landed Done</h4>
+<p>The two Share/Restore dialogs moved from <strong>In progress</strong>
+to <strong>Done</strong> by wiring every declared shareable section
+through the offer/apply layer and behaviorally separating the two
+modes.</p>
+<ul>
+<li><strong>SHARE-1 (Done):</strong> <code>gather_export_offers</code>
+(in the wx-free <code>quill/ui/share_dialogs.py</code>) now serializes
+<strong>all eight shareable sections</strong> — settings groups,
+features/profile, keymap, snippets, macros, watch profiles, personal
+dictionary, and writing-style models — and offers each only when its
+store actually holds content, so the export checklist reflects exactly
+what the user has. Keymap is offered only when bindings differ from the
+shipped defaults. <code>quill/core/snippets.py</code> gained
+<code>snippet_library_from_dict</code> so import parses a snippets
+payload through the identical validation path as a disk load.</li>
+<li><strong>SHARE-2 (Done):</strong> <code>apply_import</code> derives
+<strong>merge</strong> for a <code>.quillprofile</code> and
+<strong>replace</strong> for a <code>.quillbackup</code>: profile merge
+overlays keymap, overlays snippets by id (incoming wins) and macros by
+name, adds watch profiles only when absent, and unions style samples;
+backup replace swaps each store wholesale. The personal dictionary stays
+additive in both modes because there is no public “forget all” word API
+(documented in <code>_apply_dictionary</code>). FLAG-1 is wired — when
+importing features auto-enables a dependency, each forced-on feature is
+announced as “Enabled X to satisfy a feature dependency.”</li>
+<li><strong>Tests:</strong>
+<code>tests/unit/ui/test_share_dialogs.py</code> grew to 11 tests,
+adding coverage for content-gated offers across the six new sections, a
+full backup round-trip that restores every store, additive profile merge
+for the keymap, and the FLAG-1 dependency announcement.</li>
+<li>The two wx dialogs (<code>open_share_export_dialog</code>,
+<code>open_share_import_dialog</code>) are unchanged structurally — they
+drive their checklists entirely from the helper layer, so the new
+sections appear automatically and the existing <code>dialogs.md</code>
+rows stay accurate.</li>
+<li>Quality gates: ruff format/check clean on the edited files, strict
+mypy clean on <code>quill/core/snippets.py</code> and the wx-free
+<code>quill/ui/share_dialogs.py</code>, and the
+<code>test_share_dialogs.py</code>, <code>test_snippets.py</code>,
+<code>test_macros.py</code>, and <code>test_share_package.py</code>
+suites pass.</li>
+<li>Counts: SHARE-1 and SHARE-2 close, moving Tier 2 to <strong>41 of 58
+done (17 remaining)</strong> and the QUILL 1.0 scope to <strong>78 of
+144 done (66 remaining)</strong>.</li>
+</ul>
 <h4
 id="settings-tier-closed-out-set-1-set-4-and-set-7-landed-done">2026-06-09:
 Settings tier closed out — SET-1, SET-4, and SET-7 landed Done</h4>
