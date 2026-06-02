@@ -167,6 +167,7 @@ or the command palette (`Ctrl+Shift+P`).
 
 - [ ] Switch Feature Profile: `Alt+Shift+P`
 - [ ] Feature Profile Health Check: via Help menu
+- [ ] Manage Individual Features: via Help menu (Help > Feature Profiles > Manage Individual Features...)
 - [ ] Why Don't I See a Feature?: via Help menu
 - [ ] Profiles and Features: via Help menu
 

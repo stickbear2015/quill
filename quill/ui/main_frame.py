@@ -1962,6 +1962,12 @@ class MainFrame:
             None,
         )
         self.commands.register(
+            "tools.individual_feature_toggles",
+            "Manage Individual Features...",
+            self.open_individual_feature_toggles,
+            None,
+        )
+        self.commands.register(
             "tools.profiles_and_features_settings",
             "Profiles and Features...",
             self.open_profiles_and_features_settings,
@@ -3292,6 +3298,7 @@ class MainFrame:
         self._id_why_dont_i_see_feature = wx.NewIdRef()
         self._id_switch_feature_profile = wx.NewIdRef()
         self._id_feature_profile_health_check = wx.NewIdRef()
+        self._id_individual_feature_toggles = wx.NewIdRef()
         self._id_undo_profile_change = wx.NewIdRef()
         self._id_reset_feature_profile = wx.NewIdRef()
         self._id_profile_onboarding = wx.NewIdRef()
@@ -3867,6 +3874,13 @@ class MainFrame:
                 "help.feature_profile_health_check",
             ),
         )
+        profiles_menu.Append(
+            self._id_individual_feature_toggles,
+            self._menu_label(
+                "Manage &Individual Features...",
+                "tools.individual_feature_toggles",
+            ),
+        )
         profiles_menu.AppendSeparator()
         profiles_menu.Append(
             self._id_undo_profile_change,
@@ -3951,6 +3965,11 @@ class MainFrame:
             wx.EVT_MENU,
             lambda _e: self.show_feature_profile_health_check(),
             id=self._id_feature_profile_health_check,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.open_individual_feature_toggles(),
+            id=self._id_individual_feature_toggles,
         )
         self.frame.Bind(
             wx.EVT_MENU,
@@ -21077,6 +21096,92 @@ class MainFrame:
             "Feature Profile Health Check",
             self._wx.ICON_INFORMATION | self._wx.OK,
         )
+
+    def open_individual_feature_toggles(self) -> None:
+        """Per-feature override surface (FLAG-3).
+
+        Lists every non-locked feature with a checkbox reflecting its current
+        effective state on top of the active profile. Toggling a feature
+        applies live, persists, and announces the dependency cascade; locked
+        core features are not listed because they cannot be turned off.
+        """
+        wx = self._wx
+        toggleable = sorted(
+            (
+                (feature_id, definition)
+                for feature_id, definition in FEATURE_DEFINITIONS.items()
+                if not definition.locked_on
+            ),
+            key=lambda item: (item[1].category, item[1].name),
+        )
+        feature_ids = [feature_id for feature_id, _definition in toggleable]
+        dialog = wx.Dialog(self.frame, title="Manage Individual Features", size=(700, 620))
+        panel = wx.Panel(dialog)
+        root = wx.BoxSizer(wx.VERTICAL)
+        root.Add(
+            wx.StaticText(
+                panel,
+                label=(
+                    "Turn individual features on or off on top of your profile. "
+                    "Enabling a feature also enables what it needs; disabling one "
+                    "turns off the features that depend on it."
+                ),
+            ),
+            0,
+            wx.ALL | wx.EXPAND,
+            8,
+        )
+        chooser = wx.CheckListBox(
+            panel,
+            choices=[definition.name for _feature_id, definition in toggleable],
+        )
+        detail = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+
+        def sync_checks() -> None:
+            for index, feature_id in enumerate(feature_ids):
+                chooser.Check(index, self.features.is_enabled(feature_id))
+
+        def refresh_detail() -> None:
+            selection = chooser.GetSelection()
+            if selection == wx.NOT_FOUND or selection < 0 or selection >= len(feature_ids):
+                detail.SetValue("Select a feature to see why it is on or off.")
+                return
+            detail.SetValue(self.features.describe_feature(feature_ids[selection]))
+
+        def on_toggle(event: object) -> None:
+            index = event.GetSelection() if hasattr(event, "GetSelection") else wx.NOT_FOUND
+            if index == wx.NOT_FOUND or index < 0 or index >= len(feature_ids):
+                return
+            feature_id = feature_ids[index]
+            enabled = chooser.IsChecked(index)
+            affected = self.features.set_feature_enabled(feature_id, enabled)
+            announcement = self.features.describe_feature_toggle(feature_id, enabled, affected)
+            sync_checks()
+            chooser.SetSelection(index)
+            refresh_detail()
+            self._build_menu()
+            self._apply_accelerators()
+            self._set_status(announcement)
+
+        sync_checks()
+        refresh_detail()
+        chooser.Bind(wx.EVT_CHECKLISTBOX, on_toggle)
+        chooser.Bind(wx.EVT_LISTBOX, lambda _e: refresh_detail())
+        root.Add(chooser, 1, wx.ALL | wx.EXPAND, 8)
+        root.Add(detail, 1, wx.ALL | wx.EXPAND, 8)
+        buttons = dialog.CreateButtonSizer(wx.OK)
+        if buttons is not None:
+            ok_button = dialog.FindWindowById(wx.ID_OK)
+            if ok_button is not None:
+                ok_button.SetDefault()
+            root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
+        apply_modal_ids(dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_OK)
+        panel.SetSizer(root)
+        outer = wx.BoxSizer(wx.VERTICAL)
+        outer.Add(panel, 1, wx.EXPAND)
+        dialog.SetSizerAndFit(outer)
+        self._show_modal_dialog(dialog, "Manage Individual Features")
+        self._refresh_title()
 
     def _record_macro_step(self, command_id: str) -> None:
         macros = getattr(self, "macros", None)

@@ -63,6 +63,12 @@ _REVIEWED_EGRESS: dict[str, str] = {
         "assistant action; HTTPS uses a verified context and cloud endpoints are "
         "HTTPS-enforced by _validate_endpoint_security."
     ),
+    "core/assistant_ai.py::_post_chat_stream": (
+        "Streaming variant of AI generation (AI-14). Same gating as _post_chat: "
+        "only runs against the user's explicitly configured, non-off provider on "
+        "an explicit assistant action, with HTTPS enforced for cloud endpoints by "
+        "_validate_endpoint_security and a verified TLS context."
+    ),
     "core/ai/model_manager.py::_download": (
         "User-initiated local AI model download; verified TLS for HTTPS, visible progress callback."
     ),

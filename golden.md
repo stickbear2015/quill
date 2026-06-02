@@ -419,7 +419,7 @@ This table is the execution source of truth. Update Status as work progresses. S
 | OPS-1 | Green main: required CI gates must pass | Foundations | S | Done | The gate ladder is only real if it is green on `main`. The newly added gate jobs were red because they installed only `.[dev]`: the UI test modules need `wx` (the `ui` extra) and the scoped-typing job could not find optional modules (`markitdown`, `certifi`, `pdfplumber`, `pyttsx3`). Fix: install `.[dev,ui]` in the test jobs and add the optional modules to the mypy `ignore_missing_imports` overrides so the typing gate measures first-party code regardless of optional extras. Verified: PR CI, Security CI, and Accessibility CI all conclude success on `main` (commit d62d3bd). |
 | FLAG-1 | Feature-flag respect is a UI contract | Foundations | M | Done | `FeatureManager.is_enabled`/`is_visible` are now dependency-aware: a feature whose dependency chain is not fully enabled is treated as off no matter how the dependency was disabled (profile or override), so `visible_commands`, status-bar cells, the palette, and menu gating all hide a feature when an upstream dependency is off. Contract tests cover the off-dependency case, command visibility filtering, and the all-dependencies-on case across representative features (dictation, BITS transcription, search). |
 | FLAG-2 | Every new feature ships a FeatureDefinition | Foundations | S | Done | A source-contract test scans `quill/ui/main_frame.py` for every `feature_id="..."` wired to a command surface and fails if any references an id absent from `FEATURE_DEFINITIONS`, so no command is orphaned to an unknown feature. Combined with the existing palette/command filtering, this makes registering a `FeatureDefinition` (id, name, description, dependencies, maturity, privacy) the definition-of-done for a user-facing feature. |
-| FLAG-3 | Feature profiles and per-feature toggles UI | Foundations | M | Todo | An accessible surface lets users pick a feature profile (Essential, Writer, Developer Power Text, Accessibility Professional, Full QUILL) and override individual features within it; changes apply live, announce, and persist (schema-validated, atomic, recoverable). Dependencies resolve automatically (enabling a feature enables what it needs; disabling one quietly pauses dependents) and the resolution is announced. Fully keyboard and screen-reader navigable. |
+| FLAG-3 | Feature profiles and per-feature toggles UI | Foundations | M | Done | An accessible surface lets users pick a feature profile (Essential, Writer, Developer Power Text, Accessibility Professional, Full QUILL) and override individual features within it; changes apply live, announce, and persist (schema-validated, atomic, recoverable). Dependencies resolve automatically (enabling a feature enables what it needs; disabling one quietly pauses dependents) and the resolution is announced. Fully keyboard and screen-reader navigable. Delivered: the Profiles and Features dialog already covered profile selection, live switch with undo, compare, reset, custom profiles, and import/export; this adds the per-feature override surface (Help > Feature Profiles > Manage Individual Features...), a stock `wx.CheckListBox` of every non-locked feature whose checkboxes reflect effective state and toggle live. Toggling calls the tested wx-free `FeatureManager.set_feature_enabled`/`describe_feature_toggle` helpers, which resolve the dependency cascade and return a screen-reader announcement; changes persist via the feature store and the menu rebuilds immediately. |
 | FLAG-4 | Export, import, and pre-configure feature flags | Foundations | S | Done | The full feature-flag and profile state exports to and imports from a versioned `.qpf` QUILL profile file so a power user or administrator can pre-tune which features are on before first run, and reset is available through the existing Reset to Factory Defaults. Core round-trip helpers (`export_feature_profile_file` / `import_feature_profile_file`) live in `quill/core/features.py` with unit coverage, and Export profile / Import profile buttons sit beside the Settings Export/Import/Reset controls (`Ctrl+,` then General). Tolerant import ignores unknown profiles and locked features and announces the result. (Pairs with SET-7.) |
 | QK-1 | Name and remappable QUILL key | QUILL key | S | Done | Docs and UI call it the QUILL key; the prefix chord is now read from `Settings.quill_key_binding` (default `Ctrl+Shift+Grave`) and matched by `_quill_key_prefix_matches`, which also understands the Grave/backtick key; remapping to another chord (for example `Alt+M`) works and the old default no longer triggers. |
 | QK-3 | QUILL key mode status indicator | QUILL key | S | Done | A `quill_key_mode` status-bar cell reports Off / Prefix / Browse / Locked, appears automatically while the prefix is pending or a mode is active, and the prefix/enter/exit transitions announce. |
@@ -1157,15 +1157,15 @@ This table tracks how many of the backlog IDs each tier names are still open. It
 | Tier | Scope | Total items | Done | Remaining | Open item IDs |
 | --- | --- | --- | --- | --- | --- |
 | Tier 1 | Protect users and unlock the team | 23 | 23 | 0 | (complete) |
-| Tier 2 | Flagship experience | 58 | 43 | 15 | OCR-1, OCR-3, OCR-4, AGENT-1, AI-19, AI-20, AI-22, AI-24, SET-2, SET-3, CTX-1, DICT-2, FEAT-19, FLAG-3, DLG-1 |
+| Tier 2 | Flagship experience | 58 | 44 | 14 | OCR-1, OCR-3, OCR-4, AGENT-1, AI-19, AI-20, AI-22, AI-24, SET-2, SET-3, CTX-1, DICT-2, FEAT-19, DLG-1 |
 | Tier 4 | Structural health and performance | 30 | 11 | 19 | CQ-16, CQ-1, DLG-2, GATE-11, PERF-1..3, PERF-9..14, GATE-10, SEC-6, SEC-7, SEC-8, SEC-14, SEC-17 |
 | Tier 6 | Documentation and learning surface | 33 | 3 | 30 | DOC-14..17, DOC-11, DOC-12, DOC-1..8, POD-1..5, TUT-1..7, CQ-11, CQ-14, CQ-23, CQ-24, LINUX-2 |
-| **1.0 subtotal** | Tiers 1, 2, 4, 6 (the QUILL 1.0 scope) | **144** | **80** | **64** | |
+| **1.0 subtotal** | Tiers 1, 2, 4, 6 (the QUILL 1.0 scope) | **144** | **81** | **63** | |
 | Tier 3 (2.0) | GLOW accessibility engine — deferred to QUILL 2.0 | 8 | 0 | 8 | GLOW-1..7, WATCH-8 |
 | Tier 5 (2.0) | BITS Whisperer transcription — deferred to QUILL 2.0 | 28 | 0 | 28 | BW-1..10, WATCH-9, NAV-10, AI-11, AI-12, AI-18, FEAT-12..18, LINUX-1, ECO-1, L10N-1, COLLAB-1 |
 | AX (2.0) | Accessibility Agents / axe-core engine — deferred to QUILL 2.0 | 6 | 0 | 6 | AX-A..F |
 | **2.0 subtotal** | GLOW + BITS Whisperer + axe-core | **42** | **0** | **42** | |
-| **Total** | All tiers (1.0 + 2.0) | **186** | **80** | **106** | |
+| **Total** | All tiers (1.0 + 2.0) | **186** | **81** | **105** | |
 
 > Deferral note (2026-06-02): per maintainer direction, the GLOW accessibility
 > engine (Tier 3, including the WATCH-8 GLOW watch action), the BITS Whisperer
@@ -1192,7 +1192,7 @@ list.
 | Tier | Status | Feature IDs |
 | --- | --- | --- |
 | Tier 2 — Flagship | In progress | SET-2, SET-3, MENU-1, MENU-5, AGENT-1, OCR-1, OCR-3, OCR-4, CTX-1, DICT-2, FEAT-19 |
-| Tier 2 — Flagship | Todo | AI-19, AI-20, AI-22, AI-24, FLAG-3, DLG-1 |
+| Tier 2 — Flagship | Todo | AI-19, AI-20, AI-22, AI-24, DLG-1 |
 | Tier 4 — Structural health | Todo | CQ-1, CQ-16, DLG-2, GATE-10, GATE-11, PERF-1, PERF-2, PERF-3, PERF-9, PERF-10, PERF-11, PERF-12, PERF-13, PERF-14, SEC-6, SEC-7, SEC-8, SEC-14, SEC-17 |
 | Tier 6 — Documentation | Todo | DOC-1, DOC-2, DOC-3, DOC-4, DOC-5, DOC-6, DOC-7, DOC-8, DOC-11, DOC-12, DOC-14, DOC-15, DOC-16, DOC-17, POD-1, POD-2, POD-3, POD-4, POD-5, TUT-1, TUT-2, TUT-3, TUT-4, TUT-5, TUT-6, TUT-7, CQ-11, CQ-23, CQ-24, LINUX-2 |
 
@@ -1201,7 +1201,7 @@ list.
 | Tier | Feature IDs |
 | --- | --- |
 | Tier 1 — Protect users | BUG-1, BUG-2, BUG-3, BUG-4, BUG-5, BUG-6, BUG-7, SEC-1, SEC-10, SEC-11, SEC-13, GATE-1, GATE-2, GATE-3, GATE-4, GATE-5, GATE-6, GATE-7, GATE-8, GATE-9, FLAG-1, FLAG-2 |
-| Tier 2 — Flagship | QK-1, QK-2, QK-3, QK-4, QK-5, QK-9, NAV-1, NAV-4, NAV-5, SEL-1, SEL-2, SEL-3, AI-1, AI-6, AI-7, AI-13, AI-14, AI-15, AI-16, AI-17, AI-21, AI-23, WATCH-1, WATCH-2, WATCH-3, WATCH-4, WATCH-5, WATCH-6, WATCH-7, SET-1, SET-4, SET-5, SET-6, SET-7, SHARE-1, SHARE-2, SHARE-3, FLAG-4, MENU-3, DICT-1, OCR-2, OCR-5 |
+| Tier 2 — Flagship | QK-1, QK-2, QK-3, QK-4, QK-5, QK-9, NAV-1, NAV-4, NAV-5, SEL-1, SEL-2, SEL-3, AI-1, AI-6, AI-7, AI-13, AI-14, AI-15, AI-16, AI-17, AI-21, AI-23, WATCH-1, WATCH-2, WATCH-3, WATCH-4, WATCH-5, WATCH-6, WATCH-7, SET-1, SET-4, SET-5, SET-6, SET-7, SHARE-1, SHARE-2, SHARE-3, FLAG-3, FLAG-4, MENU-3, DICT-1, OCR-2, OCR-5 |
 | Tier 4 — Structural health | CQ-7, CQ-12, CQ-13, CQ-14, CQ-15, CQ-17, CQ-18, CQ-19, CQ-20, CQ-21, CQ-22, PERF-8, SEC-4, SEC-15, SEC-16, TYPE-1, TYPE-2, TYPE-3, TYPE-4, TYPE-5, TYPE-6, TYPE-7, TYPE-8 |
 
 **Deferred to QUILL 2.0 (not in the 1.0 lists)**

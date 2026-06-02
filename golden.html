@@ -1194,14 +1194,24 @@ feature.</td>
 <td>Feature profiles and per-feature toggles UI</td>
 <td>Foundations</td>
 <td>M</td>
-<td>Todo</td>
+<td>Done</td>
 <td>An accessible surface lets users pick a feature profile (Essential,
 Writer, Developer Power Text, Accessibility Professional, Full QUILL)
 and override individual features within it; changes apply live,
 announce, and persist (schema-validated, atomic, recoverable).
 Dependencies resolve automatically (enabling a feature enables what it
 needs; disabling one quietly pauses dependents) and the resolution is
-announced. Fully keyboard and screen-reader navigable.</td>
+announced. Fully keyboard and screen-reader navigable. Delivered: the
+Profiles and Features dialog already covered profile selection, live
+switch with undo, compare, reset, custom profiles, and import/export;
+this adds the per-feature override surface (Help &gt; Feature Profiles
+&gt; Manage Individual Features…), a stock <code>wx.CheckListBox</code>
+of every non-locked feature whose checkboxes reflect effective state and
+toggle live. Toggling calls the tested wx-free
+<code>FeatureManager.set_feature_enabled</code>/<code>describe_feature_toggle</code>
+helpers, which resolve the dependency cascade and return a screen-reader
+announcement; changes persist via the feature store and the menu
+rebuilds immediately.</td>
 </tr>
 <tr>
 <td>FLAG-4</td>
@@ -5687,10 +5697,10 @@ CQ-16) are counted once, in their primary tier.</p>
 <td>Tier 2</td>
 <td>Flagship experience</td>
 <td>58</td>
-<td>43</td>
-<td>15</td>
+<td>44</td>
+<td>14</td>
 <td>OCR-1, OCR-3, OCR-4, AGENT-1, AI-19, AI-20, AI-22, AI-24, SET-2,
-SET-3, CTX-1, DICT-2, FEAT-19, FLAG-3, DLG-1</td>
+SET-3, CTX-1, DICT-2, FEAT-19, DLG-1</td>
 </tr>
 <tr>
 <td>Tier 4</td>
@@ -5714,8 +5724,8 @@ CQ-14, CQ-23, CQ-24, LINUX-2</td>
 <td><strong>1.0 subtotal</strong></td>
 <td>Tiers 1, 2, 4, 6 (the QUILL 1.0 scope)</td>
 <td><strong>144</strong></td>
-<td><strong>80</strong></td>
-<td><strong>64</strong></td>
+<td><strong>81</strong></td>
+<td><strong>63</strong></td>
 <td></td>
 </tr>
 <tr>
@@ -5755,8 +5765,8 @@ LINUX-1, ECO-1, L10N-1, COLLAB-1</td>
 <td><strong>Total</strong></td>
 <td>All tiers (1.0 + 2.0)</td>
 <td><strong>186</strong></td>
-<td><strong>80</strong></td>
-<td><strong>106</strong></td>
+<td><strong>81</strong></td>
+<td><strong>105</strong></td>
 <td></td>
 </tr>
 </tbody>
@@ -5807,7 +5817,7 @@ DICT-2, FEAT-19</td>
 <tr>
 <td>Tier 2 — Flagship</td>
 <td>Todo</td>
-<td>AI-19, AI-20, AI-22, AI-24, FLAG-3, DLG-1</td>
+<td>AI-19, AI-20, AI-22, AI-24, DLG-1</td>
 </tr>
 <tr>
 <td>Tier 4 — Structural health</td>
@@ -5851,7 +5861,7 @@ GATE-8, GATE-9, FLAG-1, FLAG-2</td>
 SEL-2, SEL-3, AI-1, AI-6, AI-7, AI-13, AI-14, AI-15, AI-16, AI-17,
 AI-21, AI-23, WATCH-1, WATCH-2, WATCH-3, WATCH-4, WATCH-5, WATCH-6,
 WATCH-7, SET-1, SET-4, SET-5, SET-6, SET-7, SHARE-1, SHARE-2, SHARE-3,
-FLAG-4, MENU-3, DICT-1, OCR-2, OCR-5</td>
+FLAG-3, FLAG-4, MENU-3, DICT-1, OCR-2, OCR-5</td>
 </tr>
 <tr>
 <td>Tier 4 — Structural health</td>

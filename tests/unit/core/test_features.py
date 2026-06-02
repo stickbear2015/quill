@@ -173,6 +173,40 @@ def test_feature_dependency_enforcement_turns_off_dependents() -> None:
     assert manager.state_for("core.search.regex") == FEATURE_STATE_OFF
 
 
+def test_set_feature_enabled_toggles_and_announces() -> None:
+    manager = FeatureManager(active_profile_id=PROFILE_ESSENTIAL)
+    manager.overrides["core.search"] = FEATURE_STATE_OFF
+
+    affected = manager.set_feature_enabled("core.search.regex", True)
+    assert "core.search" in affected
+    assert manager.is_enabled("core.search.regex") is True
+    announcement = manager.describe_feature_toggle("core.search.regex", True, affected)
+    assert announcement.startswith("Turned on")
+    assert "it needs" in announcement
+
+    affected_off = manager.set_feature_enabled("core.search", False)
+    assert "core.search" in affected_off
+    assert "core.search.regex" in affected_off
+    assert manager.is_enabled("core.search.regex") is False
+    off_announcement = manager.describe_feature_toggle("core.search", False, affected_off)
+    assert off_announcement.startswith("Turned off")
+    assert "that need it" in off_announcement
+
+
+def test_describe_feature_toggle_handles_no_change_and_solo() -> None:
+    manager = FeatureManager(active_profile_id=PROFILE_FULL_QUILL)
+
+    # Enabling an already-on feature reports no change.
+    affected = manager.set_feature_enabled("core.search", True)
+    assert affected == []
+    assert manager.describe_feature_toggle("core.search", True, affected).endswith("is already on.")
+
+    # A toggle that affects only the feature itself omits the dependency clause.
+    solo = manager.describe_feature_toggle("core.search.regex", True, ["core.search.regex"])
+    assert "(" not in solo
+    assert solo.startswith("Turned on")
+
+
 def test_feature_health_report_includes_coverage() -> None:
     registry = CommandRegistry()
     registry.register("edit.find", "Find", lambda: None)

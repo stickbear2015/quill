@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -956,6 +957,42 @@ class FeatureManager:
         affected.append(feature_id)
         self.save()
         return affected
+
+    def set_feature_enabled(self, feature_id: str, enabled: bool) -> list[str]:
+        """Turn a single feature on or off, resolving dependencies.
+
+        Returns the feature ids whose effective state changed (including the
+        target feature). Enabling a feature also enables what it needs;
+        disabling one also turns off the features that depend on it.
+        """
+        if enabled:
+            return self.enable_feature(feature_id)
+        return self.disable_feature(feature_id)
+
+    def describe_feature_toggle(
+        self, feature_id: str, enabled: bool, affected: Sequence[str]
+    ) -> str:
+        """Build a screen-reader announcement for a single feature toggle.
+
+        ``affected`` is the list returned by :meth:`set_feature_enabled` and
+        is expected to include ``feature_id`` itself when a change occurred.
+        """
+        definition = FEATURE_DEFINITIONS.get(feature_id)
+        name = definition.name if definition is not None else feature_id
+        if not affected:
+            return f"{name} is already {'on' if enabled else 'off'}."
+        others = [
+            FEATURE_DEFINITIONS[other_id].name
+            for other_id in affected
+            if other_id != feature_id and other_id in FEATURE_DEFINITIONS
+        ]
+        verb = "Turned on" if enabled else "Turned off"
+        if not others:
+            return f"{verb} {name}."
+        count = len(others)
+        noun = "feature" if count == 1 else "features"
+        relation = "it needs" if enabled else "that need it"
+        return f"{verb} {name} (and {count} {noun} {relation}: {', '.join(others)})."
 
     def switch_profile(self, target_profile_id: str) -> None:
         if target_profile_id not in PROFILE_DEFINITIONS:
