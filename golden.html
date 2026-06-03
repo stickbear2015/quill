@@ -4379,9 +4379,21 @@ suffix and ranks final &gt; rc &gt; beta &gt; alpha for the same x.y.z;
 <td>Guard TOML parsing in compliance</td>
 <td>Code quality</td>
 <td>S</td>
-<td>Todo</td>
-<td>A corrupted <code>pyproject.toml</code> produces a clear error, not
-a silent abort.</td>
+<td>Done</td>
+<td><code>quill/core/compliance.py</code> wraps <code>tomllib</code>
+parsing in <code>_load_pyproject</code>, which catches
+<code>tomllib.TOMLDecodeError</code> and re-raises a dedicated
+<code>ComplianceConfigError</code> whose message names the offending
+<code>pyproject.toml</code> path (a missing file still raises
+<code>FileNotFoundError</code> so absence stays distinguishable from
+corruption). <code>test_corrupt_pyproject_raises_clear_error</code> in
+<code>tests/unit/core/test_compliance.py</code> writes a syntactically
+invalid TOML file and asserts both
+<code>dependency_names_from_pyproject</code> and
+<code>dependency_requirements_from_pyproject</code> raise
+<code>ComplianceConfigError</code> with the path in the message — so a
+corrupted file produces a clear, located error instead of a silent abort
+or a bare decode traceback.</td>
 </tr>
 <tr>
 <td>CQ-22</td>
@@ -5138,9 +5150,29 @@ regressions fail the build.</td>
 <td>Module-size budget gate</td>
 <td>Gates</td>
 <td>S</td>
-<td>Todo</td>
-<td>A ratcheting size budget prevents new growth in the largest files
-and decreases as extraction proceeds.</td>
+<td>Done</td>
+<td><code>quill/tools/module_size_budget.py</code> enforces a ratcheting
+per-module line-count budget from
+<code>quill/tools/module_size_budgets.json</code>: every tracked module
+has an explicit maximum, any untracked module must stay at or below the
+600-line default cap, and a stale budget entry for a deleted file is
+itself flagged. The gate runs both as a CLI
+(<code>python -m quill.tools.module_size_budget</code>, non-zero exit on
+any violation) and as
+<code>tests/unit/tools/test_module_size_budget.py</code>, which the
+required <code>unit-tests</code> CI job runs as part of
+<code>pytest tests\unit</code>. The budget is decrease-only by
+construction — the documented <code>_comment</code>, the module
+docstring, and
+<code>test_every_budget_entry_at_least_matches_current_size_or_smaller_is_fine</code>
+make raising a number to paper over growth a self-inflicted failure. The
+ratchet is live: extracting <code>BrowseModeMixin</code>,
+<code>AiActionsMixin</code>, <code>settings_specs.py</code>, and
+<code>settings_normalizers.py</code> each forced the touched budgets
+<em>down</em> (e.g. <code>settings_registry.py</code> 933→158,
+<code>settings.py</code> 617→570), and the gate blocked those modules
+from shipping over budget until the code was extracted rather than the
+cap raised.</td>
 </tr>
 <tr>
 <td>GATE-12</td>
