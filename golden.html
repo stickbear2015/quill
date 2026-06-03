@@ -1423,7 +1423,28 @@ characterization, the dialog-contract/inventory gates, and the A11Y-4
 banned-pattern gate all pass. The mixin pattern is now established for
 the remaining clusters (menu construction, QUILL key/Quick Nav,
 selection/marks, file/session lifecycle), so this stays honestly In
-progress (XL) until those land.</td>
+progress (XL) until those land. <strong>Fifth seam delivered:</strong>
+the contiguous 17-method QUILL-key / Quick-Nav cluster
+(<code>_handle_quill_key_mode_event</code> prefix/browse dispatch, mode
+enter/exit/timeout, binding parsing, the live cheat-sheet
+build/announce/present surface, and the
+<code>_quill_feedback</code>/<code>_play_quill_sound</code> feedback
+helpers, ~466 lines) was extracted verbatim from
+<code>main_frame.py</code> into
+<code>quill/ui/main_frame_quill_key.py</code> as
+<code>QuillKeyMixin</code> (now in the <code>MainFrame</code> MRO);
+<code>BrowseModeMixin</code> calls <code>self._quill_feedback</code> and
+resolves it through the MRO unchanged. Every moved method is private, so
+the GATE-6 public-surface snapshot was unchanged and needed no regen.
+The cheat-sheet dialog (<code>_present_quill_key_help</code>) moved with
+the cluster, so the DLG-3 <code>dialog_inventory.json</code> snapshot
+was regenerated — the only change is that one surface’s module key
+(classification stays <code>hardened_custom</code>; the 154-surface
+totals are unchanged). <code>main_frame.py</code> dropped 22,332→21,859
+lines (budget ratcheted to 21,859); the new module is 495 lines (under
+the 600 cap). Verified live on Windows: the full 352-test UI suite,
+GATE-11, GATE-6 public-surface, the dialog-contract/inventory gates, and
+the A11Y-4 banned-pattern gate all pass.</td>
 </tr>
 <tr>
 <td>CQ-16</td>

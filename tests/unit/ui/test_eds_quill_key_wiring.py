@@ -4,8 +4,14 @@ from pathlib import Path
 
 
 def _main_frame_source() -> str:
-    path = Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py"
-    return path.read_text(encoding="utf-8")
+    # The QUILL-key / Quick-Nav handling was extracted into the QuillKeyMixin
+    # module (CQ-1); read both so these wiring contracts hold wherever the code
+    # physically lives.
+    ui = Path(__file__).resolve().parents[3] / "quill" / "ui"
+    return "\n".join(
+        (ui / name).read_text(encoding="utf-8")
+        for name in ("main_frame.py", "main_frame_quill_key.py")
+    )
 
 
 def test_quill_key_m_invokes_paste_html_as_markdown() -> None:
