@@ -1533,7 +1533,7 @@ The 49 `hardened_custom` dialogs were triaged on the live wx 4.2.5 Windows runti
 - **Phase 2 (DLG-3.2) closed as no-applicable-work:** no dialog is a lossless one-shot — flattening any of them into a stock `wx.MessageDialog`/`wx.SingleChoiceDialog`/`wx.TextEntryDialog` would drop live search, lists, previews, or multi-action rows. Honest "Done (no applicable work)," not a fabricated conversion.
 - **Phase 3 (DLG-3.3) Done:** a machine-derived AST audit found 5 surfaces off the shared `dialog_contract`. Four were wired onto `apply_modal_ids` (and routed direct `ShowModal()` through the announcing `_show_modal_dialog`, with deterministic initial focus): `_present_quill_key_help`, `_offer_crash_recovery`, `_present_quick_nav`, `_choose_searchable_option`. The fifth, `show_watch_folder_status`, is a correctly-hardened modeless monitor. All 49 now pass a new durable guard.
 - **New anti-regression control:** `tests/unit/ui/test_dialog_hardening_contract.py` AST-asserts every `hardened_custom` surface in the inventory snapshot wires the contract, so a future bespoke dialog that skips `apply_modal_ids`/show fails CI at author time.
-- **Report:** `dialogreport.md` at the repo root captures the full triage table, per-phase status, and honest remaining work (Phases 4–8).
+- **Report:** `docs/engineering/dialog-estate-report.md` captures the full triage table, per-phase status, and honest remaining work (Phases 4–8).
 
 #### 2026-06-03: DLG-3 plan folded into the PRD; per-phase tracking ledger added
 
