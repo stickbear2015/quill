@@ -4,7 +4,12 @@ from pathlib import Path
 
 
 def _source() -> str:
-    return Path("quill/ui/main_frame.py").read_text(encoding="utf-8")
+    ui = Path("quill/ui")
+    return (
+        (ui / "main_frame.py").read_text(encoding="utf-8")
+        + "\n"
+        + (ui / "main_frame_menu.py").read_text(encoding="utf-8")
+    )
 
 
 def test_forget_key_menu_item_is_present() -> None:

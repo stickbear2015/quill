@@ -1358,7 +1358,7 @@ green.</td>
 <td>Decompose main_frame into cohesive modules</td>
 <td>Code quality</td>
 <td>XL</td>
-<td>In progress</td>
+<td>Done</td>
 <td>main_frame is split into controllers or mixins with no behavior
 change; characterization tests pass before and after. <strong>First seam
 delivered:</strong> the 25-method browse-mode navigation cluster (~455
@@ -1472,8 +1472,65 @@ only change is those two surfaces’ module keys (both stay
 to 21,637); the new module is 245 lines (under the 600 cap). Verified
 live on Windows: the full 352-test UI suite, GATE-11, GATE-6
 public-surface, the dialog-contract/inventory gates, and the A11Y-4
-banned-pattern gate all pass. The remaining named clusters (menu
-construction, selection/marks) keep this honestly In progress (XL).</td>
+banned-pattern gate all pass. <strong>Seventh seam delivered:</strong>
+the contiguous structural-selection and temporary-jump mark-ring cluster
+— line/paragraph/block selection
+(<code>select_line</code>/<code>select_paragraph</code>/<code>select_block</code>),
+<code>_announce_selection_scope</code>,
+<code>expand_selection</code>/<code>shrink_selection</code>,
+<code>_has_active_selection</code>,
+<code>_selection_action_specs</code>, the public
+<code>quill_key_selection_actions</code>, the <code>select_to_*</code>
+family, and the mark ring
+(<code>set_mark</code>/<code>pop_mark</code>/<code>exchange_point_and_mark</code>/<code>list_marks</code>,
+~223 lines) — was extracted verbatim from <code>main_frame.py</code>
+into <code>quill/ui/main_frame_selection.py</code> as
+<code>SelectionMarksMixin</code> (now in the <code>MainFrame</code>
+MRO); all <code>self.</code> collaborators and the
+<code>quill.core.selection</code>/<code>quill.core.marks</code> helpers
+resolve identically through the MRO. The bookmark trio
+(<code>set_bookmark</code>/<code>go_to_bookmark</code>/<code>list_bookmarks</code>)
+was deliberately left in <code>main_frame.py</code> because
+<code>list_bookmarks</code> depends on the module-local
+<code>_NavigatorNode</code> dataclass and moving it would introduce a
+circular import. Because <code>quill_key_selection_actions</code> and
+the
+<code>select_*</code>/<code>set_mark</code>/<code>pop_mark</code>/<code>exchange_point_and_mark</code>/<code>list_marks</code>
+methods are public, the GATE-6 public-surface snapshot was regenerated
+via <code>python -m quill.tools.ui_surface --write</code>; the runtime
+surface is unchanged via inheritance.
+<code>quill_key_selection_actions</code>’s
+<code>wx.SingleChoiceDialog</code> moved modules, so the DLG-3
+<code>dialog_inventory.json</code> snapshot was regenerated — the only
+change is that surface’s module key (stays <code>native</code>; the
+154-surface totals are unchanged). <strong>Eighth seam
+delivered:</strong> the full menu-bar construction method
+<code>_build_menu</code> (~2,384 lines, the single largest method) was
+extracted verbatim from <code>main_frame.py</code> into
+<code>quill/ui/main_frame_menu.py</code> as
+<code>MenuBuilderMixin</code> (now in the <code>MainFrame</code> MRO);
+an AST analysis confirmed the method references zero module-level names
+(only <code>self.</code> and <code>wx = self._wx</code>), so the new
+module needs no imports beyond
+<code>from __future__ import annotations</code>.
+<code>_build_menu</code> is private (GATE-6 unchanged) and builds menus
+only (no dialog surfaces, so <code>dialog_inventory.json</code> is
+unchanged). The menu module is 2,398 lines, which exceeds the 600
+default cap, so an explicit acknowledged GATE-11 budget entry was added
+(a new entry, not a raised existing one). Nine source-contract tests
+that scanned <code>main_frame.py</code> for menu-wiring text were
+updated to read both <code>main_frame.py</code> and
+<code>main_frame_menu.py</code> (same precedent as the QUILL-key seam).
+<code>main_frame.py</code> dropped 21,637→21,412 (selection) →19,029
+(menu); both budgets ratcheted down. All six originally-named clusters
+(browse-mode navigation, AI writing actions, status bar, image capture,
+QUILL key/Quick Nav, file/session lifecycle) plus selection/marks and
+menu construction are now extracted into dedicated mixins, every move
+proven behavior-identical by the full 352-test UI suite (green before
+and after) plus GATE-11, GATE-6, the dialog-contract/inventory gates,
+and the A11Y-4 banned-pattern gate — so CQ-1’s acceptance (split into
+mixins with no behavior change; characterization tests pass before and
+after) is genuinely met. Done.</td>
 </tr>
 <tr>
 <td>CQ-16</td>
@@ -7845,9 +7902,9 @@ CQ-16) are counted once, in their primary tier.</p>
 <td>Tier 4</td>
 <td>Structural health and performance</td>
 <td>32</td>
-<td>28</td>
-<td>4</td>
-<td>DLG-3, CQ-1, DLG-2, ORG-1</td>
+<td>29</td>
+<td>3</td>
+<td>DLG-3, DLG-2, ORG-1</td>
 </tr>
 <tr>
 <td>Tier 6</td>
@@ -7862,8 +7919,8 @@ CQ-14, CQ-23, CQ-24, LINUX-2</td>
 <td><strong>1.0 subtotal</strong></td>
 <td>Tiers 1, 2, 4, 6 (the QUILL 1.0 scope)</td>
 <td><strong>156</strong></td>
-<td><strong>111</strong></td>
-<td><strong>45</strong></td>
+<td><strong>112</strong></td>
+<td><strong>44</strong></td>
 <td></td>
 </tr>
 <tr>
@@ -7920,8 +7977,8 @@ delivered; GLOW engine now in 1.0)</td>
 <td><strong>Total</strong></td>
 <td>All tiers (1.0 + 2.0)</td>
 <td><strong>212</strong></td>
-<td><strong>130</strong></td>
-<td><strong>82</strong></td>
+<td><strong>131</strong></td>
+<td><strong>81</strong></td>
 <td></td>
 </tr>
 </tbody>
@@ -7988,7 +8045,7 @@ GLOW-6, GLOW-7 (GLOW family sequenced after Tier 4)</td>
 <tr>
 <td>Tier 4 — Structural health</td>
 <td>In progress / Todo</td>
-<td>DLG-3, CQ-1 (in progress), DLG-2, ORG-1</td>
+<td>DLG-3, DLG-2, ORG-1</td>
 </tr>
 <tr>
 <td>Tier 6 — Documentation</td>
@@ -8035,7 +8092,7 @@ SHELL-1</td>
 CQ-21, CQ-22, GATE-10, GATE-11, PERF-1, PERF-2, PERF-3, PERF-8, PERF-9,
 PERF-10, PERF-11, PERF-12, PERF-13, PERF-14, SEC-4, SEC-6, SEC-7, SEC-8,
 SEC-14, SEC-15, SEC-16, SEC-17, TYPE-1, TYPE-2, TYPE-3, TYPE-4, TYPE-5,
-TYPE-6, TYPE-7, TYPE-8</td>
+TYPE-6, TYPE-7, TYPE-8, CQ-1</td>
 </tr>
 <tr>
 <td>EdSharp parity (delivered in 1.0)</td>
@@ -8107,6 +8164,56 @@ note), and A11Y-1 (announcement grammar). The GATE-3/CQ-7 cleanup also
 incidentally cleared the <code>quill/core</code> and
 <code>quill/io</code> portion of the TYPE-1..8 zone, though those formal
 rows stay open until each is individually verified and closed.</p>
+<h4
+id="cq-1-complete-main_frame-decomposed-into-eight-cohesive-mixins-behavior-preserved">2026-06-11:
+CQ-1 complete — main_frame decomposed into eight cohesive mixins,
+behavior preserved</h4>
+<p>The <code>main_frame.py</code> monolith decomposition reached genuine
+Done. The final two named clusters were extracted verbatim into
+dedicated mixins, completing the eight-seam program with no behavior
+change.</p>
+<ul>
+<li><strong>Seventh seam (selection/marks):</strong> the
+structural-selection and temporary-jump mark-ring cluster
+(line/paragraph/block selection,
+<code>expand_selection</code>/<code>shrink_selection</code>,
+<code>_has_active_selection</code>,
+<code>_selection_action_specs</code>, the public
+<code>quill_key_selection_actions</code>, the <code>select_to_*</code>
+family, and the
+<code>set_mark</code>/<code>pop_mark</code>/<code>exchange_point_and_mark</code>/<code>list_marks</code>
+ring, ~223 lines) moved into
+<code>quill/ui/main_frame_selection.py</code> as
+<code>SelectionMarksMixin</code>. The bookmark trio stayed in
+<code>main_frame.py</code> to avoid a <code>_NavigatorNode</code>
+circular import. GATE-6 surface and the DLG-3
+<code>dialog_inventory.json</code> snapshot regenerated (the
+<code>wx.SingleChoiceDialog</code> re-keyed module, stays
+<code>native</code>; 154 totals unchanged).</li>
+<li><strong>Eighth seam (menu construction):</strong> the full
+<code>_build_menu</code> method (~2,384 lines, the single largest
+method) moved into <code>quill/ui/main_frame_menu.py</code> as
+<code>MenuBuilderMixin</code>; an AST analysis confirmed zero free
+module-level references. The 2,398-line module got an explicit
+acknowledged GATE-11 budget entry (a new entry, not a raised one). Nine
+source-contract tests that scanned <code>main_frame.py</code> for
+menu-wiring text were updated to read both <code>main_frame.py</code>
+and <code>main_frame_menu.py</code>.</li>
+<li><code>main_frame.py</code> dropped 21,637→21,412 (selection) →19,029
+(menu); both budgets ratcheted down. All eight clusters (browse-mode, AI
+actions, status bar, image capture, QUILL key/Quick Nav, file/session
+lifecycle, selection/marks, menu construction) are now dedicated
+mixins.</li>
+<li><strong>Verified live on Windows:</strong> the full 352-test UI
+suite (green before and after), GATE-11, GATE-6 public-surface, the
+dialog-contract/inventory gates, and the A11Y-4 banned-pattern gate all
+pass. CQ-1’s acceptance (split into mixins, no behavior change,
+characterization tests pass before and after) is genuinely met.</li>
+<li><strong>Counts:</strong> CQ-1 closes, moving Tier 4 to <strong>29 of
+32 done (3 remaining: DLG-3, DLG-2, ORG-1)</strong>, the QUILL 1.0 scope
+to <strong>112 of 156 done (44 remaining)</strong>, and the overall
+total to <strong>131 of 212</strong>.</li>
+</ul>
 <h4
 id="dlg-3-triage-settled-0-convert-48-harden-1-keep-web-phase-3-contract-hardening-complete">2026-06-04:
 DLG-3 triage settled (0 convert / 48 harden / 1 keep-web); Phase 3

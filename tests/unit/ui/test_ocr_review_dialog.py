@@ -132,9 +132,12 @@ def test_shell2_structured_ocr_runs_assistant_structure_transform() -> None:
 
 def test_shell2_handle_shell_request_passes_structured_for_structured_verb() -> None:
     """``ocr-structured`` requests reach _run_ocr_on_path with structured=True."""
+    _ui = Path(__file__).parent.parent.parent.parent / "quill" / "ui"
     main_frame = (
-        Path(__file__).parent.parent.parent.parent / "quill" / "ui" / "main_frame.py"
-    ).read_text(encoding="utf-8")
+        (_ui / "main_frame.py").read_text(encoding="utf-8")
+        + "\n"
+        + (_ui / "main_frame_menu.py").read_text(encoding="utf-8")
+    )
 
     assert 'structured=action == "ocr-structured"' in main_frame
 
@@ -153,9 +156,12 @@ def test_ocr3_capture_uses_windows_capture_helper() -> None:
 
 def test_ocr3_commands_are_wired_in_main_frame() -> None:
     """The two OCR-3 commands are registered, menued, and event-bound."""
+    _ui = Path(__file__).parent.parent.parent.parent / "quill" / "ui"
     main_frame = (
-        Path(__file__).parent.parent.parent.parent / "quill" / "ui" / "main_frame.py"
-    ).read_text(encoding="utf-8")
+        (_ui / "main_frame.py").read_text(encoding="utf-8")
+        + "\n"
+        + (_ui / "main_frame_menu.py").read_text(encoding="utf-8")
+    )
 
     # Command registration
     assert '"tools.ocr_clipboard"' in main_frame

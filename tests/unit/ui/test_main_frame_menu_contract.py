@@ -4,10 +4,17 @@ import re
 from pathlib import Path
 
 
-def test_menu_item_ids_have_menu_bindings() -> None:
-    source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
+def _menu_source() -> str:
+    ui = Path(__file__).resolve().parents[3] / "quill" / "ui"
+    return (
+        (ui / "main_frame.py").read_text(encoding="utf-8")
+        + "\n"
+        + (ui / "main_frame_menu.py").read_text(encoding="utf-8")
     )
+
+
+def test_menu_item_ids_have_menu_bindings() -> None:
+    source = _menu_source()
     menu_ids = set(
         re.findall(
             r"\.(?:Append|AppendCheckItem|AppendRadioItem)\(\s*(self\._id_[A-Za-z0-9_]+)",
@@ -34,9 +41,7 @@ def test_menu_item_ids_have_menu_bindings() -> None:
 
 
 def test_top_level_menu_append_order_places_insert_and_view_before_search() -> None:
-    source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
-    )
+    source = _menu_source()
     edit_index = source.index('menu_bar.Append(edit_menu, "&Edit")')
     insert_index = source.index('menu_bar.Append(insert_menu, "&Insert")')
     view_index = source.index('menu_bar.Append(view_menu, "&View")')
@@ -47,9 +52,7 @@ def test_top_level_menu_append_order_places_insert_and_view_before_search() -> N
 
 
 def test_update_toggle_is_in_help_menu_not_view_menu() -> None:
-    source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
-    )
+    source = _menu_source()
     assert "view_menu.AppendCheckItem(self._id_toggle_auto_check_updates" not in source
     support_marker = 'support_menu.Append(self._id_check_updates, "Check for &Updates")'
     help_marker = 'help_menu.Append(self._id_check_updates, "Check for &Updates...")'
@@ -61,18 +64,14 @@ def test_update_toggle_is_in_help_menu_not_view_menu() -> None:
 
 
 def test_replace_menu_uses_interactive_replace_command() -> None:
-    source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
-    )
+    source = _menu_source()
     assert '_menu_label("&Replace...", "edit.replace")' in source
 
 
 def test_insert_link_is_not_duplicated_in_edit_menu() -> None:
     # MENU-3: Insert Link lives only in the Insert menu (its primary home); the
     # Edit menu must not also append the same edit.insert_link command.
-    source = (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
-    )
+    source = _menu_source()
     insert_link_appends = re.findall(
         r"(\w+_menu)\.Append\(\s*self\._id_insert_link\b",
         source,

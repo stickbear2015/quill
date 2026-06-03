@@ -13,8 +13,13 @@ from pathlib import Path
 
 import quill.ui.main_frame as main_frame_module
 import quill.ui.main_frame_edsharp_menu as eds_menu_module
+import quill.ui.main_frame_menu as main_frame_menu_module
 
-_SOURCE = Path(main_frame_module.__file__).read_text(encoding="utf-8")
+_SOURCE = (
+    Path(main_frame_module.__file__).read_text(encoding="utf-8")
+    + "\n"
+    + Path(main_frame_menu_module.__file__).read_text(encoding="utf-8")
+)
 _MENU_SOURCE = Path(eds_menu_module.__file__).read_text(encoding="utf-8")
 
 # Every EdSharp command id that must be both registered and menu-wired.

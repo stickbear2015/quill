@@ -4,8 +4,11 @@ from pathlib import Path
 
 
 def _source() -> str:
-    return (Path(__file__).resolve().parents[3] / "quill" / "ui" / "main_frame.py").read_text(
-        encoding="utf-8"
+    ui = Path(__file__).resolve().parents[3] / "quill" / "ui"
+    return (
+        (ui / "main_frame.py").read_text(encoding="utf-8")
+        + "\n"
+        + (ui / "main_frame_menu.py").read_text(encoding="utf-8")
     )
 
 
