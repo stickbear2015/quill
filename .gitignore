@@ -1,4 +1,4 @@
-            ,__pycache__/
+__pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -21,3 +21,10 @@ mypy_out.txt
 .coverage
 .coverage.*
 msg.txt
+
+# Editor local history (VS Code Local History extension)
+.history/
+
+# Working / scratch files (not part of the project)
+zfix*
+/Status

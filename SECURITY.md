@@ -86,7 +86,6 @@ Related project docs:
 - `CODE_OF_CONDUCT.md`
 - `PRIVACY.md`
 - `RESPONSIBLE_AI_USE.md`
-- `docs/engineering/quality-gates.md`
 
 ## Secret handling baseline
 

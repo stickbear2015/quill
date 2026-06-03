@@ -8,12 +8,58 @@ accessible defaults, and clear user control.
 
 ## Before you start
 
-1. Read the architecture and product expectations in:
-   - `docs/QUILL-PRD.md`
-   - `docs/engineering/README.md`
+1. Read the product expectations and full architecture in `docs/QUILL-PRD.md`
+   (the single source of truth), and the architecture overview below.
 2. Review project conduct rules in `CODE_OF_CONDUCT.md`.
 3. Check existing issues and pull requests before starting overlapping work.
 4. Review project decision process in `GOVERNANCE.md`.
+
+## Architecture overview
+
+QUILL is a layered desktop application with strict boundaries that exist to
+preserve accessibility behavior and testability. The canonical, detailed
+specification lives in `docs/QUILL-PRD.md`; this section is the short version
+contributors need day to day.
+
+### Layers
+
+- **`quill/core`** — pure domain logic: documents, command registry, settings,
+  keymap, recent files, history, metrics, and storage primitives. No `wx`
+  imports and no direct UI ownership; strict-typed and gated in CI.
+- **`quill/io`** — format readers/writers and detection. The contract is
+  `read(path) -> Document`, optional `write(doc, path)`, optional `outline(doc)`;
+  also strict-typed.
+- **`quill/ui`** — wxPython shell, editor surface, menus, status bar, dialogs,
+  and command palette. UI composes `core` + `io` and owns widget lifecycle
+  (gradual typing).
+- **`quill/platform/windows`** — Windows-specific bridges (screen-reader
+  announcements, DPAPI secrets, shell integration, single-instance, TTS).
+- **`quill/plugins`** — plugin-facing API surfaces and manifest model.
+- **`quill/tools`** — internal CLIs and gates (a11y audit, diagnostics,
+  characterization and registry checks).
+
+### Primary flow
+
+A user action enters through `quill/ui/main_frame.py` (`MainFrame`), dispatches
+to `core.commands.CommandRegistry`, reads/writes a `core.document.Document`,
+persists through `io` or `core.storage`, and surfaces the outcome through status
+updates and `platform.windows.sr_announce.announce`.
+
+### Boundary and runtime rules
+
+- `core` and `io` never import `wx`; keep `wx` confined to `quill/ui` and
+  `quill/platform/windows`.
+- `ui` does not perform raw persistence; it calls `core` helpers (settings,
+  keymap, recent) and `io` for document I/O.
+- Persistent writes are atomic via `core.storage.write_json_atomic`
+  (temp file + `os.replace`), with schema validation and `.bak`/recovery.
+- The single UI thread owns all widgets; background I/O and heavier compute run
+  off-thread, network/AI runs async behind explicit consent, and all cross-thread
+  UI updates marshal through `wx.CallAfter`/`wx.CallLater`.
+- `core.events.CancelToken` is the shared cancellation primitive; long-running
+  tasks accept and check it at safe boundaries.
+- No silent network calls: every cloud/AI action is explicit, per-action opt-in
+  with visible progress and outcome.
 
 ## Development setup
 

@@ -2662,21 +2662,34 @@ over time.</td>
 </tr>
 <tr>
 <td>DOC-18</td>
-<td>Consolidate accessibility and engineering docs into the PRD; retire
-those folders</td>
+<td>Retire the stale, PRD-duplicating engineering/accessibility docs;
+keep only wired, of-value references</td>
 <td>Docs</td>
 <td>L</td>
-<td>Todo</td>
-<td><code>docs/QUILL-PRD.md</code> is brought current with shipped
-behavior, then the full <code>docs/accessibility/</code> and
-<code>docs/engineering/</code> document sets are rolled up into the PRD
-as consolidated sections so the PRD is the single source of truth. Once
-their content lives in the PRD, the <code>docs/accessibility/</code> and
-<code>docs/engineering/</code> folders (and their generated
-<code>.html</code>/<code>.epub</code> artifacts) are retired, every
-cross-reference is updated, the docs-artifact gate is adjusted, and the
-PRD <code>.html</code>/<code>.epub</code> are regenerated via pandoc. A
-clean, polished, no-duplication documentation surface.</td>
+<td>In progress</td>
+<td><strong>Done (scope as decided with the maintainer):</strong> the
+nine stale, PRD-duplicating engineering documents
+(<code>architecture</code>, <code>runtime-model</code>,
+<code>data-layout</code>, <code>module-contracts</code>,
+<code>roadmap-mapping</code>, the engineering <code>README</code> index,
+<code>ai-distribution-recommendations</code>,
+<code>diagnostics-runbook</code>, <code>quality-gates</code>) and their
+generated <code>.html</code>/<code>.epub</code> artifacts were retired;
+their content already lives in <code>docs/QUILL-PRD.md</code>. The
+CONTRIBUTING guide gained a self-contained architecture overview so it
+no longer depends on the deleted engineering README, and the three
+broken cross-references were fixed (<code>SECURITY.md</code>
+quality-gates link removed, <code>docs/site/index.html</code>
+engineering-index link removed, the <code>cp -R docs/engineering</code>
+step dropped from <code>github-pages.yml</code>). <strong>Intentionally
+kept as living references (of value, actively wired):</strong>
+<code>docs/engineering/{macos-build,security-advisory-workflow,thread-safety}.md</code>
+(README/SECURITY/golden evidence) and
+<code>docs/accessibility/{acr-vpat,announcement-style-guide}.md</code>
+(the ACR/VPAT generator default and the announcement-grammar spec).
+<strong>Remaining:</strong> folding those five retained references into
+the PRD as consolidated sections (and then fully retiring both folders)
+is deferred; until then this row stays In progress.</td>
 </tr>
 <tr>
 <td>DOC-6</td>
@@ -3401,6 +3414,96 @@ process to keep translations current.</td>
 <td>A local-first, accessible async review and comment exchange (export,
 annotate, merge) is delivered; real-time multi-user editing remains
 explicitly out of scope with the reason recorded.</td>
+</tr>
+<tr>
+<td>COMP-1</td>
+<td>Project-wide Find in Folder and Workspace Search</td>
+<td>Features</td>
+<td>L</td>
+<td>Todo</td>
+<td>QUILL ships an accessible folder and workspace search surface with
+saved scopes, include and exclude globs, file type filters, and
+replace-in-results preview. Results are exposed as a stable,
+keyboard-first list with document, line, and snippet context; Enter
+jumps, Ctrl+Enter opens side-by-side review, and all actions announce
+count, scope, and wrap behavior with the shared grammar. Search and
+replace operations stream off the UI thread, support cancellation, and
+preserve one-step undo for in-file replacements.</td>
+</tr>
+<tr>
+<td>COMP-2</td>
+<td>Workspace model parity (sessions plus folders plus project
+panels)</td>
+<td>Features</td>
+<td>L</td>
+<td>Todo</td>
+<td>QUILL adds a unified workspace model on top of existing sessions:
+named workspaces can include ad-hoc files, folder trees, and pinned
+project groups, with persistent open-state and cursor restoration
+announcements. A single Workspace hub supports create, clone, rename,
+archive, and reopen-most-recent, and clearly distinguishes session
+snapshots from durable project workspaces. Folder and project trees are
+fully screen-reader operable with predictable node announcements,
+context commands, and no focus traps.</td>
+</tr>
+<tr>
+<td>COMP-3</td>
+<td>Plugin admin lifecycle and trust UX</td>
+<td>Ecosystem</td>
+<td>XL</td>
+<td>Todo</td>
+<td>Building on ECO-1 and SEC-8, QUILL ships an accessible plugin
+manager with Installed, Available, Updates, and Incompatible states,
+each with clear risk and capability labels. Install and update flows
+require explicit consent for manifest-declared permissions (network,
+filesystem, subprocess), and signature or provenance status is announced
+before activation. Disable, rollback, and safe-mode recovery are
+first-class, with deterministic behavior when a plugin becomes
+incompatible or fails to load.</td>
+</tr>
+<tr>
+<td>COMP-4</td>
+<td>Encoding conversion suite and legacy text recovery</td>
+<td>Features</td>
+<td>M</td>
+<td>Todo</td>
+<td>QUILL extends encoding support from choose and reload to explicit
+convert workflows with loss-risk preview, fallback options, and
+recoverability. Users can convert active documents between common
+encodings, compare before and after byte interpretation in a review
+pane, and cancel safely before write. Status bar and announcements
+always report active encoding and conversion outcome, and batch
+conversion (workspace or folder) is available behind explicit
+confirmation.</td>
+</tr>
+<tr>
+<td>COMP-5</td>
+<td>Macro studio maturity (safe replay, import/export, repeat
+modes)</td>
+<td>Features</td>
+<td>M</td>
+<td>Todo</td>
+<td>QUILL upgrades macro workflows with named and described macros,
+replay controls (once, N times, until condition), and optional per-step
+speech confirmations. Macro import and export include conflict
+resolution (keep mine, replace, duplicate as new), compatibility notes,
+and dry-run verification before activation. Replay is deterministic,
+cancellable, and bounded to prevent runaway loops, with clear post-run
+summaries of actions applied.</td>
+</tr>
+<tr>
+<td>COMP-6</td>
+<td>Two-pane split editing and compare-grade navigation</td>
+<td>Features</td>
+<td>M</td>
+<td>Todo</td>
+<td>QUILL adds an optional split editing mode that keeps stock controls
+and predictable focus semantics, with explicit announcements for pane
+entry, active pane, and synchronized navigation state. Users can open
+two files or two positions of one file, lock or unlock scroll, and drive
+pane focus and movement entirely by keyboard. The feature reuses compare
+navigation primitives so jumps, hunk traversal, and region review remain
+coherent and screen-reader friendly.</td>
 </tr>
 </tbody>
 </table>
@@ -6221,6 +6324,53 @@ review and sharing). Value: new reach and polish. Outcome: a growing
 product shaped by real user feedback, with nothing of substance left
 below best-in-class.</li>
 </ul>
+<h4 id="competitive-parity-plan-notepad-benchmark-adapted-for-quill">2.0
+competitive parity plan (Notepad++ benchmark, adapted for QUILL)</h4>
+<p>This plan captures the highest-value competitive gaps identified in
+the Notepad++ comparison and folds them into QUILL 2.0 without violating
+QUILL’s accessibility and trust principles.</p>
+<ol type="1">
+<li><strong>Search at project scale (COMP-1).</strong> Deliver a
+first-class Find in Folder and Workspace Search flow so technical
+writers and developer users can search and replace across real projects
+without leaving QUILL. The key requirement is not just speed; it is
+accessibility stability: results must be reviewable by ear, keyboard
+traversal must never lose context, and operation summaries must announce
+exactly what changed.</li>
+<li><strong>Workspace depth, not just session recall (COMP-2).</strong>
+Expand existing session support into an explicit workspace model with
+named sets, folder trees, and project groups, including reliable restore
+announcements. This is the core context-switching parity move: users
+should reopen “what I was working on” in one action with deterministic
+focus and state restoration.</li>
+<li><strong>Plugin lifecycle parity, but safer than competitors
+(COMP-3).</strong> Build a complete plugin management lifecycle that
+users can operate fully by keyboard and screen reader, while preserving
+QUILL’s stricter consent and capability boundaries. The bar is
+functional parity with Notepad++ plugin administration plus stronger
+security posture (permission prompts, provenance, rollback, and
+safe-mode fallback).</li>
+<li><strong>Encoding conversion as an explicit workflow
+(COMP-4).</strong> Close the known encoding gap by adding convert flows,
+loss-risk preview, and reversible outcomes, not just open or reload
+choices. This targets legacy-document and mixed-encoding workflows where
+blind users currently need external tools to recover text safely.</li>
+<li><strong>Macro power-user maturity (COMP-5).</strong> Move macros
+from basic utility to a robust automation surface with naming,
+descriptions, repeat controls, import/export, and deterministic replay
+behavior. The objective is a “safe automation” model where productivity
+gains do not come at the cost of unpredictable edits or silent
+failures.</li>
+<li><strong>Two-pane editing for review-heavy workflows
+(COMP-6).</strong> Add optional split editing that remains stock-control
+and announcement-correct, enabling side-by-side review and synchronized
+navigation. This is specifically scoped for compare and revision tasks
+and must preserve QUILL’s no-focus-chaos rule.</li>
+</ol>
+<p>Intentional non-goal in this parity plan: <strong>multi-caret and
+rectangular editing remain out of scope</strong> for QUILL’s primary
+interaction model, because they conflict with screen-reader navigation
+patterns and the plain, predictable edit-field-first philosophy.</p>
 <p>Why sixth: essential for greatness, but it should describe a product
 that is already built, safe, delightful, and feature-complete, so it
 follows everything it documents.</p>
@@ -7133,6 +7283,13 @@ into 2.0.</td>
 FEAT-16, FEAT-17, FEAT-18, LINUX-1, ECO-1, L10N-1, COLLAB-1</td>
 <td>Post-1.0 breadth, chosen with beta feedback in 2.0.</td>
 </tr>
+<tr>
+<td>Competitive parity plan (Notepad++ benchmark)</td>
+<td>COMP-1, COMP-2, COMP-3, COMP-4, COMP-5, COMP-6</td>
+<td>Closes high-value project workflow gaps (search, workspace, plugin
+lifecycle, encoding conversion, macros, split review) while preserving
+QUILL’s screen-reader-first and explicit-consent architecture.</td>
+</tr>
 </tbody>
 </table>
 <p>Completed outside the formal tier lists (cross-cutting protections
@@ -7145,6 +7302,40 @@ note), and A11Y-1 (announcement grammar). The GATE-3/CQ-7 cleanup also
 incidentally cleared the <code>quill/core</code> and
 <code>quill/io</code> portion of the TYPE-1..8 zone, though those formal
 rows stay open until each is individually verified and closed.</p>
+<h4
+id="repository-cleanup-editor-history-untracked-working-files-ignored-stale-engineering-docs-retired">2026-06-03:
+Repository cleanup — editor history untracked, working files ignored,
+stale engineering docs retired</h4>
+<p>A no-risk housekeeping pass got the tree to a genuinely clean
+state.</p>
+<ul>
+<li><strong>Editor history untracked and ignored:</strong> the VS Code
+Local History extension’s <code>.history/</code> tree (119 tracked
+files) was removed from version control with
+<code>git rm -r --cached</code> (kept on disk) and added to
+<code>.gitignore</code>; the malformed first line of
+<code>.gitignore</code> (<code>,__pycache__/</code>) was corrected to
+<code>__pycache__/</code>.</li>
+<li><strong>Working/scratch files ignored:</strong> <code>zfix*</code>
+(the in-flight <code>zfix*.md</code>/<code>.html</code> working files,
+four of which were tracked) were untracked and added to
+<code>.gitignore</code>, and the stray empty <code>Status</code> file
+was removed and ignored. <code>git status</code> is now clean with no
+stray untracked files.</li>
+<li><strong>Stale engineering docs retired (DOC-18, scoped):</strong>
+the nine PRD-duplicating engineering documents and their
+<code>.html</code>/<code>.epub</code> artifacts were deleted; their
+content already lives in the PRD. The three references that would have
+broken were fixed (<code>SECURITY.md</code>,
+<code>docs/site/index.html</code>, <code>github-pages.yml</code>), and
+CONTRIBUTING.md absorbed a self-contained architecture overview. The
+five actively-wired references (<code>macos-build</code>,
+<code>security-advisory-workflow</code>, <code>thread-safety</code>,
+<code>acr-vpat</code>, <code>announcement-style-guide</code>) were
+intentionally retained, so every remaining golden.md evidence link stays
+valid. DOC-18 advances to In progress (folding the five retained refs
+into the PRD is deferred).</li>
+</ul>
 <h4
 id="dlg-3-dialog-estate-made-source-of-truth-and-machine-gated-enforcement-engine-landed">2026-06-03:
 DLG-3 dialog estate made source-of-truth and machine-gated (enforcement

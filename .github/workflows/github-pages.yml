@@ -39,7 +39,6 @@ jobs:
           cp docs/userguide.* site-root/docs/ 2>/dev/null || true
           cp docs/announcement-beta.* site-root/docs/ 2>/dev/null || true
           cp docs/QUILL-PRD.* site-root/docs/ 2>/dev/null || true
-          cp -R docs/engineering site-root/docs/
       - name: Skip Pages deploy (not enabled)
         if: steps.pages.outcome != 'success'
         shell: bash
