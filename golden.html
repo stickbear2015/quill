@@ -1468,29 +1468,47 @@ enhanced-native) wxPython constructs</td>
 <td>Code quality</td>
 <td>XL</td>
 <td>Todo</td>
-<td>The flagship Tier 4 refactor, done first. Every single dialog across
-<code>quill/ui/*</code> is reviewed, and any custom-drawn or hand-rolled
-dialog that <em>could</em> conform to a stock wxPython construct
-(<code>wx.Dialog</code>/<code>wx.MessageDialog</code>/<code>wx.*</code>
-controls) — even an enhanced wxPython standard built on stock controls —
-is converted to it. The motivation is risk: custom dialogs are where
-controls fail to work, focus lands on the wrong control, and rendering
-breaks, none of which a Linux/source-contract bar catches. Scope: (1)
-inventory all dialogs (forms, interactive tools, pickers, wizards,
-nested and startup) and classify each as already-native,
-convertible-to-native, or genuinely-must-stay-custom with a written
-reason; (2) convert every convertible dialog to stock or enhanced-stock
-wxPython, preserving behavior and improving focus/keyboard handling; (3)
-<strong>strengthen the A11Y-4 dialog-contract guard</strong> so the
-residual-custom-dialog bug class (controls not wired, no default, focus
-not returned, parent-ownership/sizer mismatches, rendering traps) is
-caught at author time and cannot regress in the future. Supersedes the
-batch ambition of DLG-2 (DLG-2’s individual AI-tool conversions fold
-under this) and is the largest single refactor in the 1.0 plan —
-sequenced <strong>before</strong> CQ-1/CQ-16 decomposition so the dialog
-estate is sound before the monolith is split. Gated by the strengthened
-A11Y-4 guard, <code>dialogs.md</code>, and screen-reader verification on
-Windows.</td>
+<td>The flagship Tier 4 refactor, done first. Folds in and supersedes
+issue #73 (and #72). Every single dialog across <code>quill/ui/*</code>
+is reviewed, and any custom-drawn or hand-rolled dialog that
+<em>could</em> conform to a standard surface is converted to one of
+<strong>two</strong> sanctioned kinds: <strong>native</strong>
+(<code>wx.MessageDialog</code>/<code>wx.MessageBox</code> for confirms,
+saves, and simple messages) or the existing <strong>accessible web
+surfaces</strong> (<code>AccessibleChatView</code> for input,
+<code>AccessibleHtmlDialog</code> for display,
+<code>MarkdownPreviewDialog</code> for previews) for anything that
+displays rich content or captures input — reusing what already ships, no
+new component. The motivation is risk: the ~15 hand-rolled dialog
+classes and 39 raw <code>wx.Dialog(...)</code> usages across 8 UI files
+are where controls fail to work, focus lands on the wrong control
+(e.g. sticky-note editor landing on Save instead of the text field), and
+rendering breaks — none of which a Linux/source-contract bar catches —
+and they include at least one first-run onboarding <strong>startup
+crash</strong> on Windows and macOS with a screen reader active. Scope:
+(1) inventory all dialogs (forms, interactive tools, pickers, wizards,
+nested and startup) and classify each as keep-as-native,
+convert-to-native, convert-to-web, or genuinely-must-stay-custom with a
+written reason; (2) convert every convertible dialog (sticky notes, the
+<code>assistant_tools.py</code> tool dialogs,
+<code>AIModelDialog</code>, <code>TrainStyleDialog</code>,
+onboarding/welcome which must render rather than dump raw HTML per #72,
+and the confirm/consent prompts in <code>main_frame.py</code>)
+preserving behavior and fixing focus/keyboard handling, which removes
+the onboarding crasher; (3) <strong>strengthen the A11Y-4
+dialog-contract guard</strong> so the residual-custom-dialog bug class
+(controls not wired, no default, focus not returned,
+parent-ownership/sizer mismatches, rendering traps) is caught at author
+time and cannot regress. Supersedes the batch ambition of DLG-2 (DLG-2’s
+individual AI-tool conversions fold under this) and is the largest
+single refactor in the 1.0 plan — sequenced <strong>before</strong>
+CQ-1/CQ-16 decomposition so the dialog estate is sound before the
+monolith is split. Acceptance: no hand-rolled <code>wx.Dialog</code>
+subclasses remain for confirm/message flows; input/display dialogs use
+the existing accessible web surfaces; first-run onboarding completes
+without crashing on Windows and macOS with a screen reader on. Gated by
+the strengthened A11Y-4 guard, <code>dialogs.md</code>, and
+screen-reader verification on Windows.</td>
 </tr>
 <tr>
 <td>CQ-11</td>
