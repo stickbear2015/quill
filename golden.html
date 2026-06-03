@@ -1462,6 +1462,37 @@ structural-breadth half of the dialog work and sequences after Tier 2,
 alongside CQ-1.</td>
 </tr>
 <tr>
+<td>DLG-3</td>
+<td>Full dialog estate review and conversion to native (or
+enhanced-native) wxPython constructs</td>
+<td>Code quality</td>
+<td>XL</td>
+<td>Todo</td>
+<td>The flagship Tier 4 refactor, done first. Every single dialog across
+<code>quill/ui/*</code> is reviewed, and any custom-drawn or hand-rolled
+dialog that <em>could</em> conform to a stock wxPython construct
+(<code>wx.Dialog</code>/<code>wx.MessageDialog</code>/<code>wx.*</code>
+controls) — even an enhanced wxPython standard built on stock controls —
+is converted to it. The motivation is risk: custom dialogs are where
+controls fail to work, focus lands on the wrong control, and rendering
+breaks, none of which a Linux/source-contract bar catches. Scope: (1)
+inventory all dialogs (forms, interactive tools, pickers, wizards,
+nested and startup) and classify each as already-native,
+convertible-to-native, or genuinely-must-stay-custom with a written
+reason; (2) convert every convertible dialog to stock or enhanced-stock
+wxPython, preserving behavior and improving focus/keyboard handling; (3)
+<strong>strengthen the A11Y-4 dialog-contract guard</strong> so the
+residual-custom-dialog bug class (controls not wired, no default, focus
+not returned, parent-ownership/sizer mismatches, rendering traps) is
+caught at author time and cannot regress in the future. Supersedes the
+batch ambition of DLG-2 (DLG-2’s individual AI-tool conversions fold
+under this) and is the largest single refactor in the 1.0 plan —
+sequenced <strong>before</strong> CQ-1/CQ-16 decomposition so the dialog
+estate is sound before the monolith is split. Gated by the strengthened
+A11Y-4 guard, <code>dialogs.md</code>, and screen-reader verification on
+Windows.</td>
+</tr>
+<tr>
 <td>CQ-11</td>
 <td>Spell-check fallback and preload tests</td>
 <td>Code quality</td>
@@ -2463,6 +2494,24 @@ expanded.</td>
 <td>A style guide and a checklist (purpose, structure, accessibility,
 regenerate artifacts) keep the docs folder consolidated and high quality
 over time.</td>
+</tr>
+<tr>
+<td>DOC-18</td>
+<td>Consolidate accessibility and engineering docs into the PRD; retire
+those folders</td>
+<td>Docs</td>
+<td>L</td>
+<td>Todo</td>
+<td><code>docs/QUILL-PRD.md</code> is brought current with shipped
+behavior, then the full <code>docs/accessibility/</code> and
+<code>docs/engineering/</code> document sets are rolled up into the PRD
+as consolidated sections so the PRD is the single source of truth. Once
+their content lives in the PRD, the <code>docs/accessibility/</code> and
+<code>docs/engineering/</code> folders (and their generated
+<code>.html</code>/<code>.epub</code> artifacts) are retired, every
+cross-reference is updated, the docs-artifact gate is adjusted, and the
+PRD <code>.html</code>/<code>.epub</code> are regenerated via pandoc. A
+clean, polished, no-duplication documentation surface.</td>
 </tr>
 <tr>
 <td>DOC-6</td>
@@ -5797,11 +5846,26 @@ id="tier-4-structural-health-and-performance-that-keep-greatness-durable-high-le
 leverage)</h4>
 <p>Not flashy, but what lets the product stay excellent as it grows.</p>
 <ul>
+<li>The largest refactor, done first: DLG-3. Review every single dialog
+across <code>quill/ui/*</code> and convert any custom-drawn or
+hand-rolled dialog that could conform to a stock wxPython construct —
+even an enhanced wxPython standard built on stock controls — into native
+wxPython. The risk this retires is concrete and otherwise invisible to a
+Linux/source-contract bar: controls that do not work, focus landing on
+the wrong control, and rendering breakage all live in custom dialogs.
+The A11Y-4 dialog-contract guard is strengthened in the same effort so
+the residual-custom-dialog bug class is caught at author time and cannot
+regress. This supersedes the batch ambition of DLG-2 (its individual
+AI-tool conversions fold in) and is sequenced ahead of the monolith
+decomposition so the dialog estate is sound before CQ-1/CQ-16 split it.
+Value: dialogs that are correct by construction. Outcome: the single
+highest-risk surface in the UI becomes durable and verifiable.</li>
 <li>Decompose the UI monolith behind characterization tests: CQ-16 then
 CQ-1, with GATE-6 and GATE-11. Value: every future change gets faster
 and safer. Outcome: the 18,748-line risk becomes maintainable.
-Sequencing note: do this after Tier 2 ships, never as a prerequisite to
-it, and always behind passing characterization tests.</li>
+Sequencing note: do this after Tier 2 ships and after DLG-3, never as a
+prerequisite to Tier 2, and always behind passing characterization
+tests.</li>
 <li>Drive the strict-typing zone and lint to clean: TYPE-1 through
 TYPE-8, CQ-18. Value: a class of bugs disappears at author time.
 Outcome: a codebase that resists regression.</li>
@@ -5898,6 +5962,20 @@ voice rather than rewritten from scratch.</p>
 DOC-11 (accessibility), DOC-12 (engineering docs). Value: documentation
 that is itself a model of accessibility and clarity. Outcome: nobody is
 left behind.</li>
+<li>DOC-18 (PRD consolidation and clean polish): bring
+<code>docs/QUILL-PRD.md</code> fully current with shipped behavior, then
+roll the entire <code>docs/accessibility/</code> and
+<code>docs/engineering/</code> document sets up into the PRD as
+consolidated sections so the PRD is the single source of truth. Once
+their content lives in the PRD, retire the
+<code>docs/accessibility/</code> and <code>docs/engineering/</code>
+folders (and their generated <code>.html</code>/<code>.epub</code>
+artifacts), updating every cross-reference and the docs-artifact gate
+accordingly. Regenerate the PRD <code>.html</code>/<code>.epub</code>
+via pandoc and pass <code>scripts/check_docs_artifacts.py</code> and
+<code>scripts/plain_language_lint.py</code>. Value: one authoritative,
+accessible, well-polished PRD instead of scattered folders. Outcome: a
+clean documentation surface with no duplication or drift.</li>
 <li>The learning surface: DOC-1 through DOC-8, the podcasts (POD-1
 through POD-5), and the tutorials (TUT-1 through TUT-7), now including
 the transcription and GLOW audit loops as first-class lessons. Value: a
@@ -6612,27 +6690,27 @@ CQ-16) are counted once, in their primary tier.</p>
 <tr>
 <td>Tier 4</td>
 <td>Structural health and performance</td>
-<td>30</td>
+<td>31</td>
 <td>12</td>
-<td>18</td>
-<td>CQ-16, CQ-1, DLG-2, PERF-1..3, PERF-9..14, GATE-10, SEC-6, SEC-7,
-SEC-8, SEC-14, SEC-17</td>
+<td>19</td>
+<td>DLG-3, CQ-16, CQ-1, DLG-2, PERF-1..3, PERF-9..14, GATE-10, SEC-6,
+SEC-7, SEC-8, SEC-14, SEC-17</td>
 </tr>
 <tr>
 <td>Tier 6</td>
 <td>Documentation and learning surface</td>
-<td>33</td>
+<td>34</td>
 <td>3</td>
-<td>30</td>
-<td>DOC-14..17, DOC-11, DOC-12, DOC-1..8, POD-1..5, TUT-1..7, CQ-11,
+<td>31</td>
+<td>DOC-14..18, DOC-11, DOC-12, DOC-1..8, POD-1..5, TUT-1..7, CQ-11,
 CQ-14, CQ-23, CQ-24, LINUX-2</td>
 </tr>
 <tr>
 <td><strong>1.0 subtotal</strong></td>
 <td>Tiers 1, 2, 4, 6 (the QUILL 1.0 scope)</td>
-<td><strong>143</strong></td>
+<td><strong>145</strong></td>
 <td><strong>94</strong></td>
-<td><strong>49</strong></td>
+<td><strong>51</strong></td>
 <td></td>
 </tr>
 <tr>
@@ -6679,9 +6757,9 @@ LINUX-1, ECO-1, L10N-1, COLLAB-1</td>
 <tr>
 <td><strong>Total</strong></td>
 <td>All tiers (1.0 + 2.0)</td>
-<td><strong>206</strong></td>
+<td><strong>208</strong></td>
 <td><strong>115</strong></td>
-<td><strong>91</strong></td>
+<td><strong>93</strong></td>
 <td></td>
 </tr>
 </tbody>
@@ -6731,17 +6809,17 @@ the third table and are not part of either 1.0 list.</p>
 <tr>
 <td>Tier 4 — Structural health</td>
 <td>In progress / Todo</td>
-<td>CQ-1 (in progress), CQ-16, DLG-2, GATE-10, PERF-1, PERF-2, PERF-3,
-PERF-9, PERF-10, PERF-11, PERF-12, PERF-13, PERF-14, SEC-6, SEC-7,
-SEC-8, SEC-14, SEC-17</td>
+<td>DLG-3, CQ-1 (in progress), CQ-16, DLG-2, GATE-10, PERF-1, PERF-2,
+PERF-3, PERF-9, PERF-10, PERF-11, PERF-12, PERF-13, PERF-14, SEC-6,
+SEC-7, SEC-8, SEC-14, SEC-17</td>
 </tr>
 <tr>
 <td>Tier 6 — Documentation</td>
 <td>Todo</td>
 <td>DOC-1, DOC-2, DOC-3, DOC-4, DOC-5, DOC-6, DOC-7, DOC-8, DOC-11,
-DOC-12, DOC-14, DOC-15, DOC-16, DOC-17, POD-1, POD-2, POD-3, POD-4,
-POD-5, TUT-1, TUT-2, TUT-3, TUT-4, TUT-5, TUT-6, TUT-7, CQ-11, CQ-23,
-CQ-24, LINUX-2</td>
+DOC-12, DOC-14, DOC-15, DOC-16, DOC-17, DOC-18, POD-1, POD-2, POD-3,
+POD-4, POD-5, TUT-1, TUT-2, TUT-3, TUT-4, TUT-5, TUT-6, TUT-7, CQ-11,
+CQ-23, CQ-24, LINUX-2</td>
 </tr>
 </tbody>
 </table>

@@ -21751,11 +21751,6 @@ class MainFrame(ImageCaptureMixin, BrowseModeMixin, EdSharpActionsMixin, EdSharp
         if current_pack not in keyboard_pack_choices:
             current_pack = KEYBOARD_PACK_DEFAULT
         keyboard_pack_choice.SetStringSelection(current_pack)
-        indent_style_choice = wx.Choice(panel, choices=["Spaces", "Tabs"])
-        indent_style_choice.SetStringSelection(
-            "Tabs" if bool(getattr(self.settings, "indent_with_tabs", False)) else "Spaces"
-        )
-        indent_size_spin = wx.SpinCtrl(panel, min=1, max=8, initial=self._indent_width())
         keyboard_preview = wx.TextCtrl(
             panel,
             style=wx.TE_MULTILINE | wx.TE_READONLY,
@@ -22009,15 +22004,6 @@ class MainFrame(ImageCaptureMixin, BrowseModeMixin, EdSharpActionsMixin, EdSharp
             keyboard_pack_choice.SetStringSelection(current)
             refresh_keyboard_preview()
 
-        def apply_indentation_settings() -> None:
-            use_tabs = (indent_style_choice.GetStringSelection() or "Spaces") == "Tabs"
-            indent_size = max(1, int(indent_size_spin.GetValue()))
-            self.settings.indent_with_tabs = use_tabs
-            self.settings.indent_size = indent_size
-            save_settings(self.settings)
-            mode = "tabs" if use_tabs else "spaces"
-            self._set_status(f"Indentation set to {mode} ({indent_size})")
-
         def export_profile() -> None:
             with wx.FileDialog(
                 dialog,
@@ -22067,7 +22053,6 @@ class MainFrame(ImageCaptureMixin, BrowseModeMixin, EdSharpActionsMixin, EdSharp
         apply_pack_button = wx.Button(panel, label="Apply Keyboard Pack")
         reset_pack_button = wx.Button(panel, label="Reset Keyboard Pack")
         customize_pack_button = wx.Button(panel, label="Customize Shortcuts...")
-        apply_indent_button = wx.Button(panel, label="Apply Indentation")
         close_button = wx.Button(panel, id=wx.ID_OK, label="Close")
         switch_button.Bind(wx.EVT_BUTTON, lambda _e: switch_selected())
         compare_button.Bind(wx.EVT_BUTTON, lambda _e: compare_selected())
@@ -22081,7 +22066,6 @@ class MainFrame(ImageCaptureMixin, BrowseModeMixin, EdSharpActionsMixin, EdSharp
         apply_pack_button.Bind(wx.EVT_BUTTON, lambda _e: apply_selected_keyboard_pack())
         reset_pack_button.Bind(wx.EVT_BUTTON, lambda _e: reset_keyboard_pack())
         customize_pack_button.Bind(wx.EVT_BUTTON, lambda _e: customize_keymap())
-        apply_indent_button.Bind(wx.EVT_BUTTON, lambda _e: apply_indentation_settings())
         close_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_OK))
 
         root.Add(chooser, 1, wx.ALL | wx.EXPAND, 8)
@@ -22100,17 +22084,6 @@ class MainFrame(ImageCaptureMixin, BrowseModeMixin, EdSharpActionsMixin, EdSharp
         )
         root.Add(keyboard_pack_choice, 0, wx.ALL | wx.EXPAND, 8)
         root.Add(keyboard_preview, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 8)
-        root.Add(
-            wx.StaticText(panel, label="Indentation: choose tabs or spaces and indentation width."),
-            0,
-            wx.LEFT | wx.RIGHT | wx.TOP | wx.EXPAND,
-            8,
-        )
-        indent_row = wx.BoxSizer(wx.HORIZONTAL)
-        indent_row.Add(indent_style_choice, 1, wx.RIGHT, 8)
-        indent_row.Add(indent_size_spin, 0)
-        indent_row.Add(apply_indent_button, 0, wx.LEFT, 8)
-        root.Add(indent_row, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND, 8)
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         buttons.Add(switch_button, 0, wx.RIGHT, 6)
         buttons.Add(compare_button, 0, wx.RIGHT, 6)
