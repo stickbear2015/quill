@@ -1435,6 +1435,34 @@ progress (XL) until those land.</td>
 QUILL key, selection, file lifecycle.</td>
 </tr>
 <tr>
+<td>ORG-1</td>
+<td>Full source-tree organizational review and cleanup</td>
+<td>Code quality</td>
+<td>L</td>
+<td>Todo</td>
+<td>The last Tier 4 code item, sequenced <strong>after</strong> every
+other Tier 4 refactor and <strong>before</strong> the Tier 6
+documentation work, because it carries the widest blast radius (imports,
+CI paths, installer scripts, packaging manifests). Goal: a best-in-class
+repository tree. Scope: relocate root-level platform files to a
+sanctioned home (for example
+<code>macos_app.py</code>/<code>setup_macos.py</code> →
+<code>quill/platform/macos/</code> behind the existing
+<code>quill/platform/*</code> contract, mirroring
+<code>quill/platform/windows/*</code>); consolidate scattered root
+design docs (<code>aa.md</code>, <code>glow.md</code>,
+<code>pi.md</code>, and peers) into <code>docs/</code>; rationalize the
+proliferation of build/dist scratch folders
+(<code>release-dist-*</code>, <code>installer-smoke*</code>,
+<code>windows-distribution</code>, <code>build/</code>) into a single
+ignored output convention; and remove dead or duplicated artifacts.
+Every move is mechanical and behavior-preserving: imports and
+CI/installer paths are updated in the same change, the public-surface
+(GATE-6), module-size (GATE-11), banned-pattern (A11Y-4), and full test
+gates stay green, and no <code>quill/core</code>/<code>quill/io</code>
+wx-freedom or layering rule is weakened.</td>
+</tr>
+<tr>
 <td>DLG-1</td>
 <td>Migrate hand-rolled submit-once form dialogs to the shared
 accessible helper</td>
@@ -6813,9 +6841,23 @@ Outcome: a codebase that resists regression.</li>
 <li>Remove first-use stalls and enforce budgets: PERF-1 through PERF-3,
 PERF-9 through PERF-14, GATE-10. Value: the app feels instant. Outcome:
 performance that does not slip back.</li>
-<li>The remaining security hardening: SEC-6, SEC-7, SEC-14 through
-SEC-17, SEC-8 (plugins stay gated). Value: defense in depth. Outcome: a
-product that is safe by construction.</li>
+<li>The remaining security hardening: SEC-7, SEC-14 through SEC-17,
+SEC-8 (plugins stay gated); SEC-6 (download checksum verification) is
+done. Value: defense in depth. Outcome: a product that is safe by
+construction.</li>
+<li>Last code item before documentation: ORG-1, a full source-tree
+organizational review. Relocate root-level platform files to their
+sanctioned homes (for example
+<code>macos_app.py</code>/<code>setup_macos.py</code> into
+<code>quill/platform/macos/</code>), consolidate scattered root design
+docs into <code>docs/</code>, and rationalize the build/dist scratch
+folders into one ignored output convention. Sequenced <strong>dead last
+among Tier 4 code</strong> because it touches imports, CI paths,
+installer scripts, and packaging manifests, so it runs only after the
+other refactors settle and entirely behind the GATE-6/GATE-11/A11Y-4 and
+full-test gates. Value: a best-in-class repository tree a new
+contributor can navigate at a glance. Outcome: structure that matches
+the quality of the code inside it.</li>
 </ul>
 <p>Why fourth: high leverage but mostly invisible to users, so it
 follows the work that wins user love, while the cheap protective parts
@@ -7699,10 +7741,10 @@ CQ-16) are counted once, in their primary tier.</p>
 <tr>
 <td>Tier 4</td>
 <td>Structural health and performance</td>
-<td>31</td>
+<td>32</td>
 <td>27</td>
-<td>4</td>
-<td>DLG-3, CQ-16, CQ-1, DLG-2</td>
+<td>5</td>
+<td>DLG-3, CQ-16, CQ-1, DLG-2, ORG-1</td>
 </tr>
 <tr>
 <td>Tier 6</td>
@@ -7716,9 +7758,9 @@ CQ-14, CQ-23, CQ-24, LINUX-2</td>
 <tr>
 <td><strong>1.0 subtotal</strong></td>
 <td>Tiers 1, 2, 4, 6 (the QUILL 1.0 scope)</td>
-<td><strong>148</strong></td>
+<td><strong>149</strong></td>
 <td><strong>110</strong></td>
-<td><strong>38</strong></td>
+<td><strong>39</strong></td>
 <td></td>
 </tr>
 <tr>
@@ -7773,9 +7815,9 @@ LINUX-1, ECO-1, L10N-1, COLLAB-1</td>
 <tr>
 <td><strong>Total</strong></td>
 <td>All tiers (1.0 + 2.0)</td>
-<td><strong>211</strong></td>
+<td><strong>212</strong></td>
 <td><strong>129</strong></td>
-<td><strong>82</strong></td>
+<td><strong>83</strong></td>
 <td></td>
 </tr>
 </tbody>
@@ -7825,7 +7867,7 @@ the third table and are not part of either 1.0 list.</p>
 <tr>
 <td>Tier 4 — Structural health</td>
 <td>In progress / Todo</td>
-<td>DLG-3, CQ-1 (in progress), CQ-16, DLG-2</td>
+<td>DLG-3, CQ-1 (in progress), CQ-16, DLG-2, ORG-1</td>
 </tr>
 <tr>
 <td>Tier 6 — Documentation</td>
