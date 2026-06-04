@@ -37,35 +37,80 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get update && sudo apt-get install -y pandoc
 
-      - name: Regenerate HTML + EPUB from docs/*.md
+      - name: Regenerate HTML + EPUB for changed docs/**/*.md
+        env:
+          # PR: diff against the PR base. Push: diff against the previous tip.
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          for md in docs/*.md; do
+          ZERO="0000000000000000000000000000000000000000"
+          if [ -z "${BASE_SHA:-}" ] || [ "${BASE_SHA}" = "${ZERO}" ]; then
+            echo "Base ref unavailable; skipping (the parity guard covers changed files)."
+            exit 0
+          fi
+          # Only touch artifacts for Markdown that changed in this range —
+          # recursively, so docs/planning, docs/qa, ... are covered, not just
+          # the top level. HTML output is deterministic, so it is always
+          # regenerated. EPUB output embeds a random UUID and build date, so it
+          # is generated only when missing; rewriting an existing EPUB would
+          # change its bytes every run and create endless false "stale artifact"
+          # churn. The path-based parity guard (scripts/check_docs_artifacts.py)
+          # still enforces that an edited .md ships an updated .epub.
+          mapfile -t changed < <(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- docs | grep -E '\.md$' || true)
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No docs Markdown changed in this range — nothing to regenerate."
+            exit 0
+          fi
+          for md in "${changed[@]}"; do
+            # A source removed in this range has no artifacts to regenerate.
+            [ -f "$md" ] || continue
             name="${md%.md}"
+            echo "Regenerating HTML for $md"
             pandoc "$md" -f gfm -t html5 -s -o "${name}.html"
-            pandoc "$md" -f gfm -t epub3      -o "${name}.epub"
+            if [ ! -f "${name}.epub" ]; then
+              echo "Generating missing EPUB for $md"
+              pandoc "$md" -f gfm -t epub3 -o "${name}.epub"
+            fi
           done
 
-      - name: Commit regenerated artifacts if they changed
+      - name: Reconcile regenerated artifacts
         run: |
           set -euo pipefail
-          if [ -z "$(git status --porcelain -- docs)" ]; then
-            echo "Docs artifacts already up to date — nothing to commit."
+          # "Stale" means deterministic HTML drift or a genuinely missing
+          # artifact. EPUB byte churn from its random UUID is deliberately
+          # ignored so a correct docs change is never reported as stale.
+          stale_html="$(git status --porcelain -- docs | grep -E '\.html$' || true)"
+          new_files="$(git ls-files --others --exclude-standard -- docs || true)"
+          if [ -z "$stale_html" ] && [ -z "$new_files" ]; then
+            echo "Docs artifacts already up to date."
             exit 0
           fi
-          # Fork PRs can't be pushed to with the read-only GITHUB_TOKEN; the docs
-          # parity guard will flag those so the contributor regenerates locally.
+
+          # A same-repo pull request can have the regenerated artifacts pushed
+          # back to its source branch, so the eventual merge into main is always
+          # in sync. Pushing to the protected main branch directly is rejected,
+          # so we never attempt it (that was the chronic failure cause).
           head_repo="${{ github.event.pull_request.head.repo.full_name }}"
-          if [ -n "$head_repo" ] && [ "$head_repo" != "${{ github.repository }}" ]; then
-            echo "Fork PR ($head_repo): cannot push artifacts back. Diff of what's missing:"
-            git --no-pager diff --stat -- docs
+          if [ -n "$head_repo" ] && [ "$head_repo" = "${{ github.repository }}" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- docs
+            # [skip ci] avoids re-triggering; the commit only touches .html/.epub
+            # (not .md) so the docs/**.md path filter wouldn't re-fire anyway.
+            git commit -m "docs: regenerate HTML/EPUB artifacts [skip ci]"
+            git push origin "HEAD:${{ github.head_ref }}"
+            echo "Pushed regenerated docs artifacts to ${{ github.head_ref }}."
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/*.html docs/*.epub
-          # [skip ci] avoids re-triggering; the commit only touches .html/.epub
-          # (not .md) so the docs/**.md path filter wouldn't re-fire anyway.
-          git commit -m "docs: regenerate HTML/EPUB artifacts [skip ci]"
-          git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
+
+          # Otherwise — a push to the protected main branch, or a fork PR — we
+          # cannot push artifacts back. Fail loudly with the exact diff so a human
+          # regenerates locally and commits the result (through a PR for main):
+          #   pandoc <md> -f gfm -t html5 -s -o <md:.html>
+          #   pandoc <md> -f gfm -t epub3      -o <md:.epub>
+          echo "::error::Docs artifacts are out of sync with their Markdown sources. Regenerate locally and commit them."
+          echo "Stale HTML / missing artifacts:"
+          git --no-pager diff --stat -- docs || true
+          git ls-files --others --exclude-standard -- docs || true
+          exit 1
