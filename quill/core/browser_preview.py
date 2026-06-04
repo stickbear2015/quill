@@ -167,6 +167,7 @@ def render_preview_html(title: str, text: str, kind: str, start_anchor: str | No
         '<meta http-equiv="refresh" content="1">'
         f"<title>{html.escape(title)}</title>"
         "<style>"
+        ":root{color-scheme:light dark;}"
         "body{font-family:Segoe UI,Arial,sans-serif;line-height:1.6;margin:2rem;max-width:60rem;}"
         "pre,code{font-family:Consolas,Menlo,monospace;}"
         "pre{white-space:pre-wrap;word-break:break-word;background:#f5f5f5;padding:1rem;border-radius:8px;}"
@@ -174,6 +175,17 @@ def render_preview_html(title: str, text: str, kind: str, start_anchor: str | No
         "table{border-collapse:collapse;}"
         "th,td{border:1px solid #ccc;padding:0.4rem 0.6rem;}"
         "h1,h2,h3,h4,h5,h6{scroll-margin-top:1.5rem;}"
+        # Dark mode (#126): the default browser link blue (#0000ee) fails contrast
+        # on a dark background, so pair light text with a light-blue link colour
+        # and darken the code/quote/table chrome to keep everything readable.
+        "@media (prefers-color-scheme: dark){"
+        "body{background:#1e1e1e;color:#e6e6e6;}"
+        "a{color:#6cb6ff;}"
+        "a:visited{color:#b48ce6;}"
+        "pre{background:#2a2a2a;}"
+        "blockquote{border-left-color:#666;color:#c8c8c8;}"
+        "th,td{border-color:#555;}"
+        "}"
         "</style>"
         f"{anchor_script}</head><body>{body}</body></html>"
     )

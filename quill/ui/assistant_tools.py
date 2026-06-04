@@ -379,8 +379,12 @@ class PromptStudioDialog:
         )
         self.save_button.Enable(True)
         self.delete_button.Enable(False)
-        self.status.SetLabel("Creating a new custom prompt.")
+        self.status.SetLabel("Creating a new custom prompt. Type a title, then edit the template.")
         self.preview.SetValue("")
+        # Move focus to the title field and announce the new state so keyboard and
+        # screen-reader users know a blank prompt is ready to fill in (#125).
+        self.title_text.SetFocus()
+        self._announce("Creating a new custom prompt. Type a title, then edit the template.")
 
     def _on_delete_prompt(self, _event: object) -> None:
         key = self._selected_prompt_key

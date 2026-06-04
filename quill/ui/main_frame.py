@@ -16048,8 +16048,36 @@ class MainFrame(
         Dark mode themes the wx editor control; the preview is a separate
         WebView that otherwise stays light, leaving the split view half dark and
         half bright. Mirror the editor's dark state so both panes match.
+
+        The default ``system`` theme follows the OS appearance, so a user on a
+        dark desktop saw light preview panes with low-contrast blue links
+        (issue #126). Resolve ``system`` against the live wx system appearance so
+        the preview tracks the OS instead of staying bright.
         """
-        return getattr(self.settings, "theme", "system") == "dark"
+        theme = getattr(self.settings, "theme", "system")
+        if theme == "dark":
+            return True
+        if theme in ("system", "auto"):
+            return self._system_appearance_is_dark()
+        return False
+
+    def _system_appearance_is_dark(self) -> bool:
+        """Best-effort detection of an OS-level dark appearance via wx."""
+        getter = getattr(self._wx, "SystemSettings", None)
+        appearance_getter = getattr(getter, "GetAppearance", None) if getter else None
+        if callable(appearance_getter):
+            try:
+                appearance = appearance_getter()
+            except Exception:  # noqa: BLE001 - probing must never crash the preview
+                appearance = None
+            for probe in ("IsDark", "IsUsingDarkBackground"):
+                method = getattr(appearance, probe, None)
+                if callable(method):
+                    try:
+                        return bool(method())
+                    except Exception:  # noqa: BLE001
+                        continue
+        return False
 
     def _refresh_browser_preview(self) -> None:
         session = self._browser_preview_session

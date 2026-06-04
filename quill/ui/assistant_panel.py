@@ -36,8 +36,9 @@ def classify_assistant_error(error: str) -> tuple[str, bool]:
     lowered = text.lower()
     if "failed to load native code" in lowered or "0xc000001d" in lowered:
         return (
-            "On-device AI could not start on this CPU (Windows error 0xc000001d). "
-            "Install a CPU-compatible llama-cpp-python build, or turn AI off from the AI menu.",
+            "On-device AI couldn't start on this computer. This processor may not "
+            "support the built-in AI engine. You can turn AI off from the AI menu, "
+            "or connect a cloud AI provider in AI settings.",
             True,
         )
     return (f"Error: {text}", False)
