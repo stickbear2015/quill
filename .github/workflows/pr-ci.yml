@@ -15,6 +15,20 @@ permissions:
   contents: read
 
 jobs:
+  workflow-lint:
+    # Statically validate every GitHub Actions workflow: YAML structure, action
+    # input contracts, and — crucially — shell-injection patterns such as
+    # interpolating an untrusted ${{ github.head_ref }} directly into an inline
+    # script. Catches workflow regressions automatically instead of relying on a
+    # manual local actionlint run. Pinned to a specific image for reproducibility.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Lint workflows with actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   lint:
     runs-on: windows-latest
     steps:
