@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QUILL &mdash; the screen-reader-first writing environment</title>
-  <meta name="description" content="QUILL is a Quality, Usable, Inclusive, Lightweight, Literate screen-reader-first writing environment for Windows. Documentation, the Quillin extension platform, and contribution guidelines.">
+  <meta name="description" content="QUILL is a Quality, Usable, Inclusive, Lightweight, Literate screen-reader-first writing environment for Windows and macOS. Extend it with Quillins &mdash; sandboxed, keyboard-first extensions you can write yourself.">
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -17,9 +17,9 @@
       </a>
       <nav class="site" aria-label="Primary">
         <ul>
-          <li><a href="/docs.html">Documentation</a></li>
           <li><a href="https://hub.quillforall.org">Quillin Hub</a></li>
-          <li><a href="/docs/contributing.html">Contribute</a></li>
+          <li><a href="/docs/userguide.html">User Guide</a></li>
+          <li><a href="/docs/quillin-tutorial.html">Build a Quillin</a></li>
           <li><a href="/faq.html">FAQ</a></li>
         </ul>
       </nav>
@@ -42,7 +42,7 @@
         </p>
         <div class="cta">
           <a class="btn" href="https://hub.quillforall.org">Visit the Quillin Hub</a>
-          <a class="btn secondary" href="/docs.html">Read the documentation</a>
+          <a class="btn secondary" href="/docs/userguide.html">Read the user guide</a>
         </div>
       </div>
     </div>
@@ -77,16 +77,119 @@
           </div>
           <div class="feature">
             <h3>Extensible &amp; sandboxed</h3>
-            <p>Quillins add commands, snippets, menus, and hotkeys &mdash; running in a capability-gated sandbox, never with silent access.</p>
+            <p>Quillins add commands, snippets, menus, and hotkeys &mdash; running in a capability-gated sandbox, never with silent access to your files or network.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="band" aria-labelledby="hub-h">
+    <section class="band" aria-labelledby="quillins-h">
       <div class="wrap">
-        <h2 id="hub-h">Where to go next</h2>
-        <p class="intro">Everything here is documentation &mdash; there are no downloads or executables on this site.</p>
+        <h2 id="quillins-h">The Quillin platform &mdash; extend QUILL your way</h2>
+        <p class="intro">
+          A <strong>Quillin</strong> is a sandboxed extension for QUILL. You can build
+          one with a JSON file and a few lines of Python &mdash; no build tools, no
+          compiled code. Quillins integrate seamlessly into QUILL's menus, keyboard
+          shortcuts, and screen reader announcement engine, so they are
+          indistinguishable from built-in features at the point of use.
+        </p>
+
+        <h3>Two ways to extend</h3>
+        <div class="features">
+          <div class="feature">
+            <h4>Layer 1 &mdash; Snippets and shortcuts (no code needed)</h4>
+            <p>Write a single JSON manifest to add menu items, hotkeys, and text snippets that expand placeholders like <code>${selection}</code>, <code>${date}</code>, and <code>${clipboard}</code>. No Python required &mdash; just declare what you want and QUILL wires it up.</p>
+          </div>
+          <div class="feature">
+            <h4>Layer 2 &mdash; Python handlers (real logic, safely isolated)</h4>
+            <p>Add a Python entry module for genuine custom behaviour. Your code runs in a sandboxed subprocess and only accesses what it explicitly declared in the manifest. A crash in your Quillin cannot affect the editor or your document.</p>
+          </div>
+        </div>
+
+        <h3>What a Quillin can do</h3>
+        <p class="intro">Every capability a Quillin uses is declared in its manifest and disclosed to you at install time. No surprises.</p>
+        <div class="features">
+          <div class="feature">
+            <h4>Read and write your document</h4>
+            <p>A Quillin can read document text, the current selection, and the cursor position, then insert or replace text as an undoable edit. All edits pass through the same undo history as your own typing.</p>
+          </div>
+          <div class="feature">
+            <h4>Speak through the screen reader</h4>
+            <p>Any Quillin command can announce its outcome through QUILL's announcement engine with full NVDA, JAWS, and Narrator parity &mdash; the same engine built-in commands use. A silent Quillin is treated as a bug.</p>
+          </div>
+          <div class="feature">
+            <h4>Add menus, commands, and hotkeys</h4>
+            <p>Quillins attach their commands to any top-level menu and to the right-click context menu. Keyboard shortcuts use QUILL's existing binding grammar. Conflicts are detected and reported, never silently overridden.</p>
+          </div>
+          <div class="feature">
+            <h4>Read and write files (with your permission)</h4>
+            <p>With the filesystem capability, a Quillin can read notes from a folder or write output to a file. You are informed at install time and file access never happens silently.</p>
+          </div>
+          <div class="feature">
+            <h4>Connect to the web (with your permission)</h4>
+            <p>With the network capability, a Quillin can call a web API, trigger a webhook, or fetch content. Every outbound request requires per-action consent &mdash; you see exactly where your data is going before it leaves your device.</p>
+          </div>
+          <div class="feature">
+            <h4>Remember your preferences</h4>
+            <p>The storage capability gives a Quillin a private key-value store. Settings you configure in one session are remembered in the next, without touching the filesystem directly.</p>
+          </div>
+          <div class="feature">
+            <h4>Show choice prompts and status messages</h4>
+            <p>A Quillin can present a native, accessible choice dialog so you pick from a list, and can post progress updates to the status bar &mdash; no custom dialogs, no visual-only feedback.</p>
+          </div>
+          <div class="feature">
+            <h4>Read and write the clipboard</h4>
+            <p>A Quillin can paste content from the clipboard or copy its output to it, so you can chain QUILL work with other apps in your workflow.</p>
+          </div>
+        </div>
+
+        <div class="cta">
+          <a class="btn" href="/docs/quillin-tutorial.html">Start the hands-on tutorial</a>
+          <a class="btn secondary" href="/docs/scripting.html">Read the authoring reference</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="showcase-h">
+      <div class="wrap">
+        <h2 id="showcase-h">See what's possible &mdash; showcase Quillins</h2>
+        <p class="intro">
+          These four showcase Quillins demonstrate the range of what the platform can do.
+          Each is a complete, working example with full source code and documentation.
+        </p>
+        <div class="cards">
+          <div class="card">
+            <h3>Accessibility Auditor</h3>
+            <p>Scans your document for common accessibility problems: heading levels that skip, image markers without descriptions, and punctuation patterns that create screen reader noise. One command in the Tools menu produces an itemized report inserted at the cursor, with the issue count spoken immediately.</p>
+            <p class="note">Reads document, inserts report, announces result &mdash; no network, no files.</p>
+          </div>
+          <div class="card">
+            <h3>Ghostwriter's Mirror</h3>
+            <p>Transforms your selected text into a different voice persona with one menu action. Choose <em>Legal Formalist</em> to shift casual writing toward formal, precise language, or <em>Victorian Poet</em> for dramatic, romanticized phrasing. The selection is replaced as a single undoable edit; Ctrl+Z restores the original.</p>
+            <p class="note">Reads selection, replaces selection, announces result &mdash; no network, no files.</p>
+          </div>
+          <div class="card">
+            <h3>Research Alchemist</h3>
+            <p>Siphons bullet points and key facts from every text and Markdown file in a folder, tags each item with its source file and line number, and inserts the compiled list into your document. Drop your notes into a designated folder, run one command, and your research is assembled and attributed.</p>
+            <p class="note">Reads files from a folder you designate (disclosed at install time), inserts into document.</p>
+          </div>
+          <div class="card">
+            <h3>Zen Focus Bridge</h3>
+            <p>Marks a focused writing session in your document and bridges to your broader environment &mdash; launching focus music, silencing notifications, or calling any HTTP endpoint &mdash; with a single command from the View menu. Activate and deactivate by keyboard; the screen reader announces each transition.</p>
+            <p class="note">Inserts session markers, makes network calls with per-action consent.</p>
+          </div>
+        </div>
+        <p>
+          Read the full documentation for each showcase Quillin in the
+          <a href="https://hub.quillforall.org">Quillin Hub</a>, or follow the
+          <a href="/docs/quillin-tutorial.html">tutorial</a> to build your own.
+        </p>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="next-h">
+      <div class="wrap">
+        <h2 id="next-h">Start here</h2>
         <div class="cards">
           <div class="card">
             <h3><a href="/docs/userguide.html">Using QUILL</a></h3>
@@ -94,55 +197,33 @@
             <span class="more"><a href="/docs/userguide.html">Open the user guide <span aria-hidden="true">&rarr;</span></a></span>
           </div>
           <div class="card">
-            <h3><a href="/docs/quillin-tutorial.html">The Quillin platform</a></h3>
-            <p>Extend QUILL with sandboxed Quillins. Start with the hands-on tutorial, then the authoring reference and submission guide.</p>
-            <ul class="doc-links">
-              <li><a href="/docs/quillin-tutorial.html">Hands-on Tutorial</a></li>
-              <li><a href="/docs/quillin-submission.html">Submission Guide</a></li>
-              <li><a href="/docs/quillin-migration-plan.html">Migration Plan</a></li>
-            </ul>
-            <span class="more"><a href="/docs/quillin-tutorial.html">Explore the platform <span aria-hidden="true">&rarr;</span></a></span>
+            <h3><a href="/docs/quillin-tutorial.html">Build your first Quillin</a></h3>
+            <p>A hands-on walkthrough that takes you from an empty folder to a working, tested Quillin. No prior experience with QUILL extensions required.</p>
+            <span class="more"><a href="/docs/quillin-tutorial.html">Start the tutorial <span aria-hidden="true">&rarr;</span></a></span>
           </div>
           <div class="card">
-            <h3><a href="/docs/QUILL-PRD.html">Product Requirements</a></h3>
-            <p>The foundational design vision and technical requirements for the QUILL ecosystem.</p>
-            <span class="more"><a href="/docs/QUILL-PRD.html">Read the PRD <span aria-hidden="true">&rarr;</span></a></span>
-          </div>
-        </div>
-      </div>
-    </section>
-              <li><a href="/docs/scripting.html">Authoring reference</a></li>
-              <li><a href="/docs/quillin-submission.html">Submitting a Quillin</a></li>
-              <li><a href="/docs/quillin-code-of-conduct.html">Author Covenant</a></li>
-            </ul>
+            <h3><a href="/docs/scripting.html">Quillin authoring reference</a></h3>
+            <p>The complete manifest schema, every API method, all capabilities explained, and worked examples for both snippet-only and Python handler Quillins.</p>
+            <span class="more"><a href="/docs/scripting.html">Read the reference <span aria-hidden="true">&rarr;</span></a></span>
           </div>
           <div class="card">
-            <h3><a href="/docs/contributing.html">Contributing</a></h3>
-            <p>How the project is built and governed, and how to propose changes &mdash; code, docs, or Quillins.</p>
-            <ul>
-              <li><a href="/docs/contributing.html">Contribution guidelines</a></li>
-              <li><a href="/docs/governance.html">Governance</a></li>
-              <li><a href="/docs/code-of-conduct.html">Code of conduct</a></li>
-            </ul>
+            <h3><a href="https://hub.quillforall.org">Quillin Hub</a></h3>
+            <p>Browse and install Quillins built by the community. Manage installed Quillins, review their declared capabilities, and discover what the platform can do.</p>
+            <span class="more"><a href="https://hub.quillforall.org">Visit the Hub <span aria-hidden="true">&rarr;</span></a></span>
           </div>
           <div class="card">
             <h3><a href="/faq.html">Frequently asked questions</a></h3>
-            <p>Answers about accessibility, privacy, the Quillin platform, security, and contributing.</p>
+            <p>Answers about accessibility, privacy, the Quillin platform, security, and how QUILL handles your data.</p>
             <span class="more"><a href="/faq.html">Read the FAQ <span aria-hidden="true">&rarr;</span></a></span>
           </div>
           <div class="card">
             <h3><a href="/docs/privacy.html">Privacy &amp; security</a></h3>
-            <p>How QUILL handles your data, secrets, and any networked features &mdash; and the responsible-AI stance.</p>
-            <ul>
-              <li><a href="/docs/privacy.html">Privacy</a></li>
+            <p>How QUILL handles your documents, secrets, and any networked features &mdash; and the responsible-AI stance applied to every AI-assisted command.</p>
+            <ul class="doc-links">
+              <li><a href="/docs/privacy.html">Privacy policy</a></li>
               <li><a href="/docs/security.html">Security</a></li>
               <li><a href="/docs/responsible-ai-use.html">Responsible AI use</a></li>
             </ul>
-          </div>
-          <div class="card">
-            <h3><a href="/docs.html">Full documentation index</a></h3>
-            <p>Every published document in one place, from the product requirements to the design references.</p>
-            <span class="more"><a href="/docs.html">Browse all docs <span aria-hidden="true">&rarr;</span></a></span>
           </div>
         </div>
       </div>
@@ -154,22 +235,24 @@
       <p class="note">
         <strong class="quill" style="color:var(--accent)">QUILL</strong> &mdash;
         Quality, Usable, Inclusive, Lightweight, Literate. A screen-reader-first
-        writing environment. This site is documentation only.
+        writing environment for Windows and macOS.
       </p>
       <nav aria-label="Documentation">
         <h4>Documentation</h4>
         <ul>
           <li><a href="/docs/userguide.html">User guide</a></li>
           <li><a href="/docs/quillin-tutorial.html">Quillin tutorial</a></li>
-          <li><a href="/docs.html">All documents</a></li>
+          <li><a href="/docs/scripting.html">Authoring reference</a></li>
+          <li><a href="/faq.html">FAQ</a></li>
         </ul>
       </nav>
       <nav aria-label="Project">
         <h4>Project</h4>
         <ul>
+          <li><a href="https://hub.quillforall.org">Quillin Hub</a></li>
+          <li><a href="/docs/quillin-submission.html">Submit a Quillin</a></li>
           <li><a href="/docs/contributing.html">Contributing</a></li>
           <li><a href="/docs/governance.html">Governance</a></li>
-          <li><a href="/faq.html">FAQ</a></li>
         </ul>
       </nav>
     </div>
