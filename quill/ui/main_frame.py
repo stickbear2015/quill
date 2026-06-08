@@ -497,6 +497,7 @@ from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
 from quill.ui.palette import CommandPaletteDialog
+from quill.ui.publishing_tools import PublishingConnectionsDialog
 from quill.ui.rich_text_surface import RichTextSurface
 from quill.ui.session_browser import SessionBrowserDialog
 from quill.ui.share_dialogs import (
@@ -544,6 +545,7 @@ _TOP_MENU_DEFS: tuple[tuple[str, str], ...] = (
     ("navigate", "&Navigate"),
     ("format", "F&ormat"),
     ("tools", "&Tools"),
+    ("publishing", "P&ublishing"),
     ("window", "&Window"),
     ("help", "&Help"),
 )
@@ -1419,6 +1421,18 @@ class MainFrame(
             "tools.ai_connection",
             "AI Connection",
             self.open_ai_preferences,
+            None,
+        )
+        self.commands.register(
+            "publishing.connections",
+            "Publishing Connections...",
+            self.open_publishing_connections,
+            None,
+        )
+        self.commands.register(
+            "publishing.verify_connection",
+            "Verify Current Publishing Connection",
+            self.verify_current_publishing_connection,
             None,
         )
         self.commands.register(
@@ -7656,6 +7670,35 @@ class MainFrame(
                 self._set_status(f"Updated AI connection settings. Needs attention. {detail}")
         else:
             self._set_status("AI connection settings cancelled")
+
+    def open_publishing_connections(self) -> None:
+        dialog = PublishingConnectionsDialog(self.frame)
+        if dialog.show_modal():
+            self._set_status("Updated publishing connections")
+        else:
+            self._set_status("Publishing connections cancelled")
+
+    def verify_current_publishing_connection(self) -> None:
+        from quill.core.publishing import (
+            current_publishing_connection,
+            load_publishing_secret,
+            verify_publishing_connection,
+        )
+
+        profile = current_publishing_connection()
+        if profile is None:
+            message = "No current publishing connection is selected."
+            self._show_message_box(
+                message,
+                "Publishing Connection Check",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        ok, message = verify_publishing_connection(profile, load_publishing_secret(profile.id))
+        icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
+        self._show_message_box(message, "Publishing Connection Check", icon | self._wx.OK)
+        self._set_status(message)
 
     def _set_ai_menu_status_badge(
         self, ready: bool | None, detail: str, badge: str | None = None

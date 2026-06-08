@@ -219,4 +219,6 @@ COMMAND_FEATURE_MAP: dict[str, str] = {
     "tools.describe_image": "future.ai",
     "tools.writing_instructions": "future.ai",
     "tools.run_python": "future.ai",
+    "publishing.connections": "future.publishing",
+    "publishing.verify_connection": "future.publishing",
 }
