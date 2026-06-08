@@ -39,8 +39,7 @@ Anything in this document labeled as a recommendation is the current preferred d
 
 These decisions are now the recommended baseline for future implementation unless product review explicitly reopens them:
 
-- publishing starts under `Tools -> Publishing`, not as a new top-level menu
-- publishing does not graduate to a top-level menu later under the current product direction
+- publishing uses a top-level `Publishing` menu positioned next to `Tools`
 - WordPress is the only named provider in the first user-visible slices
 - publishing ships behind a dedicated gated feature id
 - the first implementation adds no publishing status-bar cell
@@ -48,6 +47,8 @@ These decisions are now the recommended baseline for future implementation unles
 - local-to-remote linkage starts in a Quill-local registry, not inside the source document
 - the first publish path is explicit, review-first, and never silent
 - the first content path should prefer HTML-oriented output, with any source transformation explained plainly to the user
+- publishing includes both posts and pages from the first approved product design
+- simplicity is a hard requirement: reuse existing Quill patterns and avoid inventing parallel systems unless the current codebase truly lacks the needed hook
 
 These decisions can still be changed, but the burden should be on the change proposal to explain why the current spec is no longer the safest fit for Quill.
 
@@ -59,6 +60,7 @@ These decisions can still be changed, but the burden should be on the change pro
 - Taxonomy, category, tag, SEO, or theme-specific editing.
 - Real-time bidirectional sync.
 - Bulk cross-site publishing.
+- custom publishing-specific infrastructure that duplicates existing Quill menu, dialog, notification, settings, or About-surface patterns
 
 ## Why this fits QUILL
 
@@ -90,6 +92,19 @@ Additional structure observed in the current codebase that should shape the plan
 - `quill/ui/main_frame_menu.py` already owns a very large, centralized top-level menu build and event-binding surface.
 - `quill/ui/assistant_tools.py` already provides a mature pattern for connection dialogs, hub dialogs, verification actions, model discovery, and review-first summary text.
 - `dialogs.md` and the generated dialog inventory already act as the project’s explicit dialog-governance system.
+
+## Simplicity rule
+
+Simplicity is a first-order requirement for this feature.
+
+That means:
+
+- reuse existing Quill menu, dialog, command, notification, settings, and secure-storage patterns whenever possible
+- keep the first implementation small and obvious rather than framework-heavy for its own sake
+- avoid building new generic infrastructure unless the current codebase clearly cannot support the needed behavior
+- prefer a thin publishing layer that hooks into existing Quill systems over a separate publishing subsystem with its own rules
+
+If a future implementation choice is between a clever abstraction and a simple reuse of existing Quill behavior, this plan prefers the simpler reuse unless there is a concrete reason not to.
 
 ## Repo-wide planning audit
 
@@ -149,8 +164,9 @@ Planning implication:
 
 Additional planning implication from the menu source:
 
-- `quill/ui/main_frame_menu.py` is already a large contract-heavy surface, so publishing should begin as a compact submenu rather than a top-level shell redesign
+- `quill/ui/main_frame_menu.py` is already a large contract-heavy surface, so the safest approach is to add publishing by following the existing menu-construction and binding style exactly
 - any first implementation should avoid spreading publishing menu construction across multiple new mixins unless there is already an established pattern for that split
+- since the shell already supports many top-level menus, adding a `Publishing` top-level menu is acceptable if it stays disciplined and uses the same contract-heavy pattern as the rest of the shell
 
 ### Command system
 
@@ -262,6 +278,12 @@ Documentation hook-in sequence for publishing:
 - update `dialogs.md` as soon as a publishing dialog exists
 - update user-facing docs only when the feature is no longer hidden-only
 - keep wording honest about provider support and plugin/runtime limitations
+
+Additional About-surface follow-up from the code review:
+
+- the current About surface is built from `quill/ui/main_frame.py`
+- contributor GitHub identities are listed through the existing `_ABOUT_GITHUB_LINKS` structure
+- the plan should preserve that pattern and add `stickbear2015` exactly in the same style as the existing contributor GitHub entries
 
 ### Plugin and extensibility reality
 
@@ -379,10 +401,14 @@ Each provider should eventually implement a shared contract covering:
 - verify connection
 - list or browse content
 - fetch a single item
-- create draft
-- update draft or post
-- publish now
-- schedule publish
+- create draft post
+- update post
+- publish post now
+- schedule post publish
+- create draft page
+- update page
+- publish page now
+- schedule page publish
 
 Nice-to-have later:
 
@@ -404,6 +430,7 @@ The first provider should target the standard WordPress REST API and support:
 - WordPress.com sites exposing the standard API
 - WP Engine-hosted sites
 - other hosts exposing compatible WordPress REST endpoints
+- both posts and pages as first-class content types
 
 Authentication baseline:
 
@@ -471,6 +498,7 @@ Phase 1 should include:
 - provider-aware publishing connection setup
 - WordPress connection verification
 - publish-current-document confirmation and draft creation
+- support for both posts and pages
 - explicit result reporting
 - command and menu discoverability for the approved actions
 
@@ -488,11 +516,11 @@ Phase 1 should not include:
 
 The intended first user journey is:
 
-1. The user discovers `Tools -> Publishing`.
+1. The user discovers the top-level `Publishing` menu.
 2. The user opens `Publishing Connection...`.
 3. The user selects WordPress, enters site URL, username, and application password, and verifies the connection.
-4. The user returns to the current document and chooses `Create Draft...` or `Publish Current Document...`.
-5. Quill presents a review-first confirmation dialog with title, destination summary, publish state, and network explanation.
+4. The user returns to the current document and chooses an action such as `Create Draft...` or `Publish Current Document...`.
+5. Quill presents a review-first confirmation dialog with content type, title, destination summary, publish state, and network explanation.
 6. Quill performs the explicit remote action.
 7. Quill reports the outcome through the dialog result, status text, and notifications.
 
@@ -504,6 +532,8 @@ The recommended phase 1 command family is:
 - `publishing.verify_connection`
 - `publishing.create_draft`
 - `publishing.publish_current`
+- `publishing.create_page_draft`
+- `publishing.publish_current_page`
 
 The following commands should be planned but deferred from the first user-visible slice:
 
@@ -516,11 +546,14 @@ The following commands should be planned but deferred from the first user-visibl
 
 The recommended phase 1 menu contract is:
 
-- `Tools -> Publishing -> Publishing Connection...`
-- `Tools -> Publishing -> Verify Publishing Connection`
+- `Publishing -> Publishing Connection...`
+- `Publishing -> Verify Publishing Connection`
 - separator
-- `Tools -> Publishing -> Create Draft...`
-- `Tools -> Publishing -> Publish Current Document...`
+- `Publishing -> Create Draft...`
+- `Publishing -> Publish Current Document...`
+- separator
+- `Publishing -> Create Page Draft...`
+- `Publishing -> Publish Current Page...`
 
 `Browse Published Content...` should remain planned for a later slice unless it is explicitly approved into the first user-visible rollout.
 
@@ -569,7 +602,7 @@ What this avoids breaking:
 
 Planned hook:
 
-- append a new `Publishing` submenu under `Tools` in `quill/ui/main_frame_menu.py`
+- append a new top-level `Publishing` menu in `quill/ui/main_frame_menu.py`
 - bind each menu id through the existing `wx.EVT_MENU` pattern
 - keep the first menu footprint deliberately small
 
@@ -580,6 +613,9 @@ Recommended initial submenu items:
 - separator
 - `Create Draft...`
 - `Publish Current Document...`
+- separator
+- `Create Page Draft...`
+- `Publish Current Page...`
 - `Browse Published Content...`
 
 Phase 1 refinement:
@@ -603,7 +639,7 @@ Planned hook:
 Planned first dialog surfaces:
 
 - `Publishing Connection Dialog`
-- `Publish Current Document Dialog`
+- `Publish Current Content Dialog`
 - later `Browse Published Content Dialog`
 
 What this avoids breaking:
@@ -679,7 +715,7 @@ The planned entry path is:
 
 - feature registry enables publishing for the active profile
 - command registry exposes publishing commands
-- `Tools -> Publishing` surfaces the approved subset of those commands
+- the top-level `Publishing` menu surfaces the approved subset of those commands
 - dialogs handle connection setup and explicit remote actions
 - notifications and status text report outcomes
 
@@ -723,20 +759,22 @@ That is the core reason this plan should integrate cleanly with the existing cod
 
 Based on the current menu layout, the best planning path is:
 
-### Phase A: start inside `Tools`
+### Phase A: use a top-level `Publishing` menu
 
-Use a dedicated publishing submenu under `Tools` for the first implementation slices. That keeps the feature discoverable without prematurely promoting an incomplete workflow to a new top-level menu.
+Use a dedicated top-level `Publishing` menu near `Tools` for the first implementation slices. That reflects the updated product direction and gives publishing first-class discoverability.
 
-Recommended initial submenu label:
+Recommended initial menu label:
 
-- `Tools -> Publishing`
+- `Publishing`
 
-Recommended first commands in that submenu:
+Recommended first commands in that menu:
 
 - `Publishing Connection...`
 - `Verify Publishing Connection`
 - `Publish Current Document...`
 - `Create Draft...`
+- `Create Page Draft...`
+- `Publish Current Page...`
 - `Browse Published Content...`
 
 Items that are not yet implemented should remain visible only when consistent with the project’s feature-gating rules; otherwise they should stay hidden behind the feature flag until ready.
@@ -746,17 +784,9 @@ Planning note from the menu contract audit:
 - each new publishing menu id must have a matching `wx.EVT_MENU` binding
 - the plan should treat that as part of the acceptance criteria for any implementation slice that adds menu items
 
-### Phase B: evaluate a top-level `Publishing` menu later
+### Phase B: keep `Publishing` as a disciplined top-level menu
 
-Only after the workflow is complete enough to feel first-class should the project consider promoting publishing to its own top-level menu.
-
-Promotion criteria should include:
-
-- connection flow complete
-- create/update/browse flows complete
-- command palette coverage complete
-- help and dialog inventory coverage complete
-- accessibility verification complete
+The current direction is to keep publishing as a top-level menu, not a temporary promotion that later moves again.
 
 ### Command palette integration
 
@@ -774,7 +804,7 @@ Recommended initial command concepts:
 
 The smallest coherent user-facing setup is:
 
-- a `Publishing` or `Publish` entry point
+- a top-level `Publishing` entry point
 - a connection dialog for provider selection and WordPress setup
 - a verify connection action
 
@@ -832,24 +862,26 @@ Expected plain-language summary text:
 - state that verification sends a deliberate network request to the configured site
 - state that credentials are stored securely on the device
 
-#### 2. Publish Current Document Dialog
+#### 2. Publish Current Content Dialog
 
 Purpose:
 
 - confirm what is being sent
+- clearly indicate whether the current action is targeting a post or a page
 - choose title
 - choose draft or publish now
 - choose initial format behavior if needed
 
 Recommended controls:
 
+- read-only content-type summary: post or page
 - title text field
 - status choice: draft or publish now
 - content-format summary
 - plain-language network summary
 - confirmation buttons
 
-This dialog should be review-first and explicit about remote action.
+This dialog should be review-first and explicit about remote action. One shared dialog may be reused for both post and page flows as long as the active content type is clear in the title, summary text, and control labels.
 
 Expected plain-language summary text:
 
@@ -862,13 +894,14 @@ Expected plain-language summary text:
 
 Purpose:
 
-- list remote content
+- list remote posts and pages
 - inspect summary metadata
 - open selected item into QUILL
 - choose update target when publishing changes later
 
 Recommended controls:
 
+- content-type filter or grouped list that clearly distinguishes posts from pages
 - searchable list control
 - metadata preview pane or read-only text area
 - open button
@@ -888,18 +921,24 @@ Because the repo already treats dialogs as a governed surface, publishing planni
 Recommended classification expectations:
 
 - `Publishing Connection Dialog`: likely `hardened_custom`
-- `Publish Current Document Dialog`: likely `hardened_custom`
+- `Publish Current Content Dialog`: likely `hardened_custom`
+- `Browse Published Content Dialog`: likely `hardened_custom`
 - confirm-only or pick-one prompts inside the flow: prefer native dialogs where possible
 
 ### Phase 2 UI surface
 
 After connection works:
 
-- create draft
-- publish current document
+- create post draft
+- publish current post
+- create page draft
+- publish current page
+- edit existing posts
+- edit existing pages
 - schedule publish
 - browse existing posts
-- open a selected post into QUILL for editing
+- browse existing pages
+- open a selected item into QUILL for editing
 
 ### Accessibility requirements
 
@@ -983,7 +1022,7 @@ The plan should consider a future slice ready for implementation only if the sli
 
 ### Acceptance criteria for the first user-visible slice
 
-- the menu location is fixed as `Tools -> Publishing`
+- the menu location is fixed as the top-level `Publishing` menu
 - the command names and labels are fixed
 - the dialog list is fixed and minimal
 - the user journey is explicit and review-first
@@ -1011,14 +1050,14 @@ These replace the earlier broad ambiguity with a recommended spec stance.
 
 Recommendation:
 
-- start under `Tools -> Publishing`
-- do not create a top-level `Publishing` menu in the first implementation waves
+- use a top-level `Publishing` menu from the start
+- keep it near `Tools` in the top-level menu order
 
 Rationale:
 
-- this matches current shell architecture
-- it minimizes menu-order churn
-- it keeps the feature discoverable without overselling early maturity
+- this matches the updated product direction
+- it gives publishing first-class discoverability
+- it still works within the current menu-building architecture as long as the existing shell contract is followed exactly
 
 ### Provider naming in the first UI
 
@@ -1070,7 +1109,7 @@ Rationale:
 Recommendation:
 
 - `Publishing Connection Dialog`
-- `Publish Current Document Dialog`
+- `Publish Current Content Dialog`
 
 Deferred by default:
 
@@ -1086,6 +1125,7 @@ Rationale:
 Recommendation:
 
 - the first visible remote action set should include both `Create Draft...` and `Publish Current Document...`
+- the first visible page action set should include both `Create Page Draft...` and `Publish Current Page...`
 - the default selection inside the publish confirmation dialog should still be `Draft`
 
 Rationale:
@@ -1107,6 +1147,7 @@ Recommendation:
 Rationale:
 
 - connection plus draft/publish-current is the smallest coherent workflow
+- page support should not be deferred, because it is now part of the approved content scope
 - browse adds more dialog surface, more remote state complexity, and more inventory/test burden
 - deferring browse keeps the first user-visible slice easier to review and stabilize
 
@@ -1391,10 +1432,11 @@ That slice is small enough to review clearly and large enough to validate the ar
 
 If the foundation slice succeeds, the next recommended slice should be limited to:
 
-- `Tools -> Publishing` submenu wiring
+- top-level `Publishing` menu wiring
 - `Publishing Connection Dialog`
-- `Publish Current Document Dialog`
+- `Publish Current Content Dialog`
 - WordPress draft creation from the current document
+- WordPress page draft creation from the current document
 - explicit publish-now from the current document as a user-controlled choice
 - plain-language success and failure reporting
 - local preservation of remote URL and remote id when available
@@ -1430,12 +1472,28 @@ So the planning recommendation remains:
 
 - design publishing as an internal core-plus-shell feature
 - start with WordPress as the first provider, not the whole product model
-- enter through `Tools -> Publishing`
+- support both posts and pages
+- enter through a top-level `Publishing` menu
 - use explicit dialogs and existing notifications
 - keep remote linkage outside the source document at first
-- do not promote publishing to a top-level menu under the current direction
 - keep publish-now as an explicit writer-controlled choice rather than a system-decided content action
 - delay any status-bar cell or external plugin story until the base workflow is proven
+
+## About-surface follow-up
+
+This is not part of the publishing framework itself, but it should be tracked alongside this planning pass because it came up during review.
+
+Observed current pattern:
+
+- the About surface is generated in `quill/ui/main_frame.py`
+- contributor names appear in prose in `_about_markdown()`
+- contributor GitHub entries appear in `_ABOUT_GITHUB_LINKS`
+
+Planned follow-up:
+
+- add `stickbear2015` to the About-surface contributor GitHub list using the same pattern and style as the existing contributor GitHub entries
+- keep the format exactly parallel to the other contributor GitHub links
+- avoid inventing a separate contributor-credit mechanism when the About surface already has one
 
 ## What this plan deliberately does not change
 
