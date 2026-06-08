@@ -244,15 +244,6 @@ FEATURE_DEFINITIONS: dict[str, FeatureDefinition] = {
         privacy="network after confirmation",
         category="future",
     ),
-    "future.publishing": FeatureDefinition(
-        "future.publishing",
-        "Publishing",
-        aliases=("publishing", "publish", "wordpress publishing"),
-        description="Connects Quill to supported publishing providers after explicit review.",
-        maturity="advanced",
-        privacy="network after confirmation",
-        category="future",
-    ),
     "core.third_party_plugins": FeatureDefinition(
         "core.third_party_plugins",
         "Third-Party Plugins",
@@ -320,7 +311,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.cleanup": FEATURE_STATE_OFF,
             "future.regex_library": FEATURE_STATE_OFF,
             "future.ai": FEATURE_STATE_QUIET,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     PROFILE_WRITER: FeatureProfile(
@@ -343,7 +333,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.cleanup": FEATURE_STATE_QUIET,
             "future.regex_library": FEATURE_STATE_QUIET,
             "future.ai": FEATURE_STATE_QUIET,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     "reader_and_student": FeatureProfile(
@@ -366,7 +355,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.character_inspector": FEATURE_STATE_OFF,
             "future.cleanup": FEATURE_STATE_OFF,
             "future.regex_library": FEATURE_STATE_OFF,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     "office_and_admin": FeatureProfile(
@@ -389,7 +377,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.character_inspector": FEATURE_STATE_QUIET,
             "future.cleanup": FEATURE_STATE_QUIET,
             "future.regex_library": FEATURE_STATE_QUIET,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     PROFILE_DEVELOPER_POWER_TEXT: FeatureProfile(
@@ -411,7 +398,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.character_inspector": FEATURE_STATE_QUIET,
             "future.cleanup": FEATURE_STATE_QUIET,
             "future.regex_library": FEATURE_STATE_QUIET,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     "low_vision": FeatureProfile(
@@ -434,7 +420,6 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.character_inspector": FEATURE_STATE_QUIET,
             "future.cleanup": FEATURE_STATE_QUIET,
             "future.regex_library": FEATURE_STATE_QUIET,
-            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     "braille_screen_reader_power_user": FeatureProfile(

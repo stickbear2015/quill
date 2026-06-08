@@ -1291,19 +1291,6 @@ class MenuBuilderMixin:
         menu_bar.Append(format_menu, "F&ormat")
         menu_bar.Append(tools_menu, "&Tools")
 
-        self._id_publishing_connection = wx.NewIdRef()
-        self._id_publishing_verify_connection = wx.NewIdRef()
-        publishing_menu = wx.Menu()
-        publishing_menu.Append(
-            self._id_publishing_connection,
-            self._menu_label("Publishing &Connection...", "publishing.connection"),
-        )
-        publishing_menu.Append(
-            self._id_publishing_verify_connection,
-            self._menu_label("&Verify Publishing Connection", "publishing.verify_connection"),
-        )
-        menu_bar.Append(publishing_menu, "P&ublishing")
-
         # The former top-level "Settings" menu is gone. All configuration now
         # lives together under Tools > Customize (Preferences, Customize Menus,
         # profiles/features, export/import, and keymap), which is the
@@ -1423,16 +1410,6 @@ class MenuBuilderMixin:
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_preferences(), id=self._id_preferences)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_menu_editor(), id=self._id_menu_editor)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.exit_app(), id=self._id_exit)
-        self.frame.Bind(
-            wx.EVT_MENU,
-            lambda _e: self.open_publishing_connection(),
-            id=self._id_publishing_connection,
-        )
-        self.frame.Bind(
-            wx.EVT_MENU,
-            lambda _e: self.verify_saved_publishing_connection(),
-            id=self._id_publishing_verify_connection,
-        )
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.show_about_quill(), id=self._id_about_quill)
         # macOS routes the application-menu "About" to wx.ID_ABOUT — wire it to
         # the same custom dialog so the Apple-menu About shows the links too.

@@ -187,10 +187,6 @@ or the command palette (`Ctrl+Shift+P`).
 - [ ] BITS Capability Matrix: via Tools menu
 - [ ] BITS Download Queue: via Tools menu
 
-## R2. Publishing
-
-- [ ] Publishing Connection Settings: via Publishing menu
-
 ## S. Help: features and profile
 
 - [ ] Switch Feature Profile: `Alt+Shift+P`
