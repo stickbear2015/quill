@@ -4,9 +4,16 @@
 #   pip install pre-commit
 #   pre-commit install
 #
-# These hooks block commits that fail formatting, lint, or undefined-name
-# checks on the files being committed. They run on changed files only, so they
-# are fast. CI remains the source of truth for the full suite.
+# These hooks block a commit that would fail one of the fast CI gates, so the
+# failure is caught locally instead of on main. They mirror the required checks
+# in PR CI (ruff), Security CI (banned-pattern + dialog button contract), and
+# Accessibility CI (docs HTML/EPUB parity). CI remains the source of truth for
+# the full suite; these are the cheap, deterministic gates worth running on
+# every commit.
+#
+# The ruff hooks run on changed Python files only. The repo-wide gates run only
+# when a file they care about changes (quill Python for the security gates,
+# docs Markdown for the parity gate), so an unrelated commit stays fast.
 repos:
   - repo: local
     hooks:
@@ -22,4 +29,37 @@ repos:
         entry: ruff check --force-exclude
         language: system
         types_or: [python, pyi]
+        require_serial: true
+
+      - id: banned-patterns
+        name: banned-pattern gate (wx./XML/dialog registry)
+        # GATE-4: bare wx. in main_frame, raw ET.fromstring outside safe_xml,
+        # wx.ALIGN_RIGHT button sizers, and any unregistered dialog surface.
+        # Register a new dialog with 'python -m quill.tools.dialog_inventory
+        # --write' and commit the updated registry snapshot.
+        entry: python -m quill.tools.check_banned_patterns
+        language: system
+        pass_filenames: false
+        files: ^quill/.*\.py$
+        require_serial: true
+
+      - id: dialog-button-contract
+        name: dialog escape-button contract
+        # A11Y-4 / DLG-3: every custom dialog must be closable with Escape.
+        entry: python -m quill.tools.dialog_button_contract
+        language: system
+        pass_filenames: false
+        files: ^quill/ui/.*\.py$
+        require_serial: true
+
+      - id: docs-artifacts
+        name: docs HTML/EPUB parity
+        # Fail if a docs/**/*.md changed without its regenerated .html/.epub
+        # siblings. Regenerate with:
+        #   pandoc <name>.md -f gfm -t html5 -s -o <name>.html
+        #   pandoc <name>.md -f gfm -t epub3      -o <name>.epub
+        entry: python scripts/check_docs_artifacts.py
+        language: system
+        pass_filenames: false
+        files: ^docs/.*\.md$
         require_serial: true

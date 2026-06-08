@@ -258,7 +258,7 @@ href="quillin-code-of-conduct.md">Quillin Author Covenant</a> — every
 submission attests to it — and the authoring reference in <a
 href="scripting.md"><code>scripting.md</code></a> (§13 schema, §14
 authoring reference, §15 the deterministic AI-authoring contract).</p>
-<h2 id="what-a-quillin-is">1. What a Quillin is</h2>
+<h2 id="1-what-a-quillin-is">1. What a Quillin is</h2>
 <p>A Quillin is a small, sandboxed extension described by a
 <code>manifest.json</code> (<code>schema: "quill.extension/1"</code>).
 It comes in two layers:</p>
@@ -275,10 +275,10 @@ acceptance.</li>
 <li><strong>Layer 2 — Python handler.</strong> A <code>main</code> entry
 module registers handler functions via
 <code>api.register_command</code>. Requires the <code>ui.command</code>
-capability and runs <strong>out-of-process</strong> behind QUILL’s
+capability and runs <strong>out-of-process</strong> behind QUILL's
 capability + consent gate.</li>
 </ul>
-<h2 id="directory-layout">2. Directory layout</h2>
+<h2 id="2-directory-layout">2. Directory layout</h2>
 <p>A Quillin is one directory:</p>
 <pre><code>my-quillin/
   manifest.json     # required — the contract
@@ -288,15 +288,15 @@ capability + consent gate.</li>
 <p>The bundled <a
 href="../quill/quillins_bundled/markdown-helpers/"><code>quill/quillins_bundled/markdown-helpers/</code></a>
 is the canonical template — copy it.</p>
-<h2 id="author-the-manifest">3. Author the manifest</h2>
+<h2 id="3-author-the-manifest">3. Author the manifest</h2>
 <p>Minimum fields: <code>schema</code>, <code>id</code>,
 <code>name</code>, <code>version</code>. Strongly recommended for any
 submission: <code>author</code>, <code>description</code>,
 <code>license</code>, <code>min_quill_version</code>.</p>
 <ul>
-<li><strong><code>id</code></strong> — reverse-DNS you control,
-e.g. <code>com.example.mytool</code>. <code>com.quill.*</code> is
-reserved for first-party bundled Quillins.</li>
+<li><strong><code>id</code></strong> — reverse-DNS you control, e.g.
+<code>com.example.mytool</code>. <code>com.quill.*</code> is reserved
+for first-party bundled Quillins.</li>
 <li><strong><code>version</code></strong> —
 <code>MAJOR.MINOR.PATCH</code>, bumped on every change.</li>
 <li><strong><code>capabilities</code></strong> — declare the
@@ -316,7 +316,8 @@ never silently overridden). Command ids must be namespaced under
 top-level <code>main</code> module and the <code>ui.command</code>
 capability.</li>
 </ul>
-<h2 id="self-lint-before-you-submit">4. Self-lint before you submit</h2>
+<h2 id="4-self-lint-before-you-submit">4. Self-lint before you
+submit</h2>
 <p>Run the linter — the same tool CI runs — and fix everything:</p>
 <div class="sourceCode" id="cb2"><pre
 class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\my-quillin <span class="op">--</span>strict</span></code></pre></div>
@@ -326,22 +327,22 @@ class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb2-
 the published JSON Schema artifact (made executable inside the linter),
 so your errors match what editors and external tools see.</li>
 <li><strong>Manifest validation</strong> — the same contract validator
-the loader enforces, catching rules the schema does not encode
-(e.g. handler ⇒ <code>main</code> + <code>ui.command</code>).</li>
+the loader enforces, catching rules the schema does not encode (e.g.
+handler ⇒ <code>main</code> + <code>ui.command</code>).</li>
 <li><strong>Structure &amp; capability hygiene</strong> — confirms your
 <code>main</code> module exists, a README and license are present, and
 surfaces every consent-gated capability for deliberate review.</li>
 </ol>
 <p><code>--strict</code> (used by CI) treats warnings as failures. A
 clean <code>--strict</code> run is the bar for submission.</p>
-<h2 id="write-tests">5. Write tests</h2>
-<p>Mirror the bundled Quillin’s test (<a
+<h2 id="5-write-tests">5. Write tests</h2>
+<p>Mirror the bundled Quillin's test (<a
 href="../tests/unit/core/test_quillins_bundled_markdown.py"><code>tests/unit/core/test_quillins_bundled_markdown.py</code></a>):
 validate the manifest, build a conflict-free contribution registry,
 expand any snippet, and drive any handler. Handler Quillins should also
 be exercised through the real out-of-process host (see <a
 href="../tests/integration/test_quillins_host_integration.py"><code>tests/integration/test_quillins_host_integration.py</code></a>).</p>
-<h2 id="accept-the-author-covenant">6. Accept the Author Covenant</h2>
+<h2 id="6-accept-the-author-covenant">6. Accept the Author Covenant</h2>
 <p>Read <a
 href="quillin-code-of-conduct.md"><code>quillin-code-of-conduct.md</code></a>
 and confirm your Quillin keeps every promise: accessibility (announce
@@ -349,7 +350,7 @@ outcomes, keyboard-complete), capability minimization and honesty, no
 silent network or telemetry, privacy, security (no obfuscation, no
 sandbox-escape, no malware), licensing, namespace etiquette, and
 maintenance.</p>
-<h2 id="open-the-submission-pr">7. Open the submission PR</h2>
+<h2 id="7-open-the-submission-pr">7. Open the submission PR</h2>
 <ol type="1">
 <li>Add your Quillin directory to the submission area and stage
 <strong>only</strong> your own files (never
@@ -360,7 +361,7 @@ template and complete its checklist.</li>
 <code>quillin_lint --strict</code> over the Quillins your PR changes. A
 red check blocks merge; fix and push again.</li>
 </ol>
-<h2 id="review-and-acceptance">8. Review and acceptance</h2>
+<h2 id="8-review-and-acceptance">8. Review and acceptance</h2>
 <p>A maintainer reviews against this guide and the Covenant. Review
 focuses on what machines cannot fully judge:</p>
 <ul>
@@ -379,7 +380,7 @@ placement, tests present.</li>
 <strong>changes requested</strong>, or <strong>rejected</strong> with a
 reason. Security or accessibility violations are non-negotiable
 rejections.</p>
-<h2 id="updates-versioning-and-removal">9. Updates, versioning, and
+<h2 id="9-updates-versioning-and-removal">9. Updates, versioning, and
 removal</h2>
 <ul>
 <li><strong>Updates</strong> are new PRs that bump <code>version</code>
@@ -388,7 +389,7 @@ and re-pass <code>--strict</code> + review.</li>
 MAJOR version for breaking changes.</li>
 <li><strong>Removal</strong> — a Quillin that violates the Covenant
 (especially security or accessibility) may be delisted or unbundled
-without notice per the Covenant’s enforcement section.</li>
+without notice per the Covenant's enforcement section.</li>
 </ul>
 <h2 id="quick-checklist">Quick checklist</h2>
 <ul class="task-list">

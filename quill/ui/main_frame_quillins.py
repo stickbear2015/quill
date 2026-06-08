@@ -577,6 +577,7 @@ class QuillinsMenuMixin:
     @staticmethod
     def _word_at_offset(text: str, pos: int) -> str:
         import re as _re
+
         before = _re.search(r"\w+$", text[:pos])
         after = _re.match(r"\w*", text[pos:])
         return (before.group(0) if before else "") + (after.group(0) if after else "")

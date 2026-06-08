@@ -80,6 +80,7 @@ def test_word_at_cursor_placeholder_substitutes() -> None:
 
 def test_uuid_placeholder_produces_valid_uuid4() -> None:
     import re
+
     result = expand_snippet("id:${uuid}", SnippetContext())
     assert result.text.startswith("id:")
     uuid_part = result.text[3:]
@@ -107,7 +108,5 @@ def test_new_placeholders_in_combined_body() -> None:
 
 
 def test_empty_new_fields_yield_empty_substitution() -> None:
-    result = expand_snippet(
-        "${title}/${line_number}/${word_at_cursor}", SnippetContext()
-    )
+    result = expand_snippet("${title}/${line_number}/${word_at_cursor}", SnippetContext())
     assert result.text == "//"

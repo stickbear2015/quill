@@ -241,13 +241,13 @@
   </style>
 </head>
 <body>
-<h1 id="quillin-tutorial-build-your-first-quillin">Quillin Tutorial —
+<h1 id="quillin-tutorial--build-your-first-quillin">Quillin Tutorial —
 build your first Quillin</h1>
 <p>This is a hands-on, build-it-from-scratch tutorial for Quillin
 contributors. By the end you will have authored, linted, tested, and
 prepared a real Quillin for submission — starting from a zero-capability
 snippet and growing into a sandboxed Python handler.</p>
-<p>It pairs with three references you’ll reach for along the way:</p>
+<p>It pairs with three references you'll reach for along the way:</p>
 <ul>
 <li><a href="scripting.md"><code>scripting.md</code></a> — the full
 design + authoring reference (§13 schema, §14 API, §15 the deterministic
@@ -266,7 +266,7 @@ itself is <code>wx</code>-free, so <code>pip install -e .</code> is
 enough to lint.</p>
 </blockquote>
 <hr />
-<h2 id="what-youre-building">1. What you’re building</h2>
+<h2 id="1-what-youre-building">1. What you're building</h2>
 <p>A Quillin called <strong>Word Count Tools</strong>
 (<code>com.example.wordcount</code>). It will:</p>
 <ol type="1">
@@ -275,11 +275,11 @@ enough to lint.</p>
 <li>grow a <strong>Layer 2</strong> Python handler that counts the words
 in the selection and <strong>announces</strong> the result.</li>
 </ol>
-<p>Along the way you’ll see the two ideas that make Quillins safe:
+<p>Along the way you'll see the two ideas that make Quillins safe:
 <strong>declare the minimum</strong> and <strong>announce every
 outcome</strong>.</p>
 <hr />
-<h2 id="anatomy-of-a-quillin">2. Anatomy of a Quillin</h2>
+<h2 id="2-anatomy-of-a-quillin">2. Anatomy of a Quillin</h2>
 <p>A Quillin is one directory:</p>
 <pre><code>word-count-tools/
   manifest.json     # the contract — required
@@ -305,8 +305,8 @@ bundled Quillins.</li>
 <code>MAJOR.MINOR.PATCH</code> and you bump it on every change.</li>
 </ul>
 <hr />
-<h2 id="step-1-a-layer-1-snippet-no-capabilities">3. Step 1 — a Layer 1
-snippet (no capabilities)</h2>
+<h2 id="3-step-1--a-layer-1-snippet-no-capabilities">3. Step 1 — a Layer
+1 snippet (no capabilities)</h2>
 <p>Create the directory and a manifest that contributes one snippet
 command. Snippets are declarative text with placeholders — <strong>no
 code runs</strong>, so a snippet-only Quillin needs <strong>no
@@ -345,10 +345,6 @@ so they can never collide with a built-in QUILL command.</li>
 </ul>
 <h3 id="snippet-placeholders">Snippet placeholders</h3>
 <table>
-<colgroup>
-<col style="width: 52%" />
-<col style="width: 47%" />
-</colgroup>
 <thead>
 <tr>
 <th>Placeholder</th>
@@ -367,20 +363,20 @@ capability)</td>
 </tr>
 <tr>
 <td><code>${date}</code></td>
-<td>today’s date in the user’s configured format</td>
+<td>today's date in the user's configured format</td>
 </tr>
 <tr>
 <td><code>${time}</code></td>
-<td>current time in the user’s configured format</td>
+<td>current time in the user's configured format</td>
 </tr>
 <tr>
 <td><code>${filename}</code></td>
-<td>the current document’s file name (e.g. <code>notes.txt</code>)</td>
+<td>the current document's file name (e.g. <code>notes.txt</code>)</td>
 </tr>
 <tr>
 <td><code>${title}</code></td>
-<td>the document’s file name stem without extension
-(e.g. <code>notes</code>)</td>
+<td>the document's file name stem without extension (e.g.
+<code>notes</code>)</td>
 </tr>
 <tr>
 <td><code>${line_number}</code></td>
@@ -416,24 +412,24 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="
 <h3 id="lint-it">Lint it</h3>
 <div class="sourceCode" id="cb5"><pre
 class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span></code></pre></div>
-<p>You’ll get a couple of warnings (no README, no LICENSE). Add a
+<p>You'll get a couple of warnings (no README, no LICENSE). Add a
 <code>README.md</code> and a <code>LICENSE</code> file (or keep the
-manifest <code>license</code> field) and re-run until it’s green.
+manifest <code>license</code> field) and re-run until it's green.
 <strong>That clean <code>--strict</code> run is your submission bar for
 Layer 1.</strong></p>
 <p>You now have a complete, useful Quillin with zero code and zero
 capabilities. Most Quillins never need more than this.</p>
 <hr />
-<h2 id="step-2-a-layer-2-python-handler">4. Step 2 — a Layer 2 Python
+<h2 id="4-step-2--a-layer-2-python-handler">4. Step 2 — a Layer 2 Python
 handler</h2>
 <p>Now add real logic: count the words in the selection and announce the
 count. Handlers run <strong>out-of-process</strong>, in a sandbox,
-behind QUILL’s capability + consent gate.</p>
-<h3 id="a.-declare-what-you-need">4a. Declare what you need</h3>
+behind QUILL's capability + consent gate.</p>
+<h3 id="4a-declare-what-you-need">4a. Declare what you need</h3>
 <p>A handler command requires two things in the manifest: a top-level
 <code>main</code> module and the <code>ui.command</code> capability. To
 read the selection and announce a result you also need
-<code>editor.read</code> and <code>ui.announce</code>. <strong>That’s
+<code>editor.read</code> and <code>ui.announce</code>. <strong>That's
 the minimum — declare nothing more.</strong></p>
 <p>Add to <code>manifest.json</code>:</p>
 <div class="sourceCode" id="cb6"><pre
@@ -446,7 +442,7 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;Count Words In Selection&quot;</span><span class="fu">,</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;run&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;handler&quot;</span><span class="fu">:</span> <span class="st">&quot;count_words&quot;</span> <span class="fu">}</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span></code></pre></div>
-<p>Wire it to a context-menu entry (only when there’s a selection) and a
+<p>Wire it to a context-menu entry (only when there's a selection) and a
 hotkey:</p>
 <div class="sourceCode" id="cb8"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;context_menu&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
@@ -459,7 +455,7 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="
 <code>editor.hasSelection</code>, <code>editor.hasText</code>, or
 <code>editor.empty</code>. Hotkey conflicts are
 <strong>rejected</strong>, never silently overridden.</p>
-<h3 id="b.-write-the-handler">4b. Write the handler</h3>
+<h3 id="4b-write-the-handler">4b. Write the handler</h3>
 <p><code>extension.py</code>:</p>
 <div class="sourceCode" id="cb9"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;&quot;&quot;Word Count Tools — a Layer 2 Quillin handler.&quot;&quot;&quot;</span></span>
@@ -488,20 +484,15 @@ point. It binds the handler name used in the manifest
 <li>The handler receives the
 <strong><code>QuillExtensionApi</code></strong> (<code>api</code>). It
 can only do what your declared capabilities allow — calling something
-you didn’t declare is blocked by the sandbox, not by politeness.</li>
+you didn't declare is blocked by the sandbox, not by politeness.</li>
 <li><strong>It announces its outcome in every path</strong> — success
 <em>and</em> the empty-selection case. A silent success is a bug under
 the Author Covenant.</li>
 </ul>
-<h3 id="c.-the-capability-surface-layer-2">4c. The capability surface
+<h3 id="4c-the-capability-surface-layer-2">4c. The capability surface
 (Layer 2)</h3>
 <p>The API you can call maps directly onto declared capabilities:</p>
 <table>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 59%" />
-<col style="width: 15%" />
-</colgroup>
 <thead>
 <tr>
 <th>You call</th>
@@ -555,8 +546,8 @@ the Author Covenant.</li>
 <strong>every</strong> use. Design for a graceful, announced refusal —
 never assume access is granted.</p>
 <hr />
-<h2 id="test-your-quillin">5. Test your Quillin</h2>
-<p>Mirror the bundled Quillin’s test (<a
+<h2 id="5-test-your-quillin">5. Test your Quillin</h2>
+<p>Mirror the bundled Quillin's test (<a
 href="../tests/unit/core/test_quillins_bundled_markdown.py"><code>tests/unit/core/test_quillins_bundled_markdown.py</code></a>).
 A good Layer 2 test validates the manifest, builds a conflict-free
 contribution registry, and drives the handler against a fake API:</p>
@@ -603,7 +594,8 @@ href="../tests/integration/test_quillins_host_integration.py"><code>tests/integr
 which exercises the actual sandbox, capability gate, and consent
 flow.</p>
 <hr />
-<h2 id="lint-then-check-everything">6. Lint, then check everything</h2>
+<h2 id="6-lint-then-check-everything">6. Lint, then check
+everything</h2>
 <div class="sourceCode" id="cb11"><pre
 class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>pytest <span class="op">-</span>q path\to\your\test_word_count<span class="op">.</span><span class="fu">py</span></span></code></pre></div>
@@ -614,14 +606,14 @@ by whichever sees it first:</p>
 published JSON Schema (<code>quill/core/schemas/extension.json</code>),
 made executable inside the linter.</li>
 <li><strong>Manifest validation</strong> — the same contract validator
-the loader enforces (this is what flags “a handler command requires
-<code>main</code> + <code>ui.command</code>”).</li>
+the loader enforces (this is what flags "a handler command requires
+<code>main</code> + <code>ui.command</code>").</li>
 <li><strong>Structure &amp; capability hygiene</strong> — your
 <code>main</code> exists, README + license are present, and every
 consent-gated capability is surfaced for review.</li>
 </ol>
 <hr />
-<h2 id="submit">7. Submit</h2>
+<h2 id="7-submit">7. Submit</h2>
 <ol type="1">
 <li>Open the <strong>Quillin submission</strong> issue — its form
 scaffolds the <code>manifest.json</code> and records your Author
@@ -632,7 +624,7 @@ and complete its checklist.</li>
 <code>--strict</code> mode on your Quillin. Green check → ready for
 human review; red → fix and push.</li>
 </ol>
-<p>Review focuses on what machines can’t fully judge: real accessibility
+<p>Review focuses on what machines can't fully judge: real accessibility
 (does every action announce a clear outcome; is it keyboard-complete?),
 capability justification (is each one necessary and transparent?), and
 honesty (readable source, no silent network, behaviour matches
@@ -641,7 +633,7 @@ description).</p>
 <a
 href="quillin-submission.md"><code>quillin-submission.md</code></a>.</p>
 <hr />
-<h2 id="recap-the-rules-that-matter">8. Recap — the rules that
+<h2 id="8-recap--the-rules-that-matter">8. Recap — the rules that
 matter</h2>
 <ul>
 <li><strong>Start at Layer 1.</strong> Snippets cover most needs with

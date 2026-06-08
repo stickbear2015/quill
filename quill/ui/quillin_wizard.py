@@ -300,10 +300,11 @@ def open_quillin_wizard(
     save_btn = wx.Button(dialog, id=wx.ID_OK, label="&Save Quillin")
     copy_btn = wx.Button(dialog, label="Cop&y JSON")
     cancel_btn = wx.Button(dialog, id=wx.ID_CANCEL, label="Cancel")
+    action_row.AddStretchSpacer(1)
     action_row.Add(save_btn, 0, wx.RIGHT, 6)
     action_row.Add(copy_btn, 0, wx.RIGHT, 6)
     action_row.Add(cancel_btn, 0)
-    outer.Add(action_row, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
+    outer.Add(action_row, 0, wx.ALL | wx.EXPAND, 8)
 
     dialog.SetSizer(outer)
     dialog.SetSize((740, 720))
@@ -369,9 +370,7 @@ def open_quillin_wizard(
     def _refresh_preview() -> None:
         raw = _current_manifest()
         caps = raw.get("capabilities", [])
-        caps_text.SetLabel(
-            "Auto-derived capabilities: " + (", ".join(caps) if caps else "(none)")
-        )
+        caps_text.SetLabel("Auto-derived capabilities: " + (", ".join(caps) if caps else "(none)"))
         try:
             preview_ctrl.SetValue(json.dumps(raw, indent=2))
         except Exception:
@@ -493,9 +492,7 @@ def open_quillin_wizard(
 
         try:
             target_dir.mkdir(parents=True, exist_ok=True)
-            (target_dir / "manifest.json").write_text(
-                json.dumps(raw, indent=2), encoding="utf-8"
-            )
+            (target_dir / "manifest.json").write_text(json.dumps(raw, indent=2), encoding="utf-8")
             set_enabled(ext_id, True)
         except OSError as exc:
             error_text.SetLabel(f"Save failed: {exc}")
