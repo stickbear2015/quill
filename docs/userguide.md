@@ -111,11 +111,11 @@ The menu bar follows the Windows and Office order you likely expect:
 
 - File
 - Edit
-- Insert
 - View
-- Search
-- Navigate
+- Insert
 - Format
+- Navigate
+- Search
 - Tools
 - Window
 - Help
@@ -192,6 +192,7 @@ The **File** menu is the full document lifecycle.
 - **Open Recent** returns quickly to recently used files.
 - **Open from URL...** downloads a document or text resource through an explicit safety flow that confirms host and expected size.
 - **Workspace Snapshots** lets you save and reopen groups of documents as a single workspace snapshot, similar to lightweight workspaces in Visual Studio Code.
+- **New from Clipboard** opens a new document seeded with the current clipboard text.
 - **Save** writes the current document.
 - **Save As...** writes to a new path, converting the document to the file type you choose in the dialog. Quill keeps your text as portable Markdown-style markup, so picking **Rich Text Format (\*.rtf)** writes real RTF, **HTML (\*.html)** writes a standalone web page, and **Text (\*.txt)** writes clean prose with the markup removed. Choosing **Markdown (\*.md)** keeps the markup verbatim. The file's extension always decides the format; if you type a name without an extension, the selected type supplies one. When Save As changes the format, Quill can reload the file so the editing surface matches it — for example, opening a freshly saved `.rtf` in the Rich text editor. By default it asks first with a Yes/No prompt (reloading replaces the editor contents with the saved file); set **Settings → Editing → Reload after Save As to match the format** to *Reload automatically* or *Keep current surface* to skip the prompt.
 - **Save All** writes every modified open document.
@@ -199,6 +200,8 @@ The **File** menu is the full document lifecycle.
 - **Reload from Disk** throws away in-memory edits and reloads the file from storage after confirmation.
 - **Restore Backup...** lets you restore a saved backup version.
 - **Page Setup...** and **Print...** support paper and print workflows.
+- **Run Current File** executes the saved file with its associated tool, and **Open Target at Cursor** opens the path or link under the caret.
+- **Rename Current File...** and **Delete Current File...** manage the file on disk from inside the editor.
 - **Close Document** closes the current tab.
 - **Exit** closes the application.
 
@@ -218,68 +221,66 @@ Standard clipboard commands are here:
 - Copy With Source
 - Select All
 
-Quill then goes further with selection and navigation-aware editing:
+Quill then goes further with selection- and navigation-aware editing:
 
+- **Find...**, **Replace...**, **Find Next**, **Find Previous**, and **Find All Matches** all live here. Replace includes a **Replace All** action in its dialog, so bulk replacement stays in one place.
+- **Word Prediction...** opens inline word and tag suggestions.
 - **Extend Selection Mode** turns selection growth into a dedicated mode.
-- **Selection** submenu includes Select Line, Select Paragraph, Select Block, Select to Start or End of Line, and Select to Start or End of Document.
-- **Recent Marks (Ring)** commands let you set a temporary mark, jump to previous marks, swap cursor and mark, and list recent marks while you move through an editing flow.
-- **Insert Link...** creates a format-aware link.
-- **Follow Link** opens the link under the caret.
-- **Find...** and **Replace...** sit here as expected.
-- **Replace...** includes a **Replace All** action in the dialog, so bulk replacement stays in one place.
-- **Preferences...** and **Customize Menus...** now live together with the rest of Quill's configuration under **Tools -> Customize**.
+- **Selection** submenu includes Select Line, Select Paragraph, Select Block, Select to Start or End of Line, Select to Start or End of Document, and a nested **Recent Marks (Ring)** group (set a temporary mark, jump to previous marks, swap cursor and mark, list recent marks).
+- **Follow Link** opens the link under the caret. (Link *insertion* now lives in the **Insert** menu.)
+- **Paste HTML as Markdown** converts rich clipboard HTML to Markdown as it pastes.
+- The deletion group — **Delete to Line Start**, **Delete to Line End**, **Delete to Document Top**, **Delete to Document Bottom**, and **Delete Paragraph** — removes text relative to the cursor.
+
+**Preferences...** and **Customize Menus...** live with the rest of Quill's configuration under **Tools -> Customize**.
 
 ### View
 
-The **View** menu controls how Quill behaves on screen without changing your content.
+The **View** menu controls how Quill presents your document on screen without changing your content.
 
-- **Enable System Tray Mode** lets Quill minimize into the tray instead of exiting.
 - **Toggle Soft Wrap** changes line wrapping without modifying the file.
-- **Toggle Dark Mode** switches between system and dark presentation.
-- **Enable Persistent Undo** stores undo history across sessions for saved files.
-- **Spell Check As You Type** enables live misspelling hints.
-- **Show Line Numbers** changes the navigation and status-bar experience.
+- **Auto Side-by-Side Preview** opens a live preview beside the editor automatically.
+- **Show Tab Control** toggles the visible document tab strip.
+- **Wrap Find Searches** controls whether Find wraps past the end of the document.
 - **Start With No Document Open** makes Quill open into an empty workspace instead of a starter document.
+- **Preview...**, **Preview Side by Side**, **Focus Preview**, and **Browser Preview...** open rendered views of the current document.
 
-### Navigate
+Preference-style toggles that used to live here — theme/dark mode, system-tray mode, title-bar path style, dirty-title style, persistent undo, spell-check-as-you-type, and word-prediction-as-you-type — now live in the registry-driven **Settings** dialog (**Tools -> Customize -> Preferences...**), where they are persisted in one place.
 
-The **Navigate** menu is one of Quill's strongest differentiators. It assumes you may need to move through large, dense, or extracted material without visual scanning.
+### Insert
 
-Core location commands:
+The **Insert** menu adds structured content at the cursor.
 
-- **Go To Line...**
-- **Go To Page...**
-- **Back Location**
-- **Forward Location**
+- **Insert Link...** creates a format-aware link.
+- **Heading** submenu: insert Heading 1 through 6, **Decrease Level** / **Increase Level**, and **Style Headings...** (font, size, alignment) for the current level or all levels.
+- **List** submenu: **Bullet**, **Numbered**, **Task**, and **List Manager...**.
+- **Insert Code Block**, **Insert Footnote**, **Insert Table...**, **Insert HTML Tag...**, and **Insert Markdown Tag...**.
+- **Insert Snippet...** and **Manage Snippets...** for reusable text with placeholders.
+- **Special Character...**, **Date and Time**, **Calculated Date...**, and **File Content...** insert symbols, timestamps, computed dates, and the contents of another file.
 
-Structural movement commands:
+Quill treats Markdown and HTML as working surfaces, not special-purpose export formats, so tag insertion lives here beside the structural inserts.
 
-- **Next Heading**
-- **Previous Heading**
-- **Next Block**
-- **Previous Block**
-- **Outline Navigator...**
-- **Match Bracket**
-- **Next Structure**
-- **Previous Structure**
-- **Next Region**
-- **Previous Region**
+#### Word prediction and snippets
 
-Bookmark and search navigation:
+Quill separates live prediction from snippet insertion so the hotkeys feel like a modern editor:
 
-- **Set Bookmark...**
-- **Go To Bookmark...**
-- **Find Next**
-- **Find Previous**
-- **Find All Matches**
+1. Press `Ctrl+Space` to open **Word Prediction** (also on **Edit -> Word Prediction...**).
+2. Type to surface matching document words, HTML tags, and Markdown tags.
+3. Use arrow keys to choose a result and press Enter to insert it.
 
-If your work involves transcripts, legal text, long Markdown notes, HTML source, or extracted PDFs, spend time here. This is the menu that turns Quill from a text box into a navigable workspace.
+For setup and maintenance:
+
+- Press `Ctrl+Alt+Space` for **Insert Snippet**.
+- Press `Ctrl+Alt+Shift+Space` for **Manage Snippets** (create, edit, delete, import, export, and starter packs).
+- Open **Preferences -> Install Starter Snippet Packs** to install sample libraries for daily writing, developer flow, and support/accessibility notes.
+- In **General Preferences**, toggle **Word prediction and tag IntelliSense** or **Expand snippet triggers while typing** as needed.
+
+Snippets support placeholders such as `${input:name}`, `${choice:a|b}`, `${date}`, `${time}`, and `${cursor}`.
 
 ### Format
 
-The **Format** menu handles presentation and markup-aware editing.
+The **Format** menu handles presentation and markup-aware editing of existing text.
 
-Case operations:
+Case operations live in the **Change Case** submenu:
 
 - Upper Case
 - Lower Case
@@ -302,42 +303,56 @@ Line operations:
 - Delete Line
 - Join Lines
 
-Inline and structural formatting:
+Inline emphasis:
 
 - Bold
 - Italic
-- Insert Heading levels 1 through 6
-- Increase or decrease heading level
-- Style headings (font, size, alignment) for the current level or all levels
-- Open Heading Organizer (`Ctrl+Alt+Shift+H`) for heading-level edits, section reorder, and heading validation
-- Insert bullet, numbered, and task lists
-- Insert code block
-- Insert footnote
-- Insert table
-- Insert HTML tag
-- Insert Markdown tag
-- Word prediction (`Ctrl+Space`)
-- Insert snippet (`Ctrl+Alt+Space`)
-- Manage snippets (`Ctrl+Alt+Shift+Space`)
 
-Quill treats Markdown and HTML as working surfaces, not special-purpose export formats. This menu is where that philosophy becomes practical.
+The **Transform Lines** submenu gathers every line and text transform in one place: **Number Lines...**, **Hard-Wrap Lines...**, **Sort Lines Ascending**, **Sort Lines Descending**, **Reverse Lines**, **Remove Duplicate Lines**, **Trim Trailing Whitespace**, **Normalize Whitespace**, **Convert Indentation to Spaces**, and **Convert Indentation to Tabs**.
 
-### Word prediction and snippets
+### Navigate
 
-Quill 0.1.5 separates live prediction from snippet insertion so the hotkeys feel more like a modern editor:
+The **Navigate** menu is one of Quill's strongest differentiators. It assumes you may need to move through large, dense, or extracted material without visual scanning.
 
-1. Press `Ctrl+Space` to open **Word Prediction**.
-2. Type to surface matching document words, HTML tags, and Markdown tags.
-3. Use arrow keys to choose a result and press Enter to insert it.
+Core location commands:
 
-For setup and maintenance:
+- **Go To Line...**
+- **Go To Page...**
+- **Back Location**
+- **Forward Location**
 
-- Press `Ctrl+Alt+Space` for **Insert Snippet**.
-- Press `Ctrl+Alt+Shift+Space` for **Manage Snippets** (create, edit, delete, import, export, and starter packs).
-- Open **Preferences -> Install Starter Snippet Packs** to install sample libraries for daily writing, developer flow, and support/accessibility notes.
-- In **General Preferences**, toggle **Word prediction and tag IntelliSense** or **Expand snippet triggers while typing** as needed.
+Structural movement commands:
 
-Snippets still support placeholders such as `${input:name}`, `${choice:a|b}`, `${date}`, `${time}`, and `${cursor}`.
+- **Next Heading**
+- **Previous Heading**
+- **Next Block**
+- **Previous Block**
+- **Outline Navigator...**
+- **Heading Organizer...** (`Ctrl+Alt+Shift+H`) for heading-level edits, section reorder, and heading validation
+- **Match Bracket**
+- **Next Structure**
+- **Previous Structure**
+- **Next Region**
+- **Previous Region**
+
+Bookmark and position commands:
+
+- **Set Bookmark...**
+- **Go To Bookmark...**
+- **List Bookmarks...**
+- **Go to Percent...**
+- **First Non-Blank**
+- **Last Non-Blank**
+
+If your work involves transcripts, legal text, long Markdown notes, HTML source, or extracted PDFs, spend time here. This is the menu that turns Quill from a text box into a navigable workspace. (Find Next, Find Previous, and Find All Matches now live in **Edit**, beside Find and Replace.)
+
+### Search
+
+The **Search** menu is the across-files and pattern hub. In-document Find and Replace live in **Edit**; this menu covers multi-file and regular-expression work.
+
+- **Search in Files...** and **Replace Across Files...** search and replace across a folder of documents.
+- **Count Regex Matches...** and **Extract Regex Matches...** report or pull out every match of a regular expression.
+- **Lines in First Block Only** and **Lines Common to Both Blocks** filter lines by block membership (set operations between two marked blocks).
 
 ### Tools
 
@@ -382,9 +397,9 @@ The quick writing actions work with or without a selection:
 - **Continue Writing** uses your selection as the lead-in if you have one; otherwise it continues from the full document.
 - Quill announces the scope it chose, for example "Rewrite paragraph (42 words)", so you always know what the action will change.
 - If there is nothing to act on, Quill says so (for example "Nothing to rewrite") instead of sending an empty request.
-- If AI is turned off, these actions announce "AI is turned off. Enable 'Use Artificial Intelligence' in the AI menu." and do nothing else.
+- If AI is turned off, these actions announce "AI is turned off. Enable 'Use Artificial Intelligence' in Tools > AI Assistant." and do nothing else.
 
-Use **AI -> AI Hub...** for a single control surface that links provider verification, model discovery, Prompt Studio, Agent Center, and Writing Assistant.
+Use **Tools -> AI Assistant -> AI Hub...** for a single control surface that links provider verification, model discovery, Prompt Studio, Agent Center, and Writing Assistant.
 
 Trust and privacy baseline:
 
@@ -401,7 +416,7 @@ AI connection flow:
 4. Use **Verify Connection** to test endpoint and credentials.
 5. Use **List Models** to fetch endpoint models, then use the search box to filter quickly.
 6. Use **Recommend Model** to pick a model profile aligned to your hardware/task framing.
-7. Save settings. Quill auto-runs verification and updates the AI status line in the AI menu.
+7. Save settings. Quill auto-runs verification and updates the AI status line in Tools > AI Assistant.
 
 Most cloud providers are pre-configured with default host URLs so setup is key-first, not URL-first. For advanced OpenAI-compatible endpoints, use Custom and override host/model explicitly.
 
@@ -422,7 +437,7 @@ These help you stay inside the editor instead of breaking flow for small writing
 
 ### Ask Quill Chat setup (on-device AI)
 
-Ask Quill Chat (`AI -> Ask Quill Chat...`) is a message-style assistant that can answer, draft text, propose edits, and run Quill commands with approval before changes are applied.
+Ask Quill Chat (`Tools -> AI Assistant -> Ask Quill Chat...`) is a message-style assistant that can answer, draft text, propose edits, and run Quill commands with approval before changes are applied.
 
 Runtime backends:
 
@@ -433,7 +448,7 @@ Setup:
 
 1. Install dependencies: `pip install -r requirements.txt`
 2. Put a `.gguf` model in `%APPDATA%\\Quill\\models\\` (Windows) or set `QUILL_LLAMA_MODEL` to a full path.
-3. Open `AI -> Ask Quill Chat...` and send a prompt.
+3. Open `Tools -> AI Assistant -> Ask Quill Chat...` and send a prompt.
 
 Accessibility:
 
@@ -445,7 +460,7 @@ Behavior notes:
 - The assistant answers in chat by default; greetings and questions are never turned into document edits.
 - Proposed actions (insert, replace, run a command) use an explicit `Approve` or `Discard` step before anything changes your document.
 - If model/runtime is unavailable, Quill reports this clearly and does not apply destructive changes.
-- **Train Writing Style** (`AI -> Train Writing Style...`) lets you teach the assistant your own writing style from samples or the current document.
+- **Train Writing Style** (`Tools -> AI Assistant -> Train Writing Style...`) lets you teach the assistant your own writing style from samples or the current document.
 
 ### Writing Assistant and AI Hub setup
 
@@ -453,7 +468,7 @@ For release-safe beta validation, Word and CSV open in the normal plain-text edi
 
 Provider setup:
 
-1. Open `AI -> AI Hub...` (or `AI -> AI Model & Connection...`).
+1. Open `Tools -> AI Assistant -> AI Hub...` (or `Tools -> AI Assistant -> AI Model & Connection...`).
 2. Choose provider: `Ollama (local)`, `OpenAI`, `Claude`, `OpenRouter`, `Google Gemini`, `Microsoft Azure OpenAI`, `Ollama Cloud`, or `Custom OpenAI-compatible`.
 3. Enter host and model (cloud defaults are prefilled; Azure requires your resource hostname).
 4. Enter API key only if required.
@@ -499,7 +514,7 @@ Status Page behavior:
 - It surfaces asynchronous speech generation and BITS Whisperer download/provider status so users can monitor progress without blocking dialogs.
 - In **Preferences -> General**, you can enable **Auto-open Status Page when BITS Whisperer model downloads start** (default off).
 - In **Preferences -> General**, set **Status page refresh announcements** to **Quiet**, **Normal**, or **Verbose** to control screen-reader announcement cadence.
-- In **Preferences -> General**, use **Use Artificial Intelligence** to mirror the AI menu toggle from one place.
+- In **Preferences -> General**, use **Use Artificial Intelligence** to mirror the Tools > AI Assistant toggle from one place.
 - In **Preferences -> General**, enable **BITS Whisperer safe mode lock** to block download/retry actions while keeping status and onboarding surfaces available.
 
 Startup Wizard now includes a BITS Whisperer rollout setup step that applies safe defaults without enabling runtime routing changes.
@@ -559,11 +574,9 @@ The key design choice is how GLOW feels inside Quill. Audit results open as read
 - **Regex Helper...**
 - **Pandoc Conversion Wizard...**
 - **External Tools and Format Support...**
-- **GLOW** submenu
-- **Macros** submenu
-- **Convert** submenu with sort, reverse, deduplicate, trim trailing whitespace, normalize whitespace, and convert indentation commands
+- **YAML Structure Editor...**
 
-These are especially valuable in large cleanup jobs and repetitive editing workflows.
+GLOW and Macros are now their own **Tools** submenus (described below), and the old line/text **Convert** group moved to **Format -> Transform Lines**, so Authoring and Automation holds just these four authoring utilities.
 
 Regex Helper now opens as a full accessible dialog rather than a short informational prompt. It includes:
 
@@ -576,6 +589,26 @@ Regex Helper now opens as a full accessible dialog rather than a short informati
 This keeps regex learning and validation in a keyboard-first, screen-reader-friendly surface.
 
 The new external-tools surface deserves a special note. Quill does not treat optional tools as hidden technical chores. **External Tools and Format Support...** explains what each supported helper unlocks, whether Quill can already see it, and what the best first touch point is. If Pandoc is installed or bundled, **Pandoc Conversion Wizard...** can turn supported source files into Markdown, HTML, or plain text tabs that open directly in Quill. That makes Quill feel less like a dead-end editor and more like a calm bridge into real-world document cleanup and GLOW-oriented handoff work.
+
+#### Macros
+
+- **Start Recording**
+- **Stop Recording**
+- **Play Last Macro**
+- **Manage Macros...**
+
+Macros record a sequence of editing commands and replay them, which is ideal for repetitive cleanup. Manage Macros lets you name, edit, and organize saved macros.
+
+#### Power Tools
+
+- **Toggle Read-Only Guard**
+- **Toggle Clipboard Collector**
+- **Collect Clipboard Now**
+- **Toggle Key Describer**
+- **Toggle Indentation Announcements**
+- **Infer Indentation...**
+
+Power Tools collects the editor-behavior power toggles that have no other conventional home. (These were previously grouped under a single power-tools submenu; the rest of those commands now live in their natural menus — see File, Edit, Insert, Format -> Transform Lines, Navigate, Search, and Accessibility.)
 
 #### Compare documents
 
@@ -594,9 +627,10 @@ Quill's compare model is practical and local. It supports file-to-file review, m
 #### Accessibility
 
 - **Accessibility Audit...**
-- **Keyboard Trap Snapshot...**
+- **Keyboard Trap & Tab-Order Snapshot...**
 - **Validate Contrast...**
-- **Link Inventory...**
+- **Link Inventory & Alt-Text Catalog...**
+- **Speak Cursor Address**, **Speak Document Status**, and **Speak Selection Length** announce the caret position, document state, and selection size to your screen reader.
 
 These tools help review the editor experience itself, the current document's link surface, and low-vision presentation issues.
 
@@ -987,7 +1021,7 @@ Quill's current settings and customization surface covers the things you are mos
 - custom keybindings through the keymap editor
 - status-bar order and status-bar visibility
 
-Some of these live in the View menu for quick toggling. Others live in **Profiles and Features...**, **Status Bar Settings...**, **Keymap Editor...**, and the related customization commands under **Tools**.
+Some of these live in the View menu for quick toggling; the preference-style toggles now live in the **Settings** dialog (**Tools -> Customize -> Preferences...**). Others live in **Profiles and Features...**, **Status Bar Settings...**, **Keymap Editor...**, and the related customization commands under **Tools**.
 
 ## Trust, Recovery, Sessions, and Safety
 
@@ -1160,3 +1194,27 @@ Then open **Help → Open Keyboard Reference** and let Quill teach you the rest 
 The best way to understand Quill is to use it on something real: a note you care about, an extracted PDF that needs trust review, an EPUB chapter you want to navigate, a Markdown file you want to clean up, or an HTML document you want to make more usable.
 
 Quill is trying to feel like a skilled guide sitting just beside the editor, not standing in front of it. If it succeeds, you will notice something simple: you spend less time wondering what the application can do, and more time deciding what you want to do next.
+
+## Quillins: Sandboxed Extensions
+
+Quill supports **Quillins** — small, sandboxed extensions that add new commands, snippets, and menu items to the editor without requiring a full app restart.
+
+### Bundled Quillins
+Quill ships with several trusted, first-party Quillins enabled by default. These provide common utilities that would otherwise clutter the core editor:
+
+- **Text Tools**: Provides advanced text transformations and analysis, including:
+  - **Line Numbering**: Prefix lines with sequential numbers.
+  - **Hard Wrap**: Wrap text at a specific character width.
+  - **Regex Tools**: Count or extract patterns across the document.
+  - **Block Filtering**: Find lines that are common to two blocks or exist only in the first.
+- **Insert Tools**: Provides smart placeholders for quick insertion, such as the current **Date** and **Date/Time**.
+
+### The Quillins Manager
+You can discover, review, and manage all installed Quillins via **Tools $\rightarrow$ Quillins**.
+The Manager allows you to:
+- See a list of all installed Quillins.
+- Review the manifest of a selected Quillin (name, version, author, and capabilities).
+- Verify the security permissions (capabilities) a Quillin has declared (e.g., filesystem or network access).
+
+### Authoring Quillins
+For developers, Quillins are designed to be "screen-reader-first." They follow a strict capability model: a Quillin must declare the minimum set of permissions it needs, and any sensitive action (like writing to a file) is consent-gated at runtime.

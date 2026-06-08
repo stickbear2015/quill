@@ -22,6 +22,7 @@ class _Event:
 class _Dialog:
     def __init__(self, *_args: object, **_kwargs: object) -> None:
         self._result = 0
+        self.ended_with: int | None = None
 
     def SetSize(self, _size: tuple[int, int]) -> None:
         return
@@ -40,6 +41,7 @@ class _Dialog:
 
     def EndModal(self, result: int) -> None:
         self._result = result
+        self.ended_with = result
 
     def Destroy(self) -> None:
         return
@@ -169,11 +171,17 @@ def test_palette_arrow_keys_move_from_search_to_results() -> None:
     assert dialog.results.GetSelection() == dialog.results.GetCount() - 1
 
 
-def test_palette_escape_is_not_manually_intercepted() -> None:
+def test_palette_escape_closes_buttonless_dialog() -> None:
+    # The palette has no buttons by design. Per the wxWidgets SetEscapeId
+    # contract, native Escape handling maps Escape to the *click* of a Cancel
+    # (or affirmative) button; with no such button there is nothing to activate,
+    # so Escape is inert and the dialog becomes a keyboard trap (WCAG 2.1.2,
+    # the #124 bug class). The palette therefore intercepts Escape and ends the
+    # modal itself rather than skipping to native handling.
     dialog = _build_dialog()
 
     escape = _Event(dialog._wx.WXK_ESCAPE)  # noqa: SLF001
     dialog._on_char_hook(escape)  # noqa: SLF001
 
-    assert escape.skipped is True
-    assert dialog.dialog.ShowModal() == 0
+    assert escape.skipped is False
+    assert dialog.dialog.ended_with == dialog._wx.ID_CANCEL  # noqa: SLF001

@@ -40,15 +40,28 @@ def test_menu_item_ids_have_menu_bindings() -> None:
     assert missing_bindings == set()
 
 
-def test_top_level_menu_append_order_places_insert_and_view_before_search() -> None:
+def test_top_level_menu_append_order_is_conventional() -> None:
+    # MENU-REORDER (menus.md Phase 1): top-level menus are attached in one place
+    # in the conventional Windows order: File, Edit, View, Insert, Format,
+    # Navigate, Search, (AI), Tools, Window, Help.
     source = _menu_source()
     edit_index = source.index('menu_bar.Append(edit_menu, "&Edit")')
-    insert_index = source.index('menu_bar.Append(insert_menu, "&Insert")')
     view_index = source.index('menu_bar.Append(view_menu, "&View")')
-    search_index = source.index('menu_bar.Append(search_menu, "&Search")')
+    insert_index = source.index('menu_bar.Append(insert_menu, "&Insert")')
+    format_index = source.index('menu_bar.Append(format_menu, "F&ormat")')
     navigate_index = source.index('menu_bar.Append(navigate_menu, "&Navigate")')
+    search_index = source.index('menu_bar.Append(search_menu, "&Search")')
+    tools_index = source.index('menu_bar.Append(tools_menu, "&Tools")')
 
-    assert edit_index < insert_index < view_index < search_index < navigate_index
+    assert (
+        edit_index
+        < view_index
+        < insert_index
+        < format_index
+        < navigate_index
+        < search_index
+        < tools_index
+    )
 
 
 def test_update_toggle_is_in_help_menu_not_view_menu() -> None:
@@ -65,7 +78,24 @@ def test_update_toggle_is_in_help_menu_not_view_menu() -> None:
 
 def test_replace_menu_uses_interactive_replace_command() -> None:
     source = _menu_source()
-    assert '_menu_label("&Replace...", "edit.replace")' in source
+    assert '_menu_label("Rep&lace...", "edit.replace")' in source
+
+
+def test_find_group_lives_in_edit_not_search() -> None:
+    # menus.md Phase 3: in-document Find/Replace and the find-navigation commands
+    # live in Edit; the Search menu is the cross-file search hub only.
+    source = _menu_source()
+    for fid in (
+        "self._id_find",
+        "self._id_replace",
+        "self._id_find_next",
+        "self._id_find_previous",
+        "self._id_find_all_matches",
+    ):
+        assert re.search(rf"edit_menu\.Append\(\s*{re.escape(fid)}\b", source), fid
+        assert not re.search(rf"search_menu\.Append\(\s*{re.escape(fid)}\b", source), fid
+    assert re.search(r"search_menu\.Append\(\s*self\._id_search_in_files\b", source)
+    assert re.search(r"search_menu\.Append\(\s*self\._id_replace_in_files\b", source)
 
 
 def test_insert_link_is_not_duplicated_in_edit_menu() -> None:

@@ -234,9 +234,9 @@ from quill.core.lexical_preload import start_lexical_preload
 from quill.core.line_ops import (
     delete_line,
     duplicate_line,
-    join_with_next_line,
-    move_line_down,
-    move_line_up,
+    join_selected_lines,
+    move_lines_down,
+    move_lines_up,
 )
 from quill.core.link_inventory import collect_link_inventory, render_link_inventory_report
 from quill.core.links import build_link_text, find_link_at_cursor, infer_markup_kind
@@ -487,12 +487,13 @@ from quill.ui.dialog_contract import apply_modal_ids, focus_primary_control, sho
 from quill.ui.editor_surface import PLAIN, RICH, surface_kind
 from quill.ui.main_frame_ai_actions import AiActionsMixin
 from quill.ui.main_frame_browse import BrowseModeMixin
-from quill.ui.main_frame_edsharp import EdSharpActionsMixin
-from quill.ui.main_frame_edsharp_menu import EdSharpMenuMixin
 from quill.ui.main_frame_image import ImageCaptureMixin
 from quill.ui.main_frame_intellisense import IntellisensePopupMixin
 from quill.ui.main_frame_menu import MenuBuilderMixin
+from quill.ui.main_frame_power_tools import PowerToolsActionsMixin
+from quill.ui.main_frame_power_tools_menu import PowerToolsMenuMixin
 from quill.ui.main_frame_quill_key import QuillKeyMixin
+from quill.ui.main_frame_quillins import QuillinsMenuMixin
 from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
@@ -537,13 +538,11 @@ def _csv_feature_enabled() -> bool:
 _TOP_MENU_DEFS: tuple[tuple[str, str], ...] = (
     ("file", "&File"),
     ("edit", "&Edit"),
-    ("insert", "&Insert"),
     ("view", "&View"),
-    ("search", "&Search"),
-    ("ai", "A&I"),
-    ("whisperer", "&BITS Whisperer"),
-    ("navigate", "&Navigate"),
+    ("insert", "&Insert"),
     ("format", "F&ormat"),
+    ("navigate", "&Navigate"),
+    ("search", "&Search"),
     ("tools", "&Tools"),
     ("window", "&Window"),
     ("help", "&Help"),
@@ -759,8 +758,9 @@ class MainFrame(
     SessionsMixin,
     StatusBarMixin,
     IntellisensePopupMixin,
-    EdSharpActionsMixin,
-    EdSharpMenuMixin,
+    PowerToolsActionsMixin,
+    PowerToolsMenuMixin,
+    QuillinsMenuMixin,
 ):
     _ANNOUNCEMENT_BACKEND_LABELS: dict[str, str] = {
         "auto": "Automatic (use Prism when available)",
@@ -2645,7 +2645,8 @@ class MainFrame(
             self.convert_indentation_to_tabs,
             None,
         )
-        self._register_edsharp_commands()
+        self._register_power_tools_commands()
+        self._register_quillins_commands()
 
     def _apply_accelerators(self) -> None:
         wx = self._wx
@@ -9498,7 +9499,7 @@ class MainFrame(
             )
 
         dialog = AccessibilityAgentDialog(
-            self,
+            self.frame,
             document_name=self.document.name,
             document_text=original,
             markup=markup,
@@ -13897,7 +13898,7 @@ class MainFrame(
 
         if not load_ai_enabled():
             return WatchActionOutcome.skipped(
-                "AI is turned off. Enable it in the AI menu to use this action."
+                "AI is turned off. Enable it in Tools > AI Assistant to use this action."
             )
         mode = str(options.get("mode", "")).strip().lower()
         if mode not in {"summarize", "tag", "rewrite"}:
@@ -16090,8 +16091,36 @@ class MainFrame(
         Dark mode themes the wx editor control; the preview is a separate
         WebView that otherwise stays light, leaving the split view half dark and
         half bright. Mirror the editor's dark state so both panes match.
+
+        The default ``system`` theme follows the OS appearance, so a user on a
+        dark desktop saw light preview panes with low-contrast blue links
+        (issue #126). Resolve ``system`` against the live wx system appearance so
+        the preview tracks the OS instead of staying bright.
         """
-        return getattr(self.settings, "theme", "system") == "dark"
+        theme = getattr(self.settings, "theme", "system")
+        if theme == "dark":
+            return True
+        if theme in ("system", "auto"):
+            return self._system_appearance_is_dark()
+        return False
+
+    def _system_appearance_is_dark(self) -> bool:
+        """Best-effort detection of an OS-level dark appearance via wx."""
+        getter = getattr(self._wx, "SystemSettings", None)
+        appearance_getter = getattr(getter, "GetAppearance", None) if getter else None
+        if callable(appearance_getter):
+            try:
+                appearance = appearance_getter()
+            except Exception:  # noqa: BLE001 - probing must never crash the preview
+                appearance = None
+            for probe in ("IsDark", "IsUsingDarkBackground"):
+                method = getattr(appearance, probe, None)
+                if callable(method):
+                    try:
+                        return bool(method())
+                    except Exception:  # noqa: BLE001
+                        continue
+        return False
 
     def _refresh_browser_preview(self) -> None:
         session = self._browser_preview_session
@@ -16156,7 +16185,7 @@ class MainFrame(
 
         if not load_ai_enabled():
             self._set_status(
-                "AI is turned off. Enable 'Use Artificial Intelligence' in the AI menu."
+                "AI is turned off. Enable 'Use Artificial Intelligence' in Tools > AI Assistant."
             )
             return
         TrainStyleDialog(
@@ -16244,6 +16273,21 @@ class MainFrame(
         for item_id in ai_item_ids:
             if bar.FindItemById(item_id) is not None:
                 bar.Enable(item_id, enabled)
+
+        # "Forget API Key" is gated on whether a key is actually stored, not on
+        # the AI on/off toggle (#128): a user must be able to forget a key even
+        # with AI disabled, but the item is meaningless when nothing is stored.
+        if bar.FindItemById(self._id_ai_forget_key) is not None:
+            bar.Enable(self._id_ai_forget_key, self._assistant_api_key_present())
+
+    def _assistant_api_key_present(self) -> bool:
+        """True when an assistant API key is stored in either persistence layer."""
+        from quill.core.assistant_ai import load_assistant_api_key
+
+        try:
+            return bool(load_assistant_api_key())
+        except Exception:  # noqa: BLE001 - storage probing must never crash the menu
+            return False
 
     def open_ask_quill_chat(self) -> None:
         from quill.core.ai.model_manager import load_ai_enabled
@@ -16339,6 +16383,8 @@ class MainFrame(
             self._set_status("AI provider API key forgotten. Re-enter it to use cloud providers.")
         else:
             self._set_status("No stored AI provider API key was found.")
+        # Reflect the now-absent key in the menu so "Forget API Key" greys out (#128).
+        self._request_menu_refresh()
 
     def open_ai_session_browser(self) -> None:
         # Browse the branch tree of the most recent writing session and jump
@@ -16518,10 +16564,11 @@ class MainFrame(
         )
 
     def move_line_up(self) -> None:
-        self._apply_line_operation(move_line_up, "Moved line up")
+        # Selection-aware (issue #133): a multi-line selection moves as one block.
+        self._apply_selection_operation(move_lines_up, "Moved line up")
 
     def move_line_down(self) -> None:
-        self._apply_line_operation(move_line_down, "Moved line down")
+        self._apply_selection_operation(move_lines_down, "Moved line down")
 
     def duplicate_line(self) -> None:
         self._apply_line_operation(duplicate_line, "Duplicated line")
@@ -16530,7 +16577,10 @@ class MainFrame(
         self._apply_line_operation(delete_line, "Deleted line")
 
     def join_lines(self) -> None:
-        self._apply_line_operation(join_with_next_line, "Joined lines")
+        # Selection-aware (issue #135): joins the whole selection, or the
+        # caret's paragraph when there is no selection, instead of only the
+        # current line and the next one.
+        self._apply_selection_operation(join_selected_lines, "Joined lines")
 
     def sort_lines_ascending(self) -> None:
         self._apply_text_block_operation(
@@ -17376,7 +17426,7 @@ class MainFrame(
         if start != end:
             original = text[start:end]
             updated = transform(original)
-            self.editor.Replace(start, end, updated)
+            self._atomic_replace(start, end, updated)
             self.editor.SetSelection(start, start + len(updated))
             self.document.set_text(self.editor.GetValue())
             self._set_status(f"{label} applied to selection")
@@ -17388,10 +17438,29 @@ class MainFrame(
             return
         word_start, word_end = word_span
         updated = transform(text[word_start:word_end])
-        self.editor.Replace(word_start, word_end, updated)
+        self._atomic_replace(word_start, word_end, updated)
         self.editor.SetSelection(word_start, word_start + len(updated))
         self.document.set_text(self.editor.GetValue())
         self._set_status(f"{label} applied to current word")
+
+    def _atomic_replace(self, start: int, end: int, updated: str) -> None:
+        """Replace ``text[start:end]`` with ``updated`` as ONE undo step.
+
+        wx ``TextCtrl.Replace`` is recorded by the native control as two separate
+        undo entries (a delete followed by an insert). Undoing a whole-document
+        case transform then lands on an empty/corrupted intermediate state
+        instead of the original text (#131). Selecting the range and writing over
+        it records a single, cleanly reversible edit on every surface — plain
+        ``wx.TextCtrl`` and the RTF Markdown lens alike — so one Ctrl+Z restores
+        exactly the pre-transform text.
+        """
+        set_selection = getattr(self.editor, "SetSelection", None)
+        write_text = getattr(self.editor, "WriteText", None)
+        if callable(set_selection) and callable(write_text):
+            set_selection(start, end)
+            write_text(updated)
+        else:  # pragma: no cover - defensive fallback for minimal stubs
+            self.editor.Replace(start, end, updated)
 
     def _current_word_span_at_caret(self, text: str, caret: int) -> tuple[int, int] | None:
         if not text:
@@ -17421,7 +17490,7 @@ class MainFrame(
     def _replace_document_text(self, updated_text: str) -> None:
         self._browse_navigation_cache = None
         current_text = self.editor.GetValue()
-        self.editor.Replace(0, len(current_text), updated_text)
+        self._atomic_replace(0, len(current_text), updated_text)
         self.editor.SetSelection(0, len(updated_text))
         self._schedule_browse_prewarm()
 
@@ -19074,8 +19143,8 @@ class MainFrame(
         wx = self._wx
         use_ai = self._show_message_box(
             "Do you want to use Quill's built-in artificial intelligence (Ask Quill)?\n\n"
-            "It runs entirely on your computer. You can turn it on or off later from the "
-            "AI menu.",
+            "It runs entirely on your computer. You can turn it on or off later from "
+            "Tools > AI Assistant.",
             "Use Artificial Intelligence?",
             wx.ICON_QUESTION | wx.YES_NO,
         )
@@ -19083,7 +19152,7 @@ class MainFrame(
         save_ai_enabled(enabled)
         self._sync_ai_enabled_menu(enabled)
         if not enabled:
-            self._set_status("AI is off. You can enable it later from the AI menu.")
+            self._set_status("AI is off. You can enable it later from Tools > AI Assistant.")
             return
         # Foundation Models (macOS) needs no download; only llama.cpp does.
         assistant = self._get_assistant()

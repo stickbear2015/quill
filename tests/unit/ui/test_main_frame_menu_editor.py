@@ -84,15 +84,15 @@ def test_reorder_applies_desired_order() -> None:
 
 def test_hidden_menu_is_removed_and_destroyed() -> None:
     cust = MenuCustomization()
-    cust.set_top_hidden("whisperer", True)
+    cust.set_top_hidden("window", True)
     frame = _build_frame(cust)
     bar = _FakeMenuBar()
-    whisperer_menu = next(m for m, _l in bar._menus if m.key == "whisperer")
+    window_menu = next(m for m, _l in bar._menus if m.key == "window")
 
     frame._apply_menu_customization(bar)
 
-    assert "whisperer" not in bar.keys()
-    assert whisperer_menu.destroyed is True
+    assert "window" not in bar.keys()
+    assert window_menu.destroyed is True
 
 
 def test_rename_uses_custom_label_with_mnemonic() -> None:

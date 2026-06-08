@@ -1,0 +1,35 @@
+{
+  "schema": "quill.extension/1",
+  "id": "com.quill.bundled.insert-tools",
+  "name": "Insert Tools",
+  "version": "1.0.0",
+  "author": "QUILL Project",
+  "description": "Bundled Quillin: pure Layer 1 snippets that insert the current date, time, or both, surfaced on the Insert menu. No capabilities, so it can never touch your files, network, or clipboard.",
+  "license": "MIT",
+  "min_quill_version": "1.0.0",
+  "capabilities": [],
+  "contributes": {
+    "commands": [
+      {
+        "id": "ext.insert.date",
+        "title": "Insert Date",
+        "run": { "snippet": "${date}${cursor}" }
+      },
+      {
+        "id": "ext.insert.time",
+        "title": "Insert Time",
+        "run": { "snippet": "${time}${cursor}" }
+      },
+      {
+        "id": "ext.insert.datetime",
+        "title": "Insert Date and Time",
+        "run": { "snippet": "${date} ${time}${cursor}" }
+      }
+    ],
+    "menus": [
+      { "parent": "Insert", "command": "ext.insert.date" },
+      { "parent": "Insert", "command": "ext.insert.time" },
+      { "parent": "Insert", "command": "ext.insert.datetime" }
+    ]
+  }
+}

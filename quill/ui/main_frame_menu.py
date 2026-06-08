@@ -63,6 +63,9 @@ class MenuBuilderMixin:
                 "publishing.verify_connection",
             ),
         )
+        # New document from clipboard sits beside New (Power Tools recirculation,
+        # menus.md Phase 4).
+        self._append_power_tools_file_create_items(file_menu)
         file_menu.AppendSeparator()
         # --- Save ---
         file_menu.Append(self._id_save, self._menu_label("&Save", "file.save"))
@@ -78,13 +81,15 @@ class MenuBuilderMixin:
         file_menu.Append(self._id_page_setup, "Pa&ge Setup...")
         file_menu.Append(self._id_print, self._menu_label("&Print...", "file.print"))
         file_menu.AppendSeparator()
+        # --- Current-file operations (Power Tools recirculation, menus.md Phase 4) ---
+        self._append_power_tools_file_ops_items(file_menu)
+        file_menu.AppendSeparator()
         # --- Close ---
         file_menu.Append(
             self._id_close_document,
             self._menu_label("&Close Document", "file.close_document"),
         )
         file_menu.Append(self._id_exit, self._menu_label("E&xit", "app.exit"))
-        menu_bar.Append(file_menu, "&File")
 
         self._id_find = wx.NewIdRef()
         self._id_undo = wx.NewIdRef()
@@ -145,6 +150,27 @@ class MenuBuilderMixin:
             ),
         )
         edit_menu.Check(self._id_toggle_extend_selection_mode, self._extend_selection_mode)
+        edit_menu.AppendSeparator()
+        # Find / Replace and the find-navigation commands live in Edit (their
+        # conventional home and their edit.* command ids); the Search menu is
+        # reserved for cross-file search (menus.md Phase 3).
+        edit_menu.Append(self._id_find, self._menu_label("Fin&d...", "edit.find"))
+        edit_menu.Append(
+            self._id_replace,
+            self._menu_label("Rep&lace...", "edit.replace"),
+        )
+        edit_menu.Append(
+            self._id_find_next,
+            self._menu_label("Find &Next", "edit.find_next"),
+        )
+        edit_menu.Append(
+            self._id_find_previous,
+            self._menu_label("Find Pre&vious", "edit.find_previous"),
+        )
+        edit_menu.Append(
+            self._id_find_all_matches,
+            self._menu_label("Find All &Matches", "edit.find_all_matches"),
+        )
         edit_menu.AppendSeparator()
         # Insert Link lives in the Insert menu (its primary home); the Edit menu
         # keeps only Follow Link so the same command is not duplicated (MENU-3).
@@ -219,30 +245,14 @@ class MenuBuilderMixin:
         selection_menu.AppendSeparator()
         selection_menu.AppendSubMenu(mark_ring_menu, "Recent &Marks (Ring)")
         edit_menu.AppendSubMenu(selection_menu, "&Selection")
-        menu_bar.Append(edit_menu, "&Edit")
+        # Paste-as-Markdown and line-deletion commands (Power Tools recirculation,
+        # menus.md Phase 4).
+        self._append_power_tools_edit_items(edit_menu)
         insert_menu = wx.Menu()
-        menu_bar.Append(insert_menu, "&Insert")
 
         search_menu = wx.Menu()
-        search_menu.Append(self._id_find, self._menu_label("&Find...", "edit.find"))
-        search_menu.Append(
-            self._id_replace,
-            self._menu_label("&Replace...", "edit.replace"),
-        )
-        search_menu.AppendSeparator()
-        search_menu.Append(
-            self._id_find_next,
-            self._menu_label("Find &Next", "edit.find_next"),
-        )
-        search_menu.Append(
-            self._id_find_previous,
-            self._menu_label("Find &Previous", "edit.find_previous"),
-        )
-        search_menu.Append(
-            self._id_find_all_matches,
-            self._menu_label("Find &All Matches", "edit.find_all_matches"),
-        )
-        search_menu.AppendSeparator()
+        # Search is the cross-file search hub; in-document Find/Replace lives in
+        # the Edit menu (menus.md Phase 3).
         search_menu.Append(
             self._id_search_in_files,
             self._menu_label("Search in &Files...", "tools.search_in_files"),
@@ -251,6 +261,11 @@ class MenuBuilderMixin:
             self._id_replace_in_files,
             self._menu_label("&Replace Across Files...", "tools.replace_in_files"),
         )
+        # Regex match count/extract and block set-ops make Search the single
+        # find / filter / extract-lines hub (Power Tools recirculation, menus.md
+        # Phase 4).
+        self._append_power_tools_search_items(search_menu)
+        self._append_quillin_menu_items(search_menu, "Search")
         self._id_send_to_tray = wx.NewIdRef()
         self._id_toggle_tray_mode = wx.NewIdRef()
         self._id_toggle_soft_wrap = wx.NewIdRef()
@@ -272,9 +287,11 @@ class MenuBuilderMixin:
         self._id_dirty_title_asterisk = wx.NewIdRef()
         self._id_dirty_title_asterisk_text = wx.NewIdRef()
         view_menu = wx.Menu()
-        view_menu.AppendCheckItem(self._id_toggle_tray_mode, "Enable System Tray &Mode")
-        view_menu.Check(self._id_toggle_tray_mode, self.settings.tray_enabled)
-        view_menu.AppendSeparator()
+        # View keeps genuine view actions and view-state toggles. Preference
+        # toggles (theme/dark mode, system-tray mode, title-bar path, dirty-title
+        # style, persistent undo, spell-check-as-you-type, and word-prediction-as-
+        # you-type) now live in the registry-driven Settings dialog (menus.md
+        # Phase 3), where they are persisted; they are no longer duplicated here.
         view_menu.AppendCheckItem(
             self._id_toggle_soft_wrap,
             self._menu_label("Toggle Soft &Wrap", "view.toggle_soft_wrap"),
@@ -286,49 +303,6 @@ class MenuBuilderMixin:
         view_menu.Check(self._id_toggle_tab_control, self.settings.show_tab_control)
         view_menu.AppendCheckItem(self._id_toggle_find_wrap, "Wrap &Find Searches")
         view_menu.Check(self._id_toggle_find_wrap, self.settings.wrap_find)
-        view_menu.AppendCheckItem(self._id_toggle_title_full_path, "Show Full Path in &Title Bar")
-        view_menu.Check(
-            self._id_toggle_title_full_path,
-            getattr(self.settings, "title_bar_path_mode", "name") == "full_path",
-        )
-        dirty_menu = wx.Menu()
-        dirty_menu.AppendRadioItem(self._id_dirty_title_text, "Dirty Indicator: Text")
-        dirty_menu.AppendRadioItem(self._id_dirty_title_asterisk, "Dirty Indicator: Asterisk")
-        dirty_menu.AppendRadioItem(
-            self._id_dirty_title_asterisk_text,
-            "Dirty Indicator: Asterisk + Text",
-        )
-        dirty_style = getattr(self.settings, "dirty_title_style", "text")
-        dirty_menu.Check(self._id_dirty_title_text, dirty_style == "text")
-        dirty_menu.Check(self._id_dirty_title_asterisk, dirty_style == "asterisk")
-        dirty_menu.Check(
-            self._id_dirty_title_asterisk_text,
-            dirty_style == "asterisk_text",
-        )
-        view_menu.AppendSubMenu(dirty_menu, "&Dirty Title Style")
-        view_menu.AppendCheckItem(self._id_toggle_dark_mode, "Toggle &Dark Mode")
-        view_menu.Check(self._id_toggle_dark_mode, self.settings.theme == "dark")
-        view_menu.AppendCheckItem(
-            self._id_toggle_persistent_undo,
-            "Enable &Persistent Undo",
-        )
-        view_menu.Check(self._id_toggle_persistent_undo, self.settings.persistent_undo)
-        view_menu.AppendCheckItem(
-            self._id_toggle_spellcheck_as_you_type,
-            "Spell Check As You &Type",
-        )
-        view_menu.Check(
-            self._id_toggle_spellcheck_as_you_type,
-            self.settings.spellcheck_as_you_type,
-        )
-        view_menu.AppendCheckItem(
-            self._id_toggle_intellisense_as_you_type,
-            "Word Prediction As You &Type",
-        )
-        view_menu.Check(
-            self._id_toggle_intellisense_as_you_type,
-            getattr(self.settings, "intellisense_as_you_type", False),
-        )
         view_menu.AppendCheckItem(
             self._id_start_with_no_document_open,
             "Start With &No Document Open",
@@ -337,6 +311,7 @@ class MenuBuilderMixin:
             self._id_start_with_no_document_open,
             self.settings.start_with_no_document_open,
         )
+        view_menu.AppendSeparator()
         view_menu.Append(
             self._id_preview,
             self._menu_label("&Preview...", "view.preview"),
@@ -353,9 +328,6 @@ class MenuBuilderMixin:
             self._id_browser_preview,
             self._menu_label("&Browser Preview...", "view.browser_preview"),
         )
-        menu_bar.Append(view_menu, "&View")
-        menu_bar.Append(search_menu, "&Search")
-
         navigate_menu = wx.Menu()
         self._id_go_to_line = wx.NewIdRef()
         self._id_set_bookmark = wx.NewIdRef()
@@ -484,27 +456,32 @@ class MenuBuilderMixin:
         self._id_insert_code_block = wx.NewIdRef()
         self._id_insert_footnote = wx.NewIdRef()
         self._id_insert_table = wx.NewIdRef()
+        # Percent / first / last non-blank movement (Power Tools recirculation,
+        # menus.md Phase 4).
+        self._append_power_tools_navigate_items(navigate_menu)
         format_menu = wx.Menu()
-        format_menu.Append(
+        case_menu = wx.Menu()
+        case_menu.Append(
             self._id_upper_case,
             self._menu_label("&Upper Case", "format.upper_case"),
         )
-        format_menu.Append(
+        case_menu.Append(
             self._id_lower_case,
             self._menu_label("&Lower Case", "format.lower_case"),
         )
-        format_menu.Append(
+        case_menu.Append(
             self._id_title_case,
             self._menu_label("&Title Case", "format.title_case"),
         )
-        format_menu.Append(
+        case_menu.Append(
             self._id_sentence_case,
             self._menu_label("&Sentence Case", "format.sentence_case"),
         )
-        format_menu.Append(
+        case_menu.Append(
             self._id_toggle_case,
             self._menu_label("To&ggle Case", "format.toggle_case"),
         )
+        format_menu.AppendSubMenu(case_menu, "Change &Case")
         format_menu.AppendSeparator()
         format_menu.Append(
             self._id_toggle_line_comment,
@@ -633,6 +610,10 @@ class MenuBuilderMixin:
             self._id_manage_snippets,
             self._menu_label("Manage Snippets...", "format.manage_snippets"),
         )
+        # Special character / date-time / calculated date / file content (Power Tools
+        # recirculation, menus.md Phase 4).
+        self._append_power_tools_insert_items(insert_menu)
+        self._append_quillin_menu_items(insert_menu, "Insert")
         self._id_next_document = wx.NewIdRef()
         self._id_previous_document = wx.NewIdRef()
         window_menu = wx.Menu()
@@ -848,21 +829,9 @@ class MenuBuilderMixin:
             self._id_announcement_backend,
             self._menu_label("Announcement &Backend...", "tools.announcement_backend"),
         )
-        backend_menu = wx.Menu()
-        backend_menu.AppendRadioItem(
-            self._id_announcement_backend_auto,
-            "Automatic (Prism when available)",
-        )
-        backend_menu.AppendRadioItem(self._id_announcement_backend_prism, "Prism")
-        backend_menu.AppendRadioItem(self._id_announcement_backend_status_only, "Status Bar Only")
-        current_backend = self._announcement_engine.state().requested_backend
-        backend_menu.Check(self._id_announcement_backend_auto, current_backend == "auto")
-        backend_menu.Check(self._id_announcement_backend_prism, current_backend == "prism")
-        backend_menu.Check(
-            self._id_announcement_backend_status_only,
-            current_backend == "status_only",
-        )
-        read_aloud_menu.AppendSubMenu(backend_menu, "Announcement Bac&kend")
+        # The Announcement Backend picker is a preference, not an action; its
+        # auto/Prism/status-only choice now lives in the registry-driven Settings
+        # dialog (menus.md Phase 4 / §3.5), flattening this 3-level chain.
         read_aloud_menu.Append(
             self._id_toggle_announcement_trace,
             "Announcement &Trace (in Settings)...",
@@ -909,16 +878,17 @@ class MenuBuilderMixin:
             self._id_describe_image,
             self._menu_label("&Describe Image...", "tools.describe_image"),
         )
-        shell_menu = wx.Menu()
-        shell_menu.Append(
+        # Shell-integration verbs are promoted to direct Integrations entries
+        # (no third level — menus.md Phase 4 / §3.5).
+        integrations_menu.AppendSeparator()
+        integrations_menu.Append(
             self._id_shell_install,
             self._menu_label("&Install Shell Integration...", "tools.shell_install"),
         )
-        shell_menu.Append(
+        integrations_menu.Append(
             self._id_shell_remove,
             self._menu_label("&Remove Shell Integration", "tools.shell_remove"),
         )
-        integrations_menu.AppendSubMenu(shell_menu, "Sh&ell Integration")
         tools_menu.AppendSubMenu(integrations_menu, "&Integrations")
 
         intake_menu = wx.Menu()
@@ -1048,7 +1018,7 @@ class MenuBuilderMixin:
             self._menu_label("Generate &Audio...", "tools.read_aloud_generate_audio"),
         )
         ai_menu.AppendSubMenu(speech_menu, "&Speech")
-        menu_bar.Append(ai_menu, "A&I")
+        tools_menu.AppendSubMenu(ai_menu, "AI &Assistant")
         whisperer_menu = wx.Menu()
         whisperer_menu.Append(
             self._id_whisperer_about,
@@ -1147,12 +1117,11 @@ class MenuBuilderMixin:
             self._menu_label("&Capability Matrix", "whisperer.capability_matrix"),
         )
         whisperer_menu.AppendSubMenu(bw_rollout_menu, "&Rollout")
-        # BITS Whisperer is deferred to QUILL 2.0; the master `core.bw_whisperer`
-        # flag is locked off for 1.0, so the whole menu stays hidden until the
-        # suite reaches feature parity. Its commands are also feature-gated out of
-        # the palette via the bw_* feature dependencies on this master flag.
+        # BITS Whisperer (deferred to QUILL 2.0) is demoted from a top-level menu
+        # to a Tools submenu (menus.md Phase 2); it only appears when the master
+        # core.bw_whisperer flag is enabled, which it is not for 1.0.
         if self._feature_enabled("core.bw_whisperer"):
-            menu_bar.Append(whisperer_menu, "&BITS Whisperer")
+            tools_menu.AppendSubMenu(whisperer_menu, "&BITS Whisperer")
         glow_menu = wx.Menu()
         glow_menu.Append(
             self._id_glow_audit_document,
@@ -1171,7 +1140,6 @@ class MenuBuilderMixin:
             self._id_glow_fix_selection,
             self._menu_label("GLOW Fix S&election", "tools.glow_fix_selection"),
         )
-        authoring_menu.AppendSubMenu(glow_menu, "&GLOW")
         macro_menu = wx.Menu()
         macro_menu.Append(
             self._id_start_macro_recording,
@@ -1189,53 +1157,62 @@ class MenuBuilderMixin:
             self._id_manage_macros,
             self._menu_label("&Manage Macros...", "tools.manage_macros"),
         )
-        authoring_menu.AppendSubMenu(macro_menu, "&Macros")
-        convert_menu = wx.Menu()
-        convert_menu.Append(
+        # Transform Lines is the single home for line/text transforms (menus.md
+        # §3.7.2): the former Tools > Authoring > Convert group plus the Power Tools
+        # line transforms, surfaced under Format where text-shaping lives.
+        transform_menu = wx.Menu()
+        self._append_power_tools_transform_line_items(transform_menu)
+        self._append_quillin_menu_items(transform_menu, "Format")
+        transform_menu.AppendSeparator()
+        transform_menu.Append(
             self._id_sort_lines_ascending,
             self._menu_label("&Sort Lines Ascending", "edit.sort_lines_ascending"),
         )
-        convert_menu.Append(
+        transform_menu.Append(
             self._id_sort_lines_descending,
             self._menu_label("Sort Lines &Descending", "edit.sort_lines_descending"),
         )
-        convert_menu.Append(
+        transform_menu.Append(
             self._id_reverse_lines,
             self._menu_label("&Reverse Lines", "edit.reverse_lines"),
         )
-        convert_menu.Append(
+        transform_menu.Append(
             self._id_remove_duplicate_lines,
             self._menu_label("Remove &Duplicate Lines", "edit.remove_duplicate_lines"),
         )
-        convert_menu.AppendSeparator()
-        convert_menu.Append(
+        transform_menu.AppendSeparator()
+        transform_menu.Append(
             self._id_trim_trailing_whitespace,
             self._menu_label(
                 "Trim Trailing &Whitespace",
                 "edit.trim_trailing_whitespace",
             ),
         )
-        convert_menu.Append(
+        transform_menu.Append(
             self._id_normalize_whitespace,
             self._menu_label("&Normalize Whitespace", "edit.normalize_whitespace"),
         )
-        convert_menu.AppendSeparator()
-        convert_menu.Append(
+        transform_menu.AppendSeparator()
+        transform_menu.Append(
             self._id_convert_indentation_to_spaces,
             self._menu_label(
                 "Convert Indentation to &Spaces",
                 "edit.convert_indentation_to_spaces",
             ),
         )
-        convert_menu.Append(
+        transform_menu.Append(
             self._id_convert_indentation_to_tabs,
             self._menu_label(
                 "Convert Indentation to &Tabs",
                 "edit.convert_indentation_to_tabs",
             ),
         )
-        authoring_menu.AppendSubMenu(convert_menu, "Co&nvert")
+        format_menu.AppendSubMenu(transform_menu, "Transform &Lines")
         tools_menu.AppendSubMenu(authoring_menu, "Authoring && &Automation")
+        # GLOW and Macros are promoted to direct Tools submenus so no Tools chain
+        # exceeds two levels (menus.md Phase 4 / §3.5).
+        tools_menu.AppendSubMenu(glow_menu, "&GLOW")
+        tools_menu.AppendSubMenu(macro_menu, "&Macros")
 
         compare_menu = wx.Menu()
         compare_menu.Append(self._id_compare_with_file, "Compare with &File...")
@@ -1261,6 +1238,9 @@ class MenuBuilderMixin:
         )
         accessibility_menu.Append(self._id_validate_contrast, "&Validate Contrast...")
         accessibility_menu.Append(self._id_link_inventory, "Link Inventory && Alt-Text Catalo&g...")
+        # Speak cursor address / document status / selection length are screen-
+        # reader status queries (Power Tools recirculation, menus.md Phase 4).
+        self._append_power_tools_accessibility_items(accessibility_menu)
         tools_menu.AppendSubMenu(accessibility_menu, "A&ccessibility")
 
         support_menu = wx.Menu()
@@ -1300,10 +1280,8 @@ class MenuBuilderMixin:
         customize_menu.Append(self._id_reset_keymap, "&Reset Keymap")
         tools_menu.AppendSubMenu(customize_menu, "&Customize")
         tools_menu.AppendSeparator()
-        tools_menu.AppendSubMenu(self._build_edsharp_menu(), "Ed&Sharp Tools")
-        menu_bar.Append(navigate_menu, "&Navigate")
-        menu_bar.Append(format_menu, "F&ormat")
-        menu_bar.Append(tools_menu, "&Tools")
+        tools_menu.AppendSubMenu(self._build_power_tools_menu(), "&Power Tools")
+        tools_menu.AppendSubMenu(self._build_quillins_menu(), "&Quillins")
 
         # The former top-level "Settings" menu is gone. All configuration now
         # lives together under Tools > Customize (Preferences, Customize Menus,
@@ -1382,6 +1360,19 @@ class MenuBuilderMixin:
         help_menu.Append(self._id_check_updates, "Check for &Updates...")
         help_menu.Append(self._id_check_glow_updates, "Check for &GLOW Updates...")
         help_menu.Append(self._id_about_quill, "&About Quill")
+
+        # MENU-REORDER (menus.md Phase 1): every top-level menu is attached to the
+        # bar here, in one place, in the conventional Windows order. Menu *content*
+        # is built above in arbitrary order; wx lets bar order be set independently
+        # of construction order. Keep this list in sync with ``_TOP_MENU_DEFS``.
+        menu_bar.Append(file_menu, "&File")
+        menu_bar.Append(edit_menu, "&Edit")
+        menu_bar.Append(view_menu, "&View")
+        menu_bar.Append(insert_menu, "&Insert")
+        menu_bar.Append(format_menu, "F&ormat")
+        menu_bar.Append(navigate_menu, "&Navigate")
+        menu_bar.Append(search_menu, "&Search")
+        menu_bar.Append(tools_menu, "&Tools")
         menu_bar.Append(window_menu, "&Window")
         menu_bar.Append(help_menu, "&Help")
 

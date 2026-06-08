@@ -1,0 +1,54 @@
+{
+  "schema": "quill.extension/1",
+  "id": "com.quill.bundled.text-tools",
+  "name": "Text Tools",
+  "version": "1.0.0",
+  "author": "QUILL Project",
+  "description": "Bundled Quillin: number lines, hard-wrap, count/extract regex matches, and cursor-split set operations, surfaced in the Format and Search menus.",
+  "license": "MIT",
+  "min_quill_version": "1.0.0",
+  "capabilities": ["editor.read", "editor.write", "ui.announce", "ui.prompt", "ui.command"],
+  "main": "extension.py",
+  "contributes": {
+    "commands": [
+      {
+        "id": "ext.text.number_lines",
+        "title": "Number Lines",
+        "run": { "handler": "number_lines" }
+      },
+      {
+        "id": "ext.text.hard_wrap",
+        "title": "Hard-Wrap Lines",
+        "run": { "handler": "hard_wrap" }
+      },
+      {
+        "id": "ext.text.count_regex",
+        "title": "Count Regex Matches",
+        "run": { "handler": "count_regex" }
+      },
+      {
+        "id": "ext.text.extract_regex",
+        "title": "Extract Regex Matches",
+        "run": { "handler": "extract_regex" }
+      },
+      {
+        "id": "ext.text.lines_first_only",
+        "title": "Lines in First Block Only",
+        "run": { "handler": "lines_first_only" }
+      },
+      {
+        "id": "ext.text.lines_common",
+        "title": "Lines Common to Both Blocks",
+        "run": { "handler": "lines_common" }
+      }
+    ],
+    "menus": [
+      { "parent": "Format", "command": "ext.text.number_lines" },
+      { "parent": "Format", "command": "ext.text.hard_wrap" },
+      { "parent": "Search", "command": "ext.text.count_regex" },
+      { "parent": "Search", "command": "ext.text.extract_regex" },
+      { "parent": "Search", "command": "ext.text.lines_first_only" },
+      { "parent": "Search", "command": "ext.text.lines_common" }
+    ]
+  }
+}

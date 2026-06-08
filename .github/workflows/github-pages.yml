@@ -29,16 +29,45 @@ jobs:
         uses: actions/configure-pages@v6
         with:
           enablement: true
+      - name: Install Pandoc
+        if: steps.pages.outcome == 'success'
+        run: sudo apt-get update && sudo apt-get install -y pandoc
       - name: Stage docs site
         if: steps.pages.outcome == 'success'
         shell: bash
         run: |
+          set -euo pipefail
           rm -rf site-root
           mkdir -p site-root/docs
+
+          # 1. The hand-built HTML shell: landing page, documentation hub, FAQ,
+          #    shared stylesheet, .nojekyll, and the update feed.
           cp -R docs/site/. site-root/
-          cp docs/userguide.* site-root/docs/ 2>/dev/null || true
-          cp docs/announcement-beta.* site-root/docs/ 2>/dev/null || true
-          cp docs/QUILL-PRD.* site-root/docs/ 2>/dev/null || true
+
+          # 2. Every documentation page already rendered to HTML under docs/.
+          #    The site serves HTML only — no Markdown is published.
+          cp docs/*.html site-root/docs/ 2>/dev/null || true
+
+          # 3. Render the project's top-level contributor/governance docs to
+          #    HTML so the site is self-contained (no links off to raw Markdown).
+          render_root() { [ -f "$1" ] && pandoc "$1" -f gfm -t html5 -s --metadata title="$3" -o "site-root/docs/$2" || true; }
+          render_root CONTRIBUTING.md       contributing.html        "Contributing to QUILL"
+          render_root GOVERNANCE.md         governance.html          "QUILL Governance"
+          render_root CODE_OF_CONDUCT.md    code-of-conduct.html     "Code of Conduct"
+          render_root MAINTAINERS.md        maintainers.html         "QUILL Maintainers"
+          render_root SECURITY.md           security.html            "Security Policy"
+          render_root PRIVACY.md            privacy.html             "Privacy"
+          render_root RESPONSIBLE_AI_USE.md responsible-ai-use.html  "Responsible AI Use"
+
+          # 4. Rewrite internal Markdown links to their published HTML targets so
+          #    no served page points at a .md file. Order matters: handle the
+          #    docs/-prefixed and ../ cases before the bare same-directory case.
+          find site-root/docs -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's@href="docs/\([^"#]*\)\.md\(#[^"]*\)\?"@href="\1.html\2"@g' \
+            -e 's@href="\.\./CODE_OF_CONDUCT\.md"@href="code-of-conduct.html"@g' \
+            -e 's@href="\.\./SECURITY\.md"@href="security.html"@g' \
+            -e 's@href="\.\./CONTRIBUTING\.md"@href="contributing.html"@g' \
+            -e 's@href="\([^"#:]*\)\.md\(#[^"]*\)\?"@href="\1.html\2"@g'
       - name: Skip Pages deploy (not enabled)
         if: steps.pages.outcome != 'success'
         shell: bash

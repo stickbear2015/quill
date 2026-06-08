@@ -1,11 +1,72 @@
-# QUILL Scripting & Quillins — Design Plan (for review)
+# QUILL Scripting & Quillins — Design & Implementation
 
-Status: **Draft for review** · Target: **QUILL 2.0** · Branch: `edsharp`
+Status: **Implemented (framework foundation)** · Branch: `edsharp`
 
-This document proposes how QUILL should let power users extend the application
-with custom behaviour that hooks into the **menu system**, **hotkeys**, and
-**right-click / context menus**. It is a design plan only — no runtime code in
-this document is wired into the shipping app yet.
+This document is both the design rationale and the authoritative authoring
+reference for **Quillins**, QUILL's extension framework. The framework described
+here is **implemented and tested in the codebase** (`quill/core/quillins/*` and
+`quill/ui/main_frame_quillins.py`); see the Implementation Status map in §0a for
+the module-by-module mapping. Third-party Quillin **execution** is deliberately
+gated off for QUILL 1.0 by the SEC-8 `core.third_party_plugins` feature flag
+(`locked_off`), so a shipping 1.0 build discovers and runs no third-party code
+while the framework, the Quillins Manager, and the full test bar are in place.
+
+## 0a. Implementation status (module map)
+
+Every design element below is backed by a shipping, wx-free `quill/core` module
+(plus one `quill/ui` mixin) and a test. The neutral technical terms
+(`extension`, `quill.extension/1`, `ext.*`, `QuillExtensionApi`) are the stable
+wire/code identifiers; the experience speaks of **Quillins**.
+
+| Design element (this doc) | Module | Tests |
+| --- | --- | --- |
+| Manifest model, capability catalogue, errors (§4, §5, §14.1) | `quill/core/quillins/model.py` | `tests/unit/core/test_quillins_model.py` |
+| Manifest validation (§13) | `quill/core/quillins/validation.py` | `tests/unit/core/test_quillins_validation.py` |
+| Published JSON Schema (§13) | `quill/core/schemas/extension.json` | `tests/unit/core/test_quillins_protocol.py` (schema⇄validator agreement) |
+| Layer 1 snippet expansion (§14.3) | `quill/core/quillins/snippets.py` | `tests/unit/core/test_quillins_snippets.py` |
+| Contribution merge + conflict detection (§4, §15) | `quill/core/quillins/registry.py` | `tests/unit/core/test_quillins_registry.py` |
+| Discovery, enable/disable, SEC-8 gate (§6) | `quill/core/quillins/loader.py` | `tests/unit/core/test_quillins_loader.py` |
+| RPC framing (§3) | `quill/core/quillins/protocol.py` | `tests/unit/core/test_quillins_protocol.py` |
+| Out-of-process host + capability/consent gate (§5, §6) | `quill/core/quillins/host.py` | `tests/unit/core/test_quillins_host.py`, `tests/integration/test_quillins_host_integration.py` |
+| Sandboxed worker + `QuillExtensionApi` (§5, §14.4) | `quill/core/quillins/host_worker.py` | `tests/integration/test_quillins_host_integration.py` |
+| Tools ▸ Quillins menu, runtime, Quillins Manager dialog (§7, §17) | `quill/ui/main_frame_quillins.py` | `tests/unit/ui/test_main_frame_quillins.py`, A11Y-4 dialog inventory |
+| Bundled Quillin (Tier C: Layer 1 snippet + Layer 2 handler) | `quill/quillins_bundled/markdown-helpers/` | `tests/unit/core/test_quillins_bundled_markdown.py` |
+
+A complete, loadable **bundled Quillin** ships in
+[`quill/quillins_bundled/markdown-helpers/`](../quill/quillins_bundled/markdown-helpers/):
+a `manifest.json` contributing a Layer 1 front-matter snippet
+(`ext.mdh.frontmatter`) and a Layer 2 bold-selection handler (`ext.mdh.bold`),
+plus an `extension.py` entry module.
+`tests/unit/core/test_quillins_bundled_markdown.py`
+validates the manifest, builds a conflict-free contribution registry, expands the
+snippet, and drives the handler — and the same directory loads and runs through
+the real out-of-process host worker. As a **Tier C bundled Quillin** it ships
+enabled (gated by the on-by-default `core.bundled_quillins` flag, wholly
+independent of the SEC-8 third-party lock) and is the canonical template for
+authoring a new Quillin.
+
+### Submitting a Quillin
+
+Authoring a Quillin for submission is governed by three companion pieces:
+
+- **[Quillin Author Covenant](quillin-code-of-conduct.md)** — the code of
+  conduct for Quillin *code*: accessibility (announce every outcome,
+  keyboard-complete), capability minimization and honesty, no silent network or
+  telemetry, privacy, security (no obfuscation, no sandbox-escape, no malware),
+  licensing, and namespace etiquette. Every submission attests to it.
+- **[Submission guide](quillin-submission.md)** — the end-to-end author journey:
+  directory layout, manifest authoring, self-lint, tests, the PR template, and
+  the review criteria.
+- **The submission linter** — `python -m quill.tools.quillin_lint <dir> --strict`
+  (`quill/tools/quillin_lint.py`) applies three lenses: an *executable* check of
+  the published JSON Schema (`quill/core/schemas/extension.json`), the contract
+  validator the loader enforces, and a structure/capability-hygiene gate. The
+  `Quillin Verify` workflow (`.github/workflows/quillin-verify.yml`) runs it on
+  every submission, so a Quillin cannot land without passing.
+
+This document is a design plan turned reference; where it describes future,
+optional, or 2.0-scale work it says so explicitly (the QuickJS evaluator in §9,
+and the internal modularization in §16).
 
 ## Naming: Quillins
 
@@ -23,19 +84,15 @@ Quillin.
 ## 0. Provenance and inspiration
 
 This capability is QUILL's answer to the scripting/add-in model pioneered by
-**EdSharp 4.0** by **Jamal Mazrui** (2007–2017), a respected accessible,
-screen-reader-first Windows editor that exposed almost its entire object model
-to add-in code.
+earlier accessible, screen-reader-first Windows editors that exposed almost
+their entire object model to add-in code.
 
-- Jamal Mazrui on GitHub: <https://github.com/jamalmazrui>
-- EdSharp source: <https://github.com/jamalmazrui/EdSharp> and
-  <https://github.com/EmpowermentZone/EdSharp>
-
-EdSharp used **JScript.NET** as its scripting language because its host
-application was written in C#/.NET, so the scripting language matched the
-platform object model and the .NET Framework Class Library. The faithful
-translation of that design for QUILL is to expose **QUILL's own object model**,
-which is **Python** — see the language decision below.
+Those editors typically scripted the host application in **the host's own
+language**: when the application was written in C#/.NET, the add-in language was
+a .NET language, so the scripting language matched the platform object model and
+its class library. The faithful translation of that design for QUILL is to
+expose **QUILL's own object model**, which is **Python** &mdash; see the language
+decision below.
 
 ## 1. Goals and non-goals
 
@@ -49,7 +106,8 @@ which is **Python** — see the language decision below.
   subprocess access unless explicitly declared and user-granted, consistent with
   QUILL's existing consent gates, DPAPI secret handling, and "no silent network
   calls" rule.
-- Make extensions **authorable by blind power users** — the EdSharp audience —
+- Make extensions **authorable by blind power users** &mdash; the same audience
+  those editors served &mdash;
   with plain-text manifests, readable Python, and accessible install/enable UX.
 - Preserve the architecture boundary: `quill/core` and `quill/io` stay
   UI-framework-agnostic; only `quill/ui` and `quill/platform/windows` touch `wx`.
@@ -68,11 +126,11 @@ which is **Python** — see the language decision below.
 
 Rationale: QUILL's platform object model is Python, so scripting it in Python is
 the lowest-friction, most powerful, most debuggable, and most maintainable
-option — and it is the faithful analogue of EdSharp scripting its C# host with
-JScript.NET. Choosing JavaScript as the primary language would mean maintaining
+option — and it is the faithful analogue of scripting a .NET editor in a .NET
+language. Choosing JavaScript as the primary language would mean maintaining
 a second runtime and a permanent Python⇄JS marshalling layer purely to script an
-application that is already Python. JavaScript's only strong advantages
-(familiarity, EdSharp-parity optics) do not outweigh that cost.
+application that is already Python. JavaScript's only strong advantage
+(familiarity) does not outweigh that cost.
 
 A comparison of the options considered (Python, embedded JavaScript via
 QuickJS/V8, Lua via `lupa`, WASM via Extism, declarative-only) is retained in
@@ -209,7 +267,7 @@ Design rules:
 ## 7. Accessibility of the authoring experience
 
 - Manifests are plain JSON and extensions are plain `.py` — both fully readable in
-  QUILL itself, the EdSharp authoring philosophy.
+  QUILL itself, following that same authoring philosophy.
 - The **Quillins Manager** dialog uses stock controls
   (`wx.ListBox` / `wx.TextCtrl` read-only review panes, explicit default buttons,
   consistent Escape/Close handling, focus returned to the editor on close) per
@@ -227,34 +285,48 @@ Design rules:
 
 ## 9. Optional future: JavaScript snippet evaluator (QuickJS)
 
-Strictly optional, post-foundation, for literal EdSharp `.js`-snippet parity:
+Strictly optional, post-foundation, for literal `.js`-snippet parity:
 embed **QuickJS** (tiny, no ambient I/O by default) as an **expression/snippet
-evaluator** only — e.g. a "Evaluate Expression" command and `.js` snippet tokens,
-matching EdSharp's `Control+Equals` / `Alt+V`. It would **not** be the extension
+evaluator** only — e.g. a "Evaluate Expression" command and `.js` snippet tokens.
+It would **not** be the extension
 API. Capabilities would be granted explicitly, identical to the Python layer.
 
 ## 10. Phasing / milestones
 
-1. **M1 — Manifest + loader (Layer 1):** schema, validation, load/enable/disable,
-   command/menu/context/hotkey registration, conflict detection, Extensions
-   Manager dialog. No code execution. Highest value, lowest risk.
-2. **M2 — Python host (Layer 2):** out-of-process worker, RPC bridge,
+Status note: **M1–M3 are implemented and tested** (see §0a). M4 remains optional
+future work. Third-party execution stays gated off for 1.0 (SEC-8).
+
+1. **M1 — Manifest + loader (Layer 1): _Done._** Schema, validation, load/enable/
+   disable, command/menu/context/hotkey registration, conflict detection,
+   Quillins Manager dialog. No code execution.
+2. **M2 — Python host (Layer 2): _Done._** Out-of-process worker, RPC bridge,
    `QuillExtensionApi v1` with `editor.read`/`editor.write`/`announce`/
-   `register_command`, undo/announcement integration.
-3. **M3 — Capabilities + consent:** `fs.read`/`fs.write`/`net`, install-time
-   disclosure, per-action consent gate, audit log.
-4. **M4 (optional) — QuickJS snippet evaluator** for EdSharp `.js` parity.
+   `register_command`, undo/announcement integration through the host services.
+3. **M3 — Capabilities + consent: _Done._** `fs.read`/`fs.write`/`net`,
+   install-time disclosure, per-action consent gate. (A per-extension audit log
+   remains a future enhancement.)
+4. **M4 (optional) — QuickJS snippet evaluator** for `.js` snippet parity.
 
 ## 11. Testing strategy
 
-- `quill/core` + `quill/io` (manifest model, schema validation, capability
-  checks, conflict detection): real unit tests, wx-free, strict mypy.
-- UI registration (menu/context/hotkey wiring): source-contract tests plus the
-  A11Y-4 dialog-contract guard for the Quillins Manager dialog.
-- Host/RPC bridge: integration tests with a fake extension exercising
-  read/write/announce and a capability-denied path.
-- Security: explicit tests that an undeclared capability is rejected and that no
-  document content crosses the bridge without consent.
+Status note: **this strategy is implemented** — the test files are listed in the
+§0a map. The bar below is what those tests enforce.
+
+- `quill/core` (manifest model, schema validation, snippet expansion, capability
+  checks, conflict detection, loader/SEC-8 gating): real unit tests, wx-free,
+  strict mypy. The schema artifact and the hand-rolled validator are asserted to
+  agree (capability enum, menu parents, schema id).
+- UI registration (menu/context/hotkey wiring, Manager dialog): source-contract
+  tests (`tests/unit/ui/test_main_frame_quillins.py`) plus the A11Y-4 dialog
+  inventory/contract guard for the Quillins Manager dialog.
+- Host/RPC bridge: integration tests
+  (`tests/integration/test_quillins_host_integration.py`) spawn the real worker
+  subprocess and exercise read/write/announce, the capability-denied path, the
+  consent-denied path, network-with-consent, handler-error isolation, and main-
+  module path containment.
+- Security: explicit tests that an undeclared capability is rejected (in-worker
+  and at the dispatcher), that consent defaults to deny, and that diagnostic
+  `log` output never reaches user announcements.
 
 ## 12. Open questions for review
 
@@ -680,6 +752,15 @@ complexity for zero security benefit, since the code is already trusted.
   the refactor's justification is **maintainability**, not new capability.
 - This is a **2.0-scale effort**, sequenced after user-facing wins.
 
+### 16.4 The migration playbook
+
+The concrete, sequenced procedure for moving first-party code off the
+`main_frame.py` god object and onto this contribution grammar — pilot selection,
+the `register(host)` module shape, the host-facade surface, characterization-test
+discipline, and a wave-by-wave order — lives in a dedicated companion document:
+**`docs/quillin-migration-plan.md`**. Read this section for the *why*; read that
+document for the *how*.
+
 ## 17. Seamless use, transparent governance
 
 Extensions should be **indistinguishable from built-in features at the point of
@@ -909,8 +990,8 @@ well. Carrying the principle forward, three limits bind Quillins specifically:
 
 | Option | Pros | Cons | Verdict |
 | --- | --- | --- | --- |
-| **Python (embedded, app's own language)** | No new runtime; whole object model already Python; best debugging/docs/stdlib; faithful analogue of EdSharp scripting its C# host; easiest to maintain | In-process sandboxing is weak — must run out-of-process for real isolation | **Chosen (Layer 2)** |
-| **JavaScript (QuickJS / V8 via `py_mini_racer`)** | Familiar to most; strong sandbox (isolates / no ambient I/O); EdSharp/JScript.NET optics; QuickJS tiny | Permanent Python⇄JS marshalling; cross-boundary stack traces; native build/packaging dependency; async/wx impedance | Optional future snippet evaluator only |
+| **Python (embedded, app's own language)** | No new runtime; whole object model already Python; best debugging/docs/stdlib; faithful analogue of scripting a .NET editor in a .NET language; easiest to maintain | In-process sandboxing is weak — must run out-of-process for real isolation | **Chosen (Layer 2)** |
+| **JavaScript (QuickJS / V8 via `py_mini_racer`)** | Familiar to most; strong sandbox (isolates / no ambient I/O); QuickJS tiny | Permanent Python⇄JS marshalling; cross-boundary stack traces; native build/packaging dependency; async/wx impedance | Optional future snippet evaluator only |
 | **Lua (`lupa`/LuaJIT)** | Classic embeddable scripting; tiny; easy to sandbox | Small user base among QUILL power users; another language to learn; weak text-tooling stdlib | Rejected |
 | **WASM (Extism / Wasmtime)** | Strongest sandbox; language-agnostic | Heavy; complex host bindings; hard to author/debug; overkill | Rejected for 2.0 |
 | **Declarative-only (manifest)** | Safest; covers ~70% of requests; trivially accessible to author | Not Turing-complete; power users hit a ceiling | **Chosen (Layer 1), paired with Python** |

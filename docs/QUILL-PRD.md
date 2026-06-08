@@ -101,24 +101,30 @@ The menu bar is standards-based, predictable, and exhaustive. Every menu item is
 
 Menu structure:
 
-- **File**: New/Open/Open Recent/Open from URL, **Workspace Snapshots**, Save/Save As/Save All/Save as plain text, Reload/Restore backup, print flows, close/exit.
-- **Edit**: Undo/redo, clipboard, selection helpers, link insertion/follow, and **Recent Marks (Ring)** with plain-language labels.
-- **Search**: Find/Replace flows plus Next/Previous/All matches.
-- **View**: shell behavior toggles, title style options, theme and visual controls.
-- **Navigate**: line/page/bookmark movement, heading/block/structure movement, outline, bracket match, region movement.
-- **Format**: case/comment/indent/line transforms plus rich text and heading controls.
-- **Insert**: table/list/code/footnote/tag insertion helpers.
-- **Tools**: regrouped into discoverable submenus:
+- **File**: New/Open/**New from Clipboard**/Open Recent/Open from URL, **Workspace Snapshots**, Save/Save As/Save All/Save as plain text, Reload/Restore backup, print flows, **Run current file / Open target at cursor / Rename / Delete current file**, close/exit.
+- **Edit**: Undo/redo, clipboard (including **Paste HTML as Markdown**), **Find/Replace plus Find Next/Previous/All Matches**, selection helpers, **delete-to-line/document and delete-paragraph**, link insertion/follow, and **Recent Marks (Ring)** with plain-language labels.
+- **View**: shell behavior, theme and visual controls (preference toggles such as persistent undo, spell-check-as-you-type, word prediction, dark mode, tray mode, title-path and dirty-title style now live in **Settings**).
+- **Insert**: table/list/code/footnote/tag insertion helpers plus **special character, date and time, calculated date, and file content**.
+- **Format**: case/comment/indent controls, rich text and heading controls, and a single **Transform Lines** submenu (number/hard-wrap lines plus sort/reverse/dedup/whitespace/indentation conversions).
+- **Navigate**: line/page/bookmark movement, heading/block/structure movement, outline, bracket match, region movement, and **go to percent / first / last non-blank**.
+- **Search**: in-files Find and Replace-across-files, plus **regex count/extract matches and block set-operations** (line filtering by block membership).
+- **Tools**: regrouped into discoverable submenus (≤ 2 levels deep):
+  - Sticky Notes
   - Writing and Language
   - Read Aloud
-  - Dictation and Watch Folder Automation
   - Integrations
   - Document Intake
+  - AI Assistant *(demoted from top level; promotable back via Customize Menus)*
   - Authoring and Automation
+  - GLOW
+  - Macros
   - Compare Documents
-  - Accessibility
+  - Accessibility *(includes cursor address / document status / selection-length status queries)*
   - Support
   - Customize
+  - Power Tools *(editor-behavior power toggles grouped together where no other menu is a natural home)*
+  - Quillins *(includes **Text Tools** for line transforms/regex and **Insert Tools** for date/time placeholders)*
+  - Dictation and Watch Folder Automation (BITS Whisperer) appears here when enabled.
 - **Window**: document/tab management actions.
 - **Help**: contextual help, onboarding docs, feature profile support, updates, and About.
 
@@ -2940,7 +2946,7 @@ Every dialog in Quill is the single highest-risk accessibility surface in the UI
 
 **Execution waves.** DLG-3 proceeds as: Phase 0 — authoritative source-generated registry + gates (delivered); Phase 1 — strengthened A11Y-4 static guard (delivered); Phase 2 — native conversion wave for hand-rolled dialogs that are really a single confirm / choice / text prompt, replaced with the stock one-shot equivalent, preserving all user-facing wording and outcomes; Phase 3 — enhanced-native standardization wave converging the genuinely multi-control dialogs onto one focus/default/lifecycle grammar via the shared contract (never flattened into one-shots where that would lose live search, lists, or streaming); Phase 4 — web-surface standardization only where rich rendering or dynamic forms are justified, with native-fallback parity and no raw HTML dumped into document tabs in onboarding/welcome paths; Phase 5 — startup/onboarding hardening (wizard, first-run, trust consent, crash recovery) for deterministic focus across chained modals, preserving the explicit-consent requirements and retiring the screen-reader startup-crash path; Phase 6 — assistant/AI tool dialog consolidation (`assistant_tools.py`, `ai_model_panel.py`, `style_panel.py`, `assistant_panel.py`) onto the same modal/focus/error contract with safe async/"busy" semantics; Phase 7 — CQ-16 characterization expansion around dialog-launch command paths (return values and side effects) before any CQ-1 decomposition; Phase 8 — manual NVDA baseline, JAWS spot (startup, assistant, sticky notes, watch profiles), and Narrator sanity passes across `dialogs.md`, each row carrying pass/fail evidence.
 
-**Dialog-by-dialog coverage map (no section exempt).** Every checklist family in `dialogs.md` is in scope with a default disposition: file/session dialogs (native-flow normalization + modal/focus hardening); settings/customization/dialog-launch surfaces (enhanced-native consistency — menu editor, settings, command palette); navigation dialogs (keep stock/input surfaces, harden bookmark/list/tree flows); text-analysis dialogs (normalize spell/lookup/thesaurus list workflows); accessibility-tools dialogs (focus/read-order consistency in results dialogs); intake/report dialogs (standardized preview/report modals); read-aloud/OCR dialogs (keep the OCR review contract, harden nested chooser flows); sticky-notes dialogs (retain web-form where justified, harden vault/list/editor transitions); external-tools/format dialogs (enhanced-native standard patterns); compare dialogs (consistent list/option/preview focus); keymap dialogs (stock controls + predictable nested edit flow); appearance/backup/import dialogs (import/export previews and file-picker transitions hardened); watch-folder dialogs (nested editor/browse/preview paths hardened); notifications dialog (standardized close/default semantics); formatting dialogs (preserve `show_web_form` for Insert Link, harden list/YAML nested flows); macros dialogs (text-entry + management standardization); AI/assistant dialogs (the DLG-2 conversions folded in); BITS speech dialogs (provider/model/status contract hardening); feature/profile dialogs (profile-switch, health, and management consistency); help/startup/support dialogs (wizard/about/diagnostics/report-bug rendering and focus safety); selection-action dialogs (action-chooser semantics hardened); nested/secondary dialogs (explicit coverage for each path launched from a parent); EdSharp dialogs (stock prompt/confirm consistency); and startup-only dialogs (crash recovery + untrusted-location remain top-priority hardened native flows).
+**Dialog-by-dialog coverage map (no section exempt).** Every checklist family in `dialogs.md` is in scope with a default disposition: file/session dialogs (native-flow normalization + modal/focus hardening); settings/customization/dialog-launch surfaces (enhanced-native consistency — menu editor, settings, command palette); navigation dialogs (keep stock/input surfaces, harden bookmark/list/tree flows); text-analysis dialogs (normalize spell/lookup/thesaurus list workflows); accessibility-tools dialogs (focus/read-order consistency in results dialogs); intake/report dialogs (standardized preview/report modals); read-aloud/OCR dialogs (keep the OCR review contract, harden nested chooser flows); sticky-notes dialogs (retain web-form where justified, harden vault/list/editor transitions); external-tools/format dialogs (enhanced-native standard patterns); compare dialogs (consistent list/option/preview focus); keymap dialogs (stock controls + predictable nested edit flow); appearance/backup/import dialogs (import/export previews and file-picker transitions hardened); watch-folder dialogs (nested editor/browse/preview paths hardened); notifications dialog (standardized close/default semantics); formatting dialogs (preserve `show_web_form` for Insert Link, harden list/YAML nested flows); macros dialogs (text-entry + management standardization); AI/assistant dialogs (the DLG-2 conversions folded in); BITS speech dialogs (provider/model/status contract hardening); feature/profile dialogs (profile-switch, health, and management consistency); help/startup/support dialogs (wizard/about/diagnostics/report-bug rendering and focus safety); selection-action dialogs (action-chooser semantics hardened); nested/secondary dialogs (explicit coverage for each path launched from a parent); power-tools dialogs (stock prompt/confirm consistency); and startup-only dialogs (crash recovery + untrusted-location remain top-priority hardened native flows).
 
 **Conversion decisions (definitive).** Keep `native`: simple confirms and binary prompts, and stable stock file/folder/select/text prompts. Keep sanctioned `web`: markdown/HTML preview and rich rendered content, explicit multi-field forms where `show_web_form` is already stable and fallback-backed, and chat-centric surfaces with native fallback. Harden `hardened_custom` (not a web rewrite by default): complex list/CRUD/picker dialogs where stock controls are appropriate and lower-risk than a web migration, and interaction-heavy assistant panels that are not rich-rendering-centric. No untouched custom paths: any retained custom dialog must carry a written rationale plus a contract test.
 
