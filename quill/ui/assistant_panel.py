@@ -37,7 +37,7 @@ def classify_assistant_error(error: str) -> tuple[str, bool]:
     if "failed to load native code" in lowered or "0xc000001d" in lowered:
         return (
             "On-device AI couldn't start on this computer. This processor may not "
-            "support the built-in AI engine. You can turn AI off from the AI menu, "
+            "support the built-in AI engine. You can turn AI off from Tools > AI Assistant, "
             "or connect a cloud AI provider in AI settings.",
             True,
         )

@@ -111,11 +111,11 @@ The menu bar follows the Windows and Office order you likely expect:
 
 - File
 - Edit
-- Insert
 - View
-- Search
-- Navigate
+- Insert
 - Format
+- Navigate
+- Search
 - Tools
 - Window
 - Help
@@ -231,15 +231,16 @@ Quill then goes further with selection and navigation-aware editing:
 
 ### View
 
-The **View** menu controls how Quill behaves on screen without changing your content.
+The **View** menu controls how Quill presents your document on screen without changing your content.
 
-- **Enable System Tray Mode** lets Quill minimize into the tray instead of exiting.
 - **Toggle Soft Wrap** changes line wrapping without modifying the file.
-- **Toggle Dark Mode** switches between system and dark presentation.
-- **Enable Persistent Undo** stores undo history across sessions for saved files.
-- **Spell Check As You Type** enables live misspelling hints.
-- **Show Line Numbers** changes the navigation and status-bar experience.
+- **Auto Side-by-Side Preview** opens a live preview beside the editor automatically.
+- **Show Tab Control** toggles the visible document tab strip.
+- **Wrap Find Searches** controls whether Find wraps past the end of the document.
 - **Start With No Document Open** makes Quill open into an empty workspace instead of a starter document.
+- **Preview...**, **Preview Side by Side**, **Focus Preview**, and **Browser Preview...** open rendered views of the current document.
+
+Preference-style toggles that used to live here — theme/dark mode, system-tray mode, title-bar path style, dirty-title style, persistent undo, spell-check-as-you-type, and word-prediction-as-you-type — now live in the registry-driven **Settings** dialog (**Tools -> Customize -> Preferences...**), where they are persisted in one place.
 
 ### Navigate
 
@@ -382,9 +383,9 @@ The quick writing actions work with or without a selection:
 - **Continue Writing** uses your selection as the lead-in if you have one; otherwise it continues from the full document.
 - Quill announces the scope it chose, for example "Rewrite paragraph (42 words)", so you always know what the action will change.
 - If there is nothing to act on, Quill says so (for example "Nothing to rewrite") instead of sending an empty request.
-- If AI is turned off, these actions announce "AI is turned off. Enable 'Use Artificial Intelligence' in the AI menu." and do nothing else.
+- If AI is turned off, these actions announce "AI is turned off. Enable 'Use Artificial Intelligence' in Tools > AI Assistant." and do nothing else.
 
-Use **AI -> AI Hub...** for a single control surface that links provider verification, model discovery, Prompt Studio, Agent Center, and Writing Assistant.
+Use **Tools -> AI Assistant -> AI Hub...** for a single control surface that links provider verification, model discovery, Prompt Studio, Agent Center, and Writing Assistant.
 
 Trust and privacy baseline:
 
@@ -401,7 +402,7 @@ AI connection flow:
 4. Use **Verify Connection** to test endpoint and credentials.
 5. Use **List Models** to fetch endpoint models, then use the search box to filter quickly.
 6. Use **Recommend Model** to pick a model profile aligned to your hardware/task framing.
-7. Save settings. Quill auto-runs verification and updates the AI status line in the AI menu.
+7. Save settings. Quill auto-runs verification and updates the AI status line in Tools > AI Assistant.
 
 Most cloud providers are pre-configured with default host URLs so setup is key-first, not URL-first. For advanced OpenAI-compatible endpoints, use Custom and override host/model explicitly.
 
@@ -422,7 +423,7 @@ These help you stay inside the editor instead of breaking flow for small writing
 
 ### Ask Quill Chat setup (on-device AI)
 
-Ask Quill Chat (`AI -> Ask Quill Chat...`) is a message-style assistant that can answer, draft text, propose edits, and run Quill commands with approval before changes are applied.
+Ask Quill Chat (`Tools -> AI Assistant -> Ask Quill Chat...`) is a message-style assistant that can answer, draft text, propose edits, and run Quill commands with approval before changes are applied.
 
 Runtime backends:
 
@@ -433,7 +434,7 @@ Setup:
 
 1. Install dependencies: `pip install -r requirements.txt`
 2. Put a `.gguf` model in `%APPDATA%\\Quill\\models\\` (Windows) or set `QUILL_LLAMA_MODEL` to a full path.
-3. Open `AI -> Ask Quill Chat...` and send a prompt.
+3. Open `Tools -> AI Assistant -> Ask Quill Chat...` and send a prompt.
 
 Accessibility:
 
@@ -445,7 +446,7 @@ Behavior notes:
 - The assistant answers in chat by default; greetings and questions are never turned into document edits.
 - Proposed actions (insert, replace, run a command) use an explicit `Approve` or `Discard` step before anything changes your document.
 - If model/runtime is unavailable, Quill reports this clearly and does not apply destructive changes.
-- **Train Writing Style** (`AI -> Train Writing Style...`) lets you teach the assistant your own writing style from samples or the current document.
+- **Train Writing Style** (`Tools -> AI Assistant -> Train Writing Style...`) lets you teach the assistant your own writing style from samples or the current document.
 
 ### Writing Assistant and AI Hub setup
 
@@ -453,7 +454,7 @@ For release-safe beta validation, Word and CSV open in the normal plain-text edi
 
 Provider setup:
 
-1. Open `AI -> AI Hub...` (or `AI -> AI Model & Connection...`).
+1. Open `Tools -> AI Assistant -> AI Hub...` (or `Tools -> AI Assistant -> AI Model & Connection...`).
 2. Choose provider: `Ollama (local)`, `OpenAI`, `Claude`, `OpenRouter`, `Google Gemini`, `Microsoft Azure OpenAI`, `Ollama Cloud`, or `Custom OpenAI-compatible`.
 3. Enter host and model (cloud defaults are prefilled; Azure requires your resource hostname).
 4. Enter API key only if required.
@@ -499,7 +500,7 @@ Status Page behavior:
 - It surfaces asynchronous speech generation and BITS Whisperer download/provider status so users can monitor progress without blocking dialogs.
 - In **Preferences -> General**, you can enable **Auto-open Status Page when BITS Whisperer model downloads start** (default off).
 - In **Preferences -> General**, set **Status page refresh announcements** to **Quiet**, **Normal**, or **Verbose** to control screen-reader announcement cadence.
-- In **Preferences -> General**, use **Use Artificial Intelligence** to mirror the AI menu toggle from one place.
+- In **Preferences -> General**, use **Use Artificial Intelligence** to mirror the Tools > AI Assistant toggle from one place.
 - In **Preferences -> General**, enable **BITS Whisperer safe mode lock** to block download/retry actions while keeping status and onboarding surfaces available.
 
 Startup Wizard now includes a BITS Whisperer rollout setup step that applies safe defaults without enabling runtime routing changes.
@@ -987,7 +988,7 @@ Quill's current settings and customization surface covers the things you are mos
 - custom keybindings through the keymap editor
 - status-bar order and status-bar visibility
 
-Some of these live in the View menu for quick toggling. Others live in **Profiles and Features...**, **Status Bar Settings...**, **Keymap Editor...**, and the related customization commands under **Tools**.
+Some of these live in the View menu for quick toggling; the preference-style toggles now live in the **Settings** dialog (**Tools -> Customize -> Preferences...**). Others live in **Profiles and Features...**, **Status Bar Settings...**, **Keymap Editor...**, and the related customization commands under **Tools**.
 
 ## Trust, Recovery, Sessions, and Safety
 

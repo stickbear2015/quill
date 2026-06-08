@@ -352,7 +352,7 @@ class ImageCaptureMixin:
 
         if not load_ai_enabled():
             self._show_message_box(
-                "AI is turned off. Turn it on from the AI menu, then connect a "
+                "AI is turned off. Turn it on from Tools > AI Assistant, then connect a "
                 "vision-capable model to describe images.",
                 _TITLE,
                 wx.ICON_INFORMATION | wx.OK,

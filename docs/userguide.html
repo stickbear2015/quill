@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>userguide</title>
   <style>
@@ -156,8 +156,12 @@
       text-decoration: none;
     }
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -327,11 +331,11 @@ expect:</p>
 <ul>
 <li>File</li>
 <li>Edit</li>
-<li>Insert</li>
 <li>View</li>
-<li>Search</li>
-<li>Navigate</li>
+<li>Insert</li>
 <li>Format</li>
+<li>Navigate</li>
+<li>Search</li>
 <li>Tools</li>
 <li>Window</li>
 <li>Help</li>
@@ -491,24 +495,29 @@ now live together with the rest of Quill’s configuration under
 <strong>Tools -&gt; Customize</strong>.</li>
 </ul>
 <h3 id="view">View</h3>
-<p>The <strong>View</strong> menu controls how Quill behaves on screen
-without changing your content.</p>
+<p>The <strong>View</strong> menu controls how Quill presents your
+document on screen without changing your content.</p>
 <ul>
-<li><strong>Enable System Tray Mode</strong> lets Quill minimize into
-the tray instead of exiting.</li>
 <li><strong>Toggle Soft Wrap</strong> changes line wrapping without
 modifying the file.</li>
-<li><strong>Toggle Dark Mode</strong> switches between system and dark
-presentation.</li>
-<li><strong>Enable Persistent Undo</strong> stores undo history across
-sessions for saved files.</li>
-<li><strong>Spell Check As You Type</strong> enables live misspelling
-hints.</li>
-<li><strong>Show Line Numbers</strong> changes the navigation and
-status-bar experience.</li>
+<li><strong>Auto Side-by-Side Preview</strong> opens a live preview
+beside the editor automatically.</li>
+<li><strong>Show Tab Control</strong> toggles the visible document tab
+strip.</li>
+<li><strong>Wrap Find Searches</strong> controls whether Find wraps past
+the end of the document.</li>
 <li><strong>Start With No Document Open</strong> makes Quill open into
 an empty workspace instead of a starter document.</li>
+<li><strong>Preview…</strong>, <strong>Preview Side by Side</strong>,
+<strong>Focus Preview</strong>, and <strong>Browser Preview…</strong>
+open rendered views of the current document.</li>
 </ul>
+<p>Preference-style toggles that used to live here — theme/dark mode,
+system-tray mode, title-bar path style, dirty-title style, persistent
+undo, spell-check-as-you-type, and word-prediction-as-you-type — now
+live in the registry-driven <strong>Settings</strong> dialog
+(<strong>Tools -&gt; Customize -&gt; Preferences…</strong>), where they
+are persisted in one place.</p>
 <h3 id="navigate">Navigate</h3>
 <p>The <strong>Navigate</strong> menu is one of Quill’s strongest
 differentiators. It assumes you may need to move through large, dense,
@@ -675,12 +684,12 @@ if you have one; otherwise it continues from the full document.</li>
 <li>If there is nothing to act on, Quill says so (for example “Nothing
 to rewrite”) instead of sending an empty request.</li>
 <li>If AI is turned off, these actions announce “AI is turned off.
-Enable ‘Use Artificial Intelligence’ in the AI menu.” and do nothing
-else.</li>
+Enable ‘Use Artificial Intelligence’ in Tools &gt; AI Assistant.” and do
+nothing else.</li>
 </ul>
-<p>Use <strong>AI -&gt; AI Hub…</strong> for a single control surface
-that links provider verification, model discovery, Prompt Studio, Agent
-Center, and Writing Assistant.</p>
+<p>Use <strong>Tools -&gt; AI Assistant -&gt; AI Hub…</strong> for a
+single control surface that links provider verification, model
+discovery, Prompt Studio, Agent Center, and Writing Assistant.</p>
 <p>Trust and privacy baseline:</p>
 <ul>
 <li>On first run, Quill shows a trust and privacy consent
@@ -707,7 +716,7 @@ the search box to filter quickly.</li>
 <li>Use <strong>Recommend Model</strong> to pick a model profile aligned
 to your hardware/task framing.</li>
 <li>Save settings. Quill auto-runs verification and updates the AI
-status line in the AI menu.</li>
+status line in Tools &gt; AI Assistant.</li>
 </ol>
 <p>Most cloud providers are pre-configured with default host URLs so
 setup is key-first, not URL-first. For advanced OpenAI-compatible
@@ -742,7 +751,8 @@ Connection and re-enter the key.</li>
 small writing chores.</p>
 <h3 id="ask-quill-chat-setup-on-device-ai">Ask Quill Chat setup
 (on-device AI)</h3>
-<p>Ask Quill Chat (<code>AI -&gt; Ask Quill Chat...</code>) is a
+<p>Ask Quill Chat
+(<code>Tools -&gt; AI Assistant -&gt; Ask Quill Chat...</code>) is a
 message-style assistant that can answer, draft text, propose edits, and
 run Quill commands with approval before changes are applied.</p>
 <p>Runtime backends:</p>
@@ -758,7 +768,8 @@ run Quill commands with approval before changes are applied.</p>
 <li>Put a <code>.gguf</code> model in
 <code>%APPDATA%\\Quill\\models\\</code> (Windows) or set
 <code>QUILL_LLAMA_MODEL</code> to a full path.</li>
-<li>Open <code>AI -&gt; Ask Quill Chat...</code> and send a prompt.</li>
+<li>Open <code>Tools -&gt; AI Assistant -&gt; Ask Quill Chat...</code>
+and send a prompt.</li>
 </ol>
 <p>Accessibility:</p>
 <ul>
@@ -780,9 +791,9 @@ changes your document.</li>
 <li>If model/runtime is unavailable, Quill reports this clearly and does
 not apply destructive changes.</li>
 <li><strong>Train Writing Style</strong>
-(<code>AI -&gt; Train Writing Style...</code>) lets you teach the
-assistant your own writing style from samples or the current
-document.</li>
+(<code>Tools -&gt; AI Assistant -&gt; Train Writing Style...</code>)
+lets you teach the assistant your own writing style from samples or the
+current document.</li>
 </ul>
 <h3 id="writing-assistant-and-ai-hub-setup">Writing Assistant and AI Hub
 setup</h3>
@@ -791,8 +802,8 @@ plain-text editor surface. AI connection and chat flows remain
 available.</p>
 <p>Provider setup:</p>
 <ol type="1">
-<li>Open <code>AI -&gt; AI Hub...</code> (or
-<code>AI -&gt; AI Model &amp; Connection...</code>).</li>
+<li>Open <code>Tools -&gt; AI Assistant -&gt; AI Hub...</code> (or
+<code>Tools -&gt; AI Assistant -&gt; AI Model &amp; Connection...</code>).</li>
 <li>Choose provider: <code>Ollama (local)</code>, <code>OpenAI</code>,
 <code>Claude</code>, <code>OpenRouter</code>,
 <code>Google Gemini</code>, <code>Microsoft Azure OpenAI</code>,
@@ -880,8 +891,8 @@ page refresh announcements</strong> to <strong>Quiet</strong>,
 <strong>Normal</strong>, or <strong>Verbose</strong> to control
 screen-reader announcement cadence.</li>
 <li>In <strong>Preferences -&gt; General</strong>, use <strong>Use
-Artificial Intelligence</strong> to mirror the AI menu toggle from one
-place.</li>
+Artificial Intelligence</strong> to mirror the Tools &gt; AI Assistant
+toggle from one place.</li>
 <li>In <strong>Preferences -&gt; General</strong>, enable <strong>BITS
 Whisperer safe mode lock</strong> to block download/retry actions while
 keeping status and onboarding surfaces available.</li>
@@ -1491,9 +1502,11 @@ you are most likely to want to tune every day.</p>
 <li>custom keybindings through the keymap editor</li>
 <li>status-bar order and status-bar visibility</li>
 </ul>
-<p>Some of these live in the View menu for quick toggling. Others live
-in <strong>Profiles and Features…</strong>, <strong>Status Bar
-Settings…</strong>, <strong>Keymap Editor…</strong>, and the related
+<p>Some of these live in the View menu for quick toggling; the
+preference-style toggles now live in the <strong>Settings</strong>
+dialog (<strong>Tools -&gt; Customize -&gt; Preferences…</strong>).
+Others live in <strong>Profiles and Features…</strong>, <strong>Status
+Bar Settings…</strong>, <strong>Keymap Editor…</strong>, and the related
 customization commands under <strong>Tools</strong>.</p>
 <h2 id="trust-recovery-sessions-and-safety">Trust, Recovery, Sessions,
 and Safety</h2>

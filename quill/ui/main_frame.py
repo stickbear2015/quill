@@ -13856,7 +13856,7 @@ class MainFrame(
 
         if not load_ai_enabled():
             return WatchActionOutcome.skipped(
-                "AI is turned off. Enable it in the AI menu to use this action."
+                "AI is turned off. Enable it in Tools > AI Assistant to use this action."
             )
         mode = str(options.get("mode", "")).strip().lower()
         if mode not in {"summarize", "tag", "rewrite"}:
@@ -16143,7 +16143,7 @@ class MainFrame(
 
         if not load_ai_enabled():
             self._set_status(
-                "AI is turned off. Enable 'Use Artificial Intelligence' in the AI menu."
+                "AI is turned off. Enable 'Use Artificial Intelligence' in Tools > AI Assistant."
             )
             return
         TrainStyleDialog(
@@ -19101,8 +19101,8 @@ class MainFrame(
         wx = self._wx
         use_ai = self._show_message_box(
             "Do you want to use Quill's built-in artificial intelligence (Ask Quill)?\n\n"
-            "It runs entirely on your computer. You can turn it on or off later from the "
-            "AI menu.",
+            "It runs entirely on your computer. You can turn it on or off later from "
+            "Tools > AI Assistant.",
             "Use Artificial Intelligence?",
             wx.ICON_QUESTION | wx.YES_NO,
         )
@@ -19110,7 +19110,7 @@ class MainFrame(
         save_ai_enabled(enabled)
         self._sync_ai_enabled_menu(enabled)
         if not enabled:
-            self._set_status("AI is off. You can enable it later from the AI menu.")
+            self._set_status("AI is off. You can enable it later from Tools > AI Assistant.")
             return
         # Foundation Models (macOS) needs no download; only llama.cpp does.
         assistant = self._get_assistant()
