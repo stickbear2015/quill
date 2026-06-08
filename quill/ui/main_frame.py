@@ -497,6 +497,7 @@ from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
 from quill.ui.palette import CommandPaletteDialog
+from quill.ui.publishing_tools import PublishingConnectionDialog
 from quill.ui.rich_text_surface import RichTextSurface
 from quill.ui.session_browser import SessionBrowserDialog
 from quill.ui.share_dialogs import (
@@ -544,6 +545,7 @@ _TOP_MENU_DEFS: tuple[tuple[str, str], ...] = (
     ("navigate", "&Navigate"),
     ("format", "F&ormat"),
     ("tools", "&Tools"),
+    ("publishing", "P&ublishing"),
     ("window", "&Window"),
     ("help", "&Help"),
 )
@@ -1419,6 +1421,18 @@ class MainFrame(
             "tools.ai_connection",
             "AI Connection",
             self.open_ai_preferences,
+            None,
+        )
+        self.commands.register(
+            "publishing.connection",
+            "Publishing Connection...",
+            self.open_publishing_connection,
+            None,
+        )
+        self.commands.register(
+            "publishing.verify_connection",
+            "Verify Publishing Connection",
+            self.verify_saved_publishing_connection,
             None,
         )
         self.commands.register(
@@ -7656,6 +7670,36 @@ class MainFrame(
                 self._set_status(f"Updated AI connection settings. Needs attention. {detail}")
         else:
             self._set_status("AI connection settings cancelled")
+
+    def open_publishing_connection(self) -> None:
+        dialog = PublishingConnectionDialog(self.frame)
+        if dialog.show_modal():
+            if dialog.last_verification_ok:
+                self._set_status(
+                    f"Updated publishing connection settings. Ready. {dialog.last_verification_message}"
+                )
+            else:
+                self._set_status(
+                    "Updated publishing connection settings. Needs attention. "
+                    f"{dialog.last_verification_message}"
+                )
+        else:
+            self._set_status("Publishing connection settings cancelled")
+
+    def verify_saved_publishing_connection(self) -> None:
+        from quill.core.publishing import (
+            load_publishing_app_password,
+            load_publishing_connection_settings,
+            verify_publishing_connection,
+        )
+
+        ok, message = verify_publishing_connection(
+            load_publishing_connection_settings(),
+            load_publishing_app_password(),
+        )
+        icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
+        self._show_message_box(message, "Publishing Connection Check", icon | self._wx.OK)
+        self._set_status(message)
 
     def _set_ai_menu_status_badge(
         self, ready: bool | None, detail: str, badge: str | None = None
