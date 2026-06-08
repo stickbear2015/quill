@@ -39,7 +39,7 @@ Anything in this document labeled as a recommendation is the current preferred d
 
 These decisions are now the recommended baseline for future implementation unless product review explicitly reopens them:
 
-- publishing uses a top-level `Publishing` menu positioned next to `Tools`
+- publishing enters through the `File` menu rather than a dedicated top-level `Publishing` menu
 - WordPress is the only named provider in the first user-visible slices
 - publishing ships behind a dedicated gated feature id
 - the first implementation adds no publishing status-bar cell
@@ -319,6 +319,8 @@ Likely enforcement surfaces for publishing work:
 - `tests/unit/ui/test_main_frame_menu_contract.py`
 - `tests/unit/ui/test_dialog_inventory.py`
 - `tests/unit/core/test_features.py`
+- `tests/unit/ui/test_dialog_button_parenting.py`
+- `tests/unit/ui/test_connection_dialog_a11y.py`
 - provider-oriented core tests modeled after existing assistant/provider tests
 - a likely future `network_egress_audit` entry once real publishing requests are implemented
 
@@ -326,6 +328,7 @@ Planning implication:
 
 - publishing must be planned against existing enforcement points before implementation starts
 - every user-visible slice should declare which test contracts it is expected to touch
+- publishing work should not be considered complete until it has been run against the relevant accessibility, usability, dialog-governance, menu-contract, feature-gating, and publishing-focused tests already present in `tests/`
 
 ### Settings, storage, and trust-model audit
 
@@ -521,7 +524,7 @@ Phase 1 should include:
 
 Phase 1 should not include:
 
-- any additional top-level menu expansion beyond the approved `Publishing` menu
+- any additional top-level menu expansion
 - persistent sync
 - media upload
 - category/tag/taxonomy editing
@@ -533,7 +536,7 @@ Phase 1 should not include:
 
 The intended first user journey is:
 
-1. The user discovers the top-level `Publishing` menu.
+1. The user discovers publishing actions in the `File` menu.
 2. The user opens a provider-agnostic publishing connections surface.
 3. The user creates or selects a saved publishing connection profile.
 4. Only after choosing a provider does Quill show provider-specific fields or auth language.
@@ -567,14 +570,14 @@ The following commands should be planned but deferred from the first user-visibl
 
 The recommended phase 1 menu contract is:
 
-- `Publishing -> Connections...`
-- `Publishing -> Verify Current Connection`
+- `File -> Publishing Connections...`
+- `File -> Verify Current Publishing Connection`
 - separator
-- `Publishing -> Create Draft...`
-- `Publishing -> Publish Current Document...`
+- `File -> Create Draft...`
+- `File -> Publish Current Document...`
 - separator
-- `Publishing -> Create Page Draft...`
-- `Publishing -> Publish Current Page...`
+- `File -> Create Page Draft...`
+- `File -> Publish Current Page...`
 
 `Browse Published Content...` should remain planned for a later slice unless it is explicitly approved into the first user-visible rollout.
 
@@ -625,14 +628,14 @@ What this avoids breaking:
 
 Planned hook:
 
-- append a new top-level `Publishing` menu in `quill/ui/main_frame_menu.py`
+- add publishing actions within the existing `File` menu in `quill/ui/main_frame_menu.py`
 - bind each menu id through the existing `wx.EVT_MENU` pattern
 - keep the first menu footprint deliberately small
 
 Recommended initial submenu items:
 
-- `Connections...`
-- `Verify Current Connection`
+- `Publishing Connections...`
+- `Verify Current Publishing Connection`
 - separator
 - `Create Draft...`
 - `Publish Current Document...`
@@ -1106,13 +1109,13 @@ These replace the earlier broad ambiguity with a recommended spec stance.
 
 Recommendation:
 
-- use a top-level `Publishing` menu from the start
-- keep it near `Tools` in the top-level menu order
+- place publishing entry points under the `File` menu
+- avoid introducing a permanent top-level `Publishing` menu
 
 Rationale:
 
-- this matches the updated product direction
-- it gives publishing first-class discoverability
+- this now matches the updated product direction
+- it keeps publishing near other document lifecycle actions
 - it still works within the current menu-building architecture as long as the existing shell contract is followed exactly
 
 ### Provider naming in the first UI
@@ -1178,6 +1181,12 @@ Rationale:
 
 - this is the smallest coherent user journey
 - it keeps the first visible surface area reviewable
+
+Accessibility and usability requirement:
+
+- every editable field in the connection flow must have an explicit, speech-friendly purpose in tab order
+- helper text must explain what belongs in a field instead of giving only provider background or overly chatty prose
+- no field should feel effectively unlabeled just because nearby visual text exists
 
 ### First visible remote action
 
@@ -1327,7 +1336,7 @@ This slice does not need post editing yet. Its job is to prove that the framewor
 - send title and body
 - return resulting URL or post id
 - announce success clearly
-- add the first approved publishing menu entry points
+- add the first approved publishing entry points under `File`
 - add the first approved publishing dialogs
 
 Planned tests and governance for this slice:
@@ -1336,6 +1345,7 @@ Planned tests and governance for this slice:
 - dialog inventory snapshot updated deliberately
 - dialog checklist entries added
 - user-facing text reviewed for plain-language and explicit-consent wording
+- relevant accessibility and usability tests in `tests/` must be run against the publishing dialogs and menu flow before the slice is considered complete
 
 ### Slice 3: update and browse
 
@@ -1549,7 +1559,7 @@ So the planning recommendation remains:
 - design publishing as an internal core-plus-shell feature
 - start with WordPress as the first provider, not the whole product model
 - support both posts and pages
-- enter through a top-level `Publishing` menu
+- enter through the `File` menu
 - use explicit dialogs and existing notifications
 - keep remote linkage outside the source document at first
 - keep publish-now as an explicit writer-controlled choice rather than a system-decided content action
@@ -1575,7 +1585,7 @@ Planned follow-up:
 
 To reduce risk, the current planning direction does not assume changes to:
 
-- the top-level menu order
+- the top-level menu order beyond placing publishing actions inside the existing `File` menu
 - the command palette architecture
 - the status-bar layout model
 - the plugin runtime policy
