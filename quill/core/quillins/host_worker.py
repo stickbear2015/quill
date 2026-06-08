@@ -98,9 +98,25 @@ class QuillExtensionApi:
     def replace_selection(self, text: str) -> None:
         self._worker.call("replace_selection", [text])
 
+    def set_text(self, text: str) -> None:
+        """Replace the entire document text (a single undoable edit)."""
+
+        self._worker.call("set_text", [text])
+
+    def open_buffer(self, text: str, title: str = "") -> None:
+        """Open ``text`` in a new editor buffer/tab, leaving the current one intact."""
+
+        self._worker.call("open_buffer", [text, title])
+
     # -- ui -------------------------------------------------------------------
     def announce(self, message: str) -> None:
         self._worker.call("announce", [message])
+
+    def prompt(self, title: str, label: str, default: str = "") -> str | None:
+        """Ask the user for one line of text; return it, or ``None`` if cancelled."""
+
+        value = self._worker.call("prompt", [title, label, default])
+        return None if value is None else str(value)
 
     # -- fs (consent-gated) ---------------------------------------------------
     def read_file(self, path: str) -> str:

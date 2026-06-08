@@ -37,6 +37,7 @@
           "editor.write",
           "ui.announce",
           "ui.command",
+          "ui.prompt",
           "fs.read",
           "fs.write",
           "net",
@@ -105,8 +106,8 @@
             "properties": {
               "parent": {
                 "type": "string",
-                "description": "Top-level menu title to attach under, e.g. File, Edit, Format, Tools, Help.",
-                "enum": ["File", "Edit", "Format", "Tools", "Navigate", "View", "Help"]
+                "description": "Top-level menu title to attach under, e.g. File, Edit, Insert, Format, Tools, Navigate, Search, Help.",
+                "enum": ["File", "Edit", "Insert", "Format", "Tools", "Navigate", "Search", "View", "Help"]
               },
               "command": { "type": "string", "description": "A command id contributed above or a built-in command id." }
             }

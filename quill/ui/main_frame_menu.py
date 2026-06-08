@@ -251,6 +251,7 @@ class MenuBuilderMixin:
         # find / filter / extract-lines hub (Power Tools recirculation, menus.md
         # Phase 4).
         self._append_power_tools_search_items(search_menu)
+        self._append_quillin_menu_items(search_menu, "Search")
         self._id_send_to_tray = wx.NewIdRef()
         self._id_toggle_tray_mode = wx.NewIdRef()
         self._id_toggle_soft_wrap = wx.NewIdRef()
@@ -598,6 +599,7 @@ class MenuBuilderMixin:
         # Special character / date-time / calculated date / file content (Power Tools
         # recirculation, menus.md Phase 4).
         self._append_power_tools_insert_items(insert_menu)
+        self._append_quillin_menu_items(insert_menu, "Insert")
         self._id_next_document = wx.NewIdRef()
         self._id_previous_document = wx.NewIdRef()
         window_menu = wx.Menu()
@@ -1146,6 +1148,7 @@ class MenuBuilderMixin:
         # line transforms, surfaced under Format where text-shaping lives.
         transform_menu = wx.Menu()
         self._append_power_tools_transform_line_items(transform_menu)
+        self._append_quillin_menu_items(transform_menu, "Format")
         transform_menu.AppendSeparator()
         transform_menu.Append(
             self._id_sort_lines_ascending,

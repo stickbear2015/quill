@@ -90,8 +90,22 @@ class _EditorHostServices:
         else:
             editor.Replace(start, end, text)
 
+    def set_text(self, text: str) -> None:
+        """Replace the whole document as one undoable edit and sync the model."""
+
+        self._frame._replace_document_text(text)
+        self._frame.document.set_text(text)
+
+    def open_buffer(self, text: str, title: str) -> None:
+        """Open ``text`` in a new editor tab, leaving the current one untouched."""
+
+        self._frame._power_tools_open_text_in_new_buffer(text, title or "Opened Quillin result")
+
     def announce(self, message: str) -> None:
         self._frame._announce(message)
+
+    def prompt(self, title: str, label: str, default: str) -> str | None:
+        return self._frame._power_tools_prompt_single(title, label, default)
 
     def read_file(self, path: str) -> str:
         return Path(path).read_text(encoding="utf-8")
@@ -148,6 +162,38 @@ class QuillinsMenuMixin:
                     id=item_id,
                 )
         return menu
+
+    def _append_quillin_menu_items(self, menu: object, parent_title: str) -> None:
+        """Append bundled/third-party Quillin commands whose menu home is ``parent_title``.
+
+        This is what lets a Quillin's ``menus`` contribution land in its declared
+        conventional home (Insert, Format, Search, ...) instead of only the flat
+        Tools > Quillins backstop list, so a converted built-in keeps the menu
+        placement recorded in ``menus.md``. Each item is bound to run through the
+        same capability/consent-gated path as any other Quillin command.
+        """
+
+        registry = getattr(self, "_quillin_registry", None)
+        if registry is None:
+            return
+        wx = self._wx
+        appended = False
+        for contribution in registry.menus:
+            if contribution.parent != parent_title:
+                continue
+            resolved = registry.commands.get(contribution.command_id)
+            if resolved is None:
+                continue
+            if not appended:
+                menu.AppendSeparator()
+                appended = True
+            item_id = wx.NewIdRef()
+            menu.Append(item_id, self._menu_label(resolved.command.title, contribution.command_id))
+            self.frame.Bind(
+                wx.EVT_MENU,
+                lambda _e, cid=contribution.command_id: self.run_quillin_command(cid),
+                id=item_id,
+            )
 
     # -- command + runtime registration --------------------------------------
     def _register_quillins_commands(self) -> None:

@@ -34,6 +34,7 @@ from quill.core.quillins.model import (
     CAP_FS_WRITE,
     CAP_NET,
     CAP_UI_ANNOUNCE,
+    CAP_UI_PROMPT,
     CONSENT_GATED_CAPABILITIES,
     ApiVersionError,
     CapabilityError,
@@ -49,7 +50,10 @@ _METHOD_CAPABILITY: dict[str, str] = {
     "get_cursor": CAP_EDITOR_READ,
     "insert_text": CAP_EDITOR_WRITE,
     "replace_selection": CAP_EDITOR_WRITE,
+    "set_text": CAP_EDITOR_WRITE,
+    "open_buffer": CAP_EDITOR_WRITE,
     "announce": CAP_UI_ANNOUNCE,
+    "prompt": CAP_UI_PROMPT,
     "read_file": CAP_FS_READ,
     "write_file": CAP_FS_WRITE,
     "fetch": CAP_NET,
@@ -71,7 +75,10 @@ class HostServices(Protocol):
     def get_cursor(self) -> dict[str, int]: ...
     def insert_text(self, text: str) -> None: ...
     def replace_selection(self, text: str) -> None: ...
+    def set_text(self, text: str) -> None: ...
+    def open_buffer(self, text: str, title: str) -> None: ...
     def announce(self, message: str) -> None: ...
+    def prompt(self, title: str, label: str, default: str) -> str | None: ...
     def read_file(self, path: str) -> str: ...
     def write_file(self, path: str, text: str) -> None: ...
     def fetch(self, url: str, method: str, body: str | None) -> dict[str, Any]: ...
@@ -151,9 +158,20 @@ class ApiDispatcher:
         if method == "replace_selection":
             services.replace_selection(str(args[0]))
             return None
+        if method == "set_text":
+            services.set_text(str(args[0]))
+            return None
+        if method == "open_buffer":
+            title = str(args[1]) if len(args) > 1 else ""
+            services.open_buffer(str(args[0]), title)
+            return None
         if method == "announce":
             services.announce(str(args[0]))
             return None
+        if method == "prompt":
+            label = str(args[1]) if len(args) > 1 else ""
+            default = str(args[2]) if len(args) > 2 else ""
+            return services.prompt(str(args[0]), label, default)
         if method == "read_file":
             return services.read_file(str(args[0]))
         if method == "write_file":

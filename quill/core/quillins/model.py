@@ -27,6 +27,7 @@ CAP_EDITOR_READ = "editor.read"
 CAP_EDITOR_WRITE = "editor.write"
 CAP_UI_ANNOUNCE = "ui.announce"
 CAP_UI_COMMAND = "ui.command"
+CAP_UI_PROMPT = "ui.prompt"
 CAP_FS_READ = "fs.read"
 CAP_FS_WRITE = "fs.write"
 CAP_NET = "net"
@@ -38,6 +39,7 @@ CAPABILITIES: frozenset[str] = frozenset({
     CAP_EDITOR_WRITE,
     CAP_UI_ANNOUNCE,
     CAP_UI_COMMAND,
+    CAP_UI_PROMPT,
     CAP_FS_READ,
     CAP_FS_WRITE,
     CAP_NET,
@@ -58,9 +60,11 @@ CONSENT_GATED_CAPABILITIES: frozenset[str] = frozenset({
 MENU_PARENTS: tuple[str, ...] = (
     "File",
     "Edit",
+    "Insert",
     "Format",
     "Tools",
     "Navigate",
+    "Search",
     "View",
     "Help",
 )
