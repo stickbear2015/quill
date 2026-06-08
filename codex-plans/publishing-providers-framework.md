@@ -283,7 +283,9 @@ Additional About-surface follow-up from the code review:
 
 - the current About surface is built from `quill/ui/main_frame.py`
 - contributor GitHub identities are listed through the existing `_ABOUT_GITHUB_LINKS` structure
+- contributor thank-you prose is rendered through `_about_markdown()`
 - the plan should preserve that pattern and add `stickbear2015` exactly in the same style as the existing contributor GitHub entries
+- the plan should not introduce a second contributor-credit mechanism just for publishing follow-up work
 
 ### Plugin and extensibility reality
 
@@ -504,7 +506,7 @@ Phase 1 should include:
 
 Phase 1 should not include:
 
-- top-level `Publishing` menu promotion
+- any additional top-level menu expansion beyond the approved `Publishing` menu
 - persistent sync
 - media upload
 - category/tag/taxonomy editing
@@ -746,7 +748,7 @@ This keeps the UI language mostly provider-neutral while still allowing the firs
 
 The current planning model is deliberately conservative:
 
-- no change to top-level menu order in the first slices
+- one bounded top-level menu change only: add `Publishing` near `Tools`, with no broader menu reorganization in the first slices
 - no new status-bar cell in the first slices
 - no plugin-runtime dependency
 - no silent background sync
@@ -762,6 +764,12 @@ Based on the current menu layout, the best planning path is:
 ### Phase A: use a top-level `Publishing` menu
 
 Use a dedicated top-level `Publishing` menu near `Tools` for the first implementation slices. That reflects the updated product direction and gives publishing first-class discoverability.
+
+Implementation note for that later slice:
+
+- update the factory top-level menu definition list in `quill/ui/main_frame.py`
+- keep the new menu inside the existing menu-customization and menu-editor model rather than treating it as a shell special case
+- keep the final order stable across menu build, menu customization, command palette discoverability, and help text
 
 Recommended initial menu label:
 
