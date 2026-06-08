@@ -225,6 +225,7 @@ Additional planning implication from the dialog governance tooling:
 
 - any publishing dialog implementation will need both human checklist coverage in `dialogs.md` and machine registry coverage in `tests/unit/ui/fixtures/dialog_inventory.json`
 - a plan that adds too many secondary or nested dialogs too early will create unnecessary maintenance pressure
+- any custom publishing dialog must use Quill's shared dialog contract helpers (`apply_modal_ids`, `show_modal_dialog`, and the associated focus-routing behavior) instead of raw `ShowModal()` or one-off modal wiring
 
 ### Existing connection-flow precedent
 
@@ -309,6 +310,7 @@ Confirmed from the current test suite and tooling:
 
 - menu structure and menu binding contracts are tested
 - dialog inventory and dialog classification are tested
+- dialog contract and hardening behavior are tested
 - feature mapping and profile behavior are tested
 - plugin policy expectations are tested
 - provider and connection logic already have unit-test precedents in adjacent systems
@@ -318,6 +320,9 @@ Likely enforcement surfaces for publishing work:
 
 - `tests/unit/ui/test_main_frame_menu_contract.py`
 - `tests/unit/ui/test_dialog_inventory.py`
+- `tests/unit/ui/test_dialog_contract.py`
+- `tests/unit/ui/test_dialog_hardening_contract.py`
+- `tests/unit/ui/test_dialog_focus_routing_guard.py`
 - `tests/unit/core/test_features.py`
 - `tests/unit/ui/test_dialog_button_parenting.py`
 - `tests/unit/ui/test_connection_dialog_a11y.py`
@@ -329,6 +334,7 @@ Planning implication:
 - publishing must be planned against existing enforcement points before implementation starts
 - every user-visible slice should declare which test contracts it is expected to touch
 - publishing work should not be considered complete until it has been run against the relevant accessibility, usability, dialog-governance, menu-contract, feature-gating, and publishing-focused tests already present in `tests/`
+- every new publishing dialog must use the repo's shared dialog contract and hardening helpers rather than raw modal wiring
 
 ### Settings, storage, and trust-model audit
 
@@ -1187,6 +1193,7 @@ Accessibility and usability requirement:
 - every editable field in the connection flow must have an explicit, speech-friendly purpose in tab order
 - helper text must explain what belongs in a field instead of giving only provider background or overly chatty prose
 - no field should feel effectively unlabeled just because nearby visual text exists
+- every publishing dialog must use Quill's shared dialog contract for modal ids, title announcement, focus routing, and escape/affirmative behavior
 
 ### First visible remote action
 
