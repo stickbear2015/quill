@@ -44,6 +44,9 @@ These decisions are now the recommended baseline for future implementation unles
 - publishing ships behind a dedicated gated feature id
 - the first implementation adds no publishing status-bar cell
 - the first implementation does not depend on Quillins or any third-party plugin runtime
+- publishing must support multiple saved publishing connections, not a single global site
+- publishing connection UX must stay provider-agnostic until a provider is explicitly chosen
+- publishing authentication cannot assume application passwords are the only realistic user credential path
 - local-to-remote linkage starts in a Quill-local registry, not inside the source document
 - the first publish path is explicit, review-first, and never silent
 - the first content path should prefer HTML-oriented output, with any source transformation explained plainly to the user
@@ -383,8 +386,9 @@ The PRD sets several non-optional requirements that apply directly to publishing
 Add a publishing domain in `quill/core` with:
 
 - provider definitions
-- connection settings
+- connection profile settings
 - secure credential handling
+- auth-method definitions
 - endpoint verification
 - provider capability metadata
 
@@ -436,18 +440,27 @@ The first provider should target the standard WordPress REST API and support:
 
 Authentication baseline:
 
-- WordPress username
-- WordPress Application Password
+- do not assume a single universal WordPress login method
+- support a provider-owned list of possible auth methods
+- allow the first real implementation to start with one verified method, but keep the model open to browser-based or email-link style sign-in later
 
 ### 4. Settings and secrets
 
-Connection settings should likely include:
+Connection profile settings should likely include:
 
+- connection/profile id
+- user-visible connection label
 - provider id
 - site URL
-- username
+- auth method id
+- account identifier such as username or email when the chosen auth method needs one
 - content format preference
 - optional site-specific defaults later
+
+Planning correction:
+
+- the implementation must not store publishing setup as one singleton connection record if Quill is expected to work with multiple author sites
+- the first data model should start with a list of saved publishing connection profiles plus a default/last-used selection model
 
 Secrets should be stored using the same secure pattern already used by AI connection flows, not plain settings JSON.
 
@@ -497,8 +510,10 @@ This section defines the desired behavior for the first coherent user-visible pu
 
 Phase 1 should include:
 
-- provider-aware publishing connection setup
-- WordPress connection verification
+- provider-aware publishing connection profiles
+- multiple saved publishing connections
+- a provider-agnostic connection manager surface
+- WordPress connection verification for the first implemented auth method
 - publish-current-document confirmation and draft creation
 - support for both posts and pages
 - explicit result reporting
@@ -519,18 +534,22 @@ Phase 1 should not include:
 The intended first user journey is:
 
 1. The user discovers the top-level `Publishing` menu.
-2. The user opens `Publishing Connection...`.
-3. The user selects WordPress, enters site URL, username, and application password, and verifies the connection.
-4. The user returns to the current document and chooses an action such as `Create Draft...` or `Publish Current Document...`.
-5. Quill presents a review-first confirmation dialog with content type, title, destination summary, publish state, and network explanation.
-6. Quill performs the explicit remote action.
-7. Quill reports the outcome through the dialog result, status text, and notifications.
+2. The user opens a provider-agnostic publishing connections surface.
+3. The user creates or selects a saved publishing connection profile.
+4. Only after choosing a provider does Quill show provider-specific fields or auth language.
+5. The user verifies the selected connection using the auth method supported for that provider/profile.
+6. The user returns to the current document and chooses an action such as `Create Draft...` or `Publish Current Document...`.
+7. Quill presents a review-first confirmation dialog with content type, title, destination summary, publish state, and network explanation.
+8. Quill performs the explicit remote action.
+9. Quill reports the outcome through the dialog result, status text, and notifications.
 
 ### Phase 1 command set
 
 The recommended phase 1 command family is:
 
-- `publishing.connection`
+- `publishing.connections`
+- `publishing.new_connection`
+- `publishing.edit_connection`
 - `publishing.verify_connection`
 - `publishing.create_draft`
 - `publishing.publish_current`
@@ -548,8 +567,8 @@ The following commands should be planned but deferred from the first user-visibl
 
 The recommended phase 1 menu contract is:
 
-- `Publishing -> Publishing Connection...`
-- `Publishing -> Verify Publishing Connection`
+- `Publishing -> Connections...`
+- `Publishing -> Verify Current Connection`
 - separator
 - `Publishing -> Create Draft...`
 - `Publishing -> Publish Current Document...`
@@ -586,7 +605,9 @@ Planned hook:
 
 Recommended initial command family:
 
-- `publishing.connection`
+- `publishing.connections`
+- `publishing.new_connection`
+- `publishing.edit_connection`
 - `publishing.verify_connection`
 - `publishing.create_draft`
 - `publishing.publish_current`
@@ -610,8 +631,8 @@ Planned hook:
 
 Recommended initial submenu items:
 
-- `Publishing Connection...`
-- `Verify Publishing Connection`
+- `Connections...`
+- `Verify Current Connection`
 - separator
 - `Create Draft...`
 - `Publish Current Document...`
@@ -640,7 +661,8 @@ Planned hook:
 
 Planned first dialog surfaces:
 
-- `Publishing Connection Dialog`
+- `Publishing Connections Dialog`
+- `Edit Publishing Connection Dialog`
 - `Publish Current Content Dialog`
 - later `Browse Published Content Dialog`
 
@@ -813,7 +835,8 @@ Recommended initial command concepts:
 The smallest coherent user-facing setup is:
 
 - a top-level `Publishing` entry point
-- a connection dialog for provider selection and WordPress setup
+- a connections manager for multiple saved sites
+- an add or edit connection dialog that stays provider-agnostic until the provider is chosen
 - a verify connection action
 
 This is the minimum needed before post creation flows make sense.
@@ -842,33 +865,55 @@ The existing AI surfaces provide the closest UI precedent for publishing. The pu
 
 ### Recommended first publishing dialogs
 
-#### 1. Publishing Connection Dialog
+#### 1. Publishing Connections Dialog
 
 Purpose:
 
-- choose provider
-- enter site URL
-- enter username
-- enter application password
-- verify connection
+- list saved publishing connections
+- add a new connection
+- edit an existing connection
+- choose the current/default connection
+- verify the selected connection
 
 Recommended controls:
 
+- list of saved connections
+- add button
+- edit button
+- remove button
+- set current/default button
+- verify button
+
+This dialog should be the publishing equivalent of a connection manager, not a singleton settings form.
+
+#### 2. Edit Publishing Connection Dialog
+
+Purpose:
+
+- enter a connection label
+- choose provider
+- enter site URL
+- choose auth method
+- only then show provider-specific or auth-specific fields
+- save and verify the connection profile
+
+Recommended controls:
+
+- connection label text field
 - provider choice
 - site URL text field
-- username text field
-- application password field with reveal toggle
+- auth method choice
+- account identifier field when needed
+- secret field only when the chosen auth method actually needs one
 - provider help text
 - verify button
-- optional future button for “Browse content”
-
-This dialog should be the publishing equivalent of the existing AI connection dialog, not a brand-new interaction model.
 
 Expected plain-language summary text:
 
 - explain that Quill can connect to a publishing site only when the user configures it
 - state that verification sends a deliberate network request to the configured site
-- state that credentials are stored securely on the device
+- state that saved sign-in data, when present, is stored securely on the device
+- avoid assuming the user already knows what an application password is
 
 #### 2. Publish Current Content Dialog
 
@@ -928,7 +973,8 @@ Because the repo already treats dialogs as a governed surface, publishing planni
 
 Recommended classification expectations:
 
-- `Publishing Connection Dialog`: likely `hardened_custom`
+- `Publishing Connections Dialog`: likely `hardened_custom`
+- `Edit Publishing Connection Dialog`: likely `hardened_custom`
 - `Publish Current Content Dialog`: likely `hardened_custom`
 - `Browse Published Content Dialog`: likely `hardened_custom`
 - confirm-only or pick-one prompts inside the flow: prefer native dialogs where possible
@@ -974,8 +1020,9 @@ This is the planning-level UX contract that future implementation should satisfy
 
 The connection dialog should:
 
-- default to WordPress as the only visible provider in the first user-visible slice
-- ask for site URL, username, and application password
+- start from saved connections rather than a single global connection record
+- keep provider names generic until the user chooses or edits a provider
+- support multiple saved sites cleanly
 - provide a visible verify action before save-and-exit is the only path forward
 - use cause-specific feedback such as invalid URL, insecure endpoint, authentication failure, unreachable host, or successful verification
 
@@ -983,7 +1030,8 @@ The connection flow should not:
 
 - auto-verify silently on field blur or dialog open
 - hide the fact that a real network call is happening
-- use provider-specific jargon without plain-language explanation
+- assume every user has or understands an application password
+- use provider-specific jargon before the provider is chosen
 
 ### Publish confirmation behavior
 
@@ -1071,12 +1119,14 @@ Rationale:
 
 Recommendation:
 
-- WordPress should be the only user-facing provider in the first visible slice, even if the core is provider-based
+- WordPress should be the only implemented provider in the first visible slice, even if the core is provider-based
+- the generic connections UI should not hard-code WordPress wording before provider selection
 
 Rationale:
 
 - it keeps the user promise honest
 - it prevents a “provider framework” UI from implying support breadth that does not exist yet
+- it keeps the generic connection-management surface reusable when later providers arrive
 
 ### Title derivation
 
@@ -1116,7 +1166,8 @@ Rationale:
 
 Recommendation:
 
-- `Publishing Connection Dialog`
+- `Publishing Connections Dialog`
+- `Edit Publishing Connection Dialog`
 - `Publish Current Content Dialog`
 
 Deferred by default:
@@ -1251,10 +1302,12 @@ Rationale:
 ### Slice 1: framework foundation
 
 - publishing provider metadata
-- connection settings model
+- connection profile model
+- auth method model
+- multi-connection storage model
 - secure secret storage
 - endpoint security validation
-- WordPress verification flow
+- WordPress verification flow for the first supported auth method
 - unit tests for those pieces
 - feature-registry and feature-gating integration
 
@@ -1350,6 +1403,21 @@ Recommended first planning direction:
 
 - start with a QUILL-local registry because it is lowest-risk and avoids mutating document formats unexpectedly
 - if later moved into document metadata, that should require a separate approval step because it changes the file-behavior contract
+
+### 4. Connection and authentication model
+
+Decision needed:
+
+- should a saved publishing connection represent one site/profile pair
+- how should Quill represent auth methods that do not use a long-lived password
+- how should Quill support future browser-based or one-time-link sign-in flows without rewriting the whole connection model
+
+Recommended first planning direction:
+
+- model publishing connections as named saved profiles
+- model authentication as a provider-owned auth-method choice, not a hard-coded password field
+- allow secrets to be optional because some auth methods may rely on browser/session flows instead
+- keep the first implementation honest if only one auth method is actually wired for WordPress at first
 
 ## Risks
 

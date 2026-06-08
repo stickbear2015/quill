@@ -63,6 +63,7 @@ def test_feature_manager_respects_profile_state() -> None:
     assert manager.state_for("core.file") == FEATURE_STATE_ON
     assert manager.state_for("core.search.regex") == FEATURE_STATE_QUIET
     assert manager.state_for("future.ai") == FEATURE_STATE_QUIET
+    assert manager.state_for("future.publishing") == FEATURE_STATE_QUIET
 
 
 def test_feature_manager_can_switch_profiles() -> None:
@@ -112,6 +113,10 @@ def test_feature_registry_includes_shipped_profiles() -> None:
 
 def test_intellisense_feature_is_in_registry() -> None:
     assert "core.intellisense" in PROFILE_DEFINITIONS[PROFILE_FULL_QUILL].states
+
+
+def test_publishing_feature_is_in_registry() -> None:
+    assert "future.publishing" in PROFILE_DEFINITIONS[PROFILE_FULL_QUILL].states
 
 
 def test_feature_profile_import_and_export_roundtrip() -> None:
