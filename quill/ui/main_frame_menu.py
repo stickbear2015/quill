@@ -49,6 +49,20 @@ class MenuBuilderMixin:
         self._refresh_recent_menu()
         file_menu.Append(self._id_open_url, "Open from &URL...")
         file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
+        self._id_publishing_connections = wx.NewIdRef()
+        self._id_publishing_verify_connection = wx.NewIdRef()
+        file_menu.AppendSeparator()
+        file_menu.Append(
+            self._id_publishing_connections,
+            self._menu_label("Publishing &Connections...", "publishing.connections"),
+        )
+        file_menu.Append(
+            self._id_publishing_verify_connection,
+            self._menu_label(
+                "&Verify Current Publishing Connection",
+                "publishing.verify_connection",
+            ),
+        )
         file_menu.AppendSeparator()
         # --- Save ---
         file_menu.Append(self._id_save, self._menu_label("&Save", "file.save"))
@@ -1290,19 +1304,6 @@ class MenuBuilderMixin:
         menu_bar.Append(navigate_menu, "&Navigate")
         menu_bar.Append(format_menu, "F&ormat")
         menu_bar.Append(tools_menu, "&Tools")
-
-        self._id_publishing_connections = wx.NewIdRef()
-        self._id_publishing_verify_connection = wx.NewIdRef()
-        publishing_menu = wx.Menu()
-        publishing_menu.Append(
-            self._id_publishing_connections,
-            self._menu_label("Publishing &Connections...", "publishing.connections"),
-        )
-        publishing_menu.Append(
-            self._id_publishing_verify_connection,
-            self._menu_label("&Verify Current Connection", "publishing.verify_connection"),
-        )
-        menu_bar.Append(publishing_menu, "P&ublishing")
 
         # The former top-level "Settings" menu is gone. All configuration now
         # lives together under Tools > Customize (Preferences, Customize Menus,

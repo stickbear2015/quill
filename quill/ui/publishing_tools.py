@@ -59,10 +59,18 @@ class EditPublishingConnectionDialog:
         self.connection_label = wx.TextCtrl(panel)
         self.connection_label.SetValue(self._profile.label)
         self.connection_label.SetName("Publishing connection label")
+        self.connection_label.SetHint("Example: My blog or Team site")
         panel_sizer.Add(
             wx.StaticText(panel, label="Connection label"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
         )
         panel_sizer.Add(self.connection_label, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        self.connection_label_hint = wx.StaticText(
+            panel,
+            label="Optional. Give this saved connection a short name you will recognize later.",
+        )
+        panel_sizer.Add(
+            self.connection_label_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8
+        )
 
         self.provider = wx.Choice(
             panel, choices=[label for _value, label in self._PROVIDER_CHOICES]
@@ -77,8 +85,14 @@ class EditPublishingConnectionDialog:
         self.site_url = wx.TextCtrl(panel)
         self.site_url.SetValue(self._profile.site_url)
         self.site_url.SetName("Publishing site URL")
+        self.site_url.SetHint("Example: https://example.com")
         panel_sizer.Add(wx.StaticText(panel, label="Site URL"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         panel_sizer.Add(self.site_url, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        self.site_url_hint = wx.StaticText(
+            panel,
+            label="Enter the full site address for the site you want to publish to.",
+        )
+        panel_sizer.Add(self.site_url_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.auth_method = wx.Choice(panel)
         self.auth_method.SetName("Publishing sign-in method")
@@ -94,7 +108,12 @@ class EditPublishingConnectionDialog:
         self.account_identifier = wx.TextCtrl(panel)
         self.account_identifier.SetValue(self._profile.account_identifier)
         self.account_identifier.SetName("Publishing sign-in name or email")
+        self.account_identifier.SetHint("Example: your username or email address")
         panel_sizer.Add(self.account_identifier, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        self.account_identifier_hint = wx.StaticText(panel, label="")
+        panel_sizer.Add(
+            self.account_identifier_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8
+        )
 
         self.secret_label = wx.StaticText(panel, label="Secret")
         panel_sizer.Add(self.secret_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
@@ -102,6 +121,7 @@ class EditPublishingConnectionDialog:
         self.secret = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
         self.secret.SetValue(self._secret)
         self.secret.SetName("Publishing secret")
+        self.secret.SetHint("Enter the sign-in secret for this connection")
         self.secret_row.Add(self.secret, 1, wx.EXPAND | wx.RIGHT, 8)
         self.reveal_secret = wx.Button(panel, label="Reveal")
         self.reveal_secret.SetName("Reveal publishing secret")
@@ -167,7 +187,9 @@ class EditPublishingConnectionDialog:
 
     def _on_provider_changed(self, _event: object | None) -> None:
         provider_id = self._provider_value()
-        self.provider_hint.SetLabel(publishing_provider_help_text(provider_id))
+        self.provider_hint.SetLabel(
+            f"Provider details: {publishing_provider_help_text(provider_id)}"
+        )
         methods = provider_auth_methods(provider_id)
         self.auth_method.SetItems([publishing_auth_method_name(item) for item in methods])
         try:
@@ -179,12 +201,19 @@ class EditPublishingConnectionDialog:
 
     def _on_auth_method_changed(self, _event: object | None) -> None:
         method = auth_method_definition(self._auth_method_value())
-        self.auth_hint.SetLabel(method.description)
+        self.auth_hint.SetLabel(f"Sign-in method details: {method.description}")
         self.identifier_label.Show(method.requires_identifier)
         self.account_identifier.Show(method.requires_identifier)
+        self.account_identifier_hint.Show(method.requires_identifier)
         self.secret_label.Show(method.requires_secret)
         self.secret.Show(method.requires_secret)
         self.reveal_secret.Show(method.requires_secret)
+        if method.requires_identifier:
+            self.account_identifier_hint.SetLabel(
+                "Enter the username or email address used with this sign-in method."
+            )
+        else:
+            self.account_identifier_hint.SetLabel("")
         self.secret_hint.SetLabel(
             "Saved sign-in data, when present, is stored securely on this device."
             if method.requires_secret

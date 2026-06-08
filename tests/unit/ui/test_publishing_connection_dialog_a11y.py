@@ -29,6 +29,9 @@ def test_edit_connection_controls_set_accessible_names() -> None:
     assert 'self.account_identifier.SetName("Publishing sign-in name or email")' in body
     assert 'self.secret.SetName("Publishing secret")' in body
     assert 'self.reveal_secret.SetName("Reveal publishing secret")' in body
+    assert 'self.connection_label.SetHint("Example: My blog or Team site")' in body
+    assert 'self.site_url.SetHint("Example: https://example.com")' in body
+    assert 'self.account_identifier.SetHint("Example: your username or email address")' in body
 
 
 def test_manager_dialog_names_the_connections_list() -> None:
@@ -42,6 +45,15 @@ def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> N
     assert "self.connection_label.SetFocus()" in source
     assert "self.connection_list.SetFocus()" in source
     assert "self.reveal_secret.MoveAfterInTabOrder(self.secret)" in source
+
+
+def test_publishing_dialogs_explain_field_purpose_in_plain_language() -> None:
+    body = _edit_dialog_source()
+    assert "Optional. Give this saved connection a short name" in body
+    assert "Enter the full site address for the site you want to publish to." in body
+    assert "Enter the username or email address used with this sign-in method." in body
+    assert "Provider details:" in body
+    assert "Sign-in method details:" in body
 
 
 def test_publishing_dialogs_have_no_storage_jargon() -> None:
