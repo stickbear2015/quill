@@ -97,7 +97,9 @@ def default_content_format_for_provider(provider_id: str) -> str:
 
 def auth_method_definition(auth_method_id: str) -> PublishingAuthMethodDefinition:
     normalized = auth_method_id.strip().lower()
-    return AUTH_METHOD_DEFINITIONS.get(normalized, AUTH_METHOD_DEFINITIONS[AUTH_METHOD_APP_PASSWORD])
+    return AUTH_METHOD_DEFINITIONS.get(
+        normalized, AUTH_METHOD_DEFINITIONS[AUTH_METHOD_APP_PASSWORD]
+    )
 
 
 def publishing_auth_method_name(auth_method_id: str) -> str:

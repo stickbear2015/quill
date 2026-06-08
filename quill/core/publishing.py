@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import ssl
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -18,7 +19,6 @@ from quill.core.publishing_providers import (
     provider_implemented_auth_methods,
     publishing_auth_method_name,
     publishing_provider_display_name,
-    publishing_provider_help_text,
 )
 from quill.core.storage import read_json, write_json_atomic
 from quill.platform.windows.credential_manager import (
@@ -49,9 +49,11 @@ class PublishingConnectionProfile:
         auth_method = str(data.get("auth_method", AUTH_METHOD_APP_PASSWORD)).strip().lower()
         if auth_method not in allowed_auth:
             auth_method = AUTH_METHOD_APP_PASSWORD
-        content_format = str(
-            data.get("content_format", default_content_format_for_provider(provider_id))
-        ).strip().lower()
+        content_format = (
+            str(data.get("content_format", default_content_format_for_provider(provider_id)))
+            .strip()
+            .lower()
+        )
         if content_format not in {"html"}:
             content_format = default_content_format_for_provider(provider_id)
         profile = cls(
@@ -228,8 +230,11 @@ def verify_publishing_connection(
     if normalized.auth_method not in provider_implemented_auth_methods(normalized.provider_id):
         return (
             False,
-            f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
-            f"{publishing_provider_display_name(normalized.provider_id)}, but is not implemented yet.",
+            (
+                f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
+                f"{publishing_provider_display_name(normalized.provider_id)}, "
+                "but is not implemented yet."
+            ),
         )
     if normalized.auth_method == AUTH_METHOD_APP_PASSWORD:
         return _verify_wordpress_app_password(normalized, secret, timeout_seconds=timeout_seconds)
@@ -266,7 +271,13 @@ def _verify_wordpress_app_password(
             return False, "Authentication failed. Check the sign-in name or application password."
         if exc.code == 403:
             return False, "Access denied. This account cannot publish on that site."
-        return False, f"{publishing_provider_display_name(profile.provider_id)} returned HTTP {exc.code} while verifying the connection."
+        return (
+            False,
+            (
+                f"{publishing_provider_display_name(profile.provider_id)} returned HTTP "
+                f"{exc.code} while verifying the connection."
+            ),
+        )
     except URLError as exc:
         reason = getattr(exc, "reason", None)
         text = str(reason).strip() or "unknown network error"
@@ -328,7 +339,7 @@ def _delete_secret_from_credential_manager(connection_id: str) -> None:
         return
 
 
-def _context_for(endpoint: str):
+def _context_for(endpoint: str) -> ssl.SSLContext | None:
     if urlparse(endpoint).scheme == "https":
         return verified_ssl_context()
     return None
@@ -373,5 +384,5 @@ def _display_host(site_url: str) -> str:
 
 
 def _basic_auth_header(identifier: str, secret: str) -> str:
-    token = f"{identifier.strip()}:{secret.strip()}".encode("utf-8")
+    token = f"{identifier.strip()}:{secret.strip()}".encode()
     return "Basic " + base64.b64encode(token).decode("ascii")

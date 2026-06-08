@@ -22,17 +22,26 @@ def _manager_dialog_source() -> str:
 
 def test_edit_connection_controls_set_accessible_names() -> None:
     body = _edit_dialog_source()
-    assert 'self.connection_label.SetName("Connection label")' in body
-    assert 'self.provider.SetName("Provider")' in body
-    assert 'self.site_url.SetName("Site URL")' in body
-    assert 'self.auth_method.SetName("Sign-in method")' in body
-    assert 'self.account_identifier.SetName("Sign-in name or email")' in body
-    assert 'self.secret.SetName("Secret")' in body
+    assert 'self.connection_label.SetName("Publishing connection label")' in body
+    assert 'self.provider.SetName("Publishing provider")' in body
+    assert 'self.site_url.SetName("Publishing site URL")' in body
+    assert 'self.auth_method.SetName("Publishing sign-in method")' in body
+    assert 'self.account_identifier.SetName("Publishing sign-in name or email")' in body
+    assert 'self.secret.SetName("Publishing secret")' in body
+    assert 'self.reveal_secret.SetName("Reveal publishing secret")' in body
 
 
 def test_manager_dialog_names_the_connections_list() -> None:
     body = _manager_dialog_source()
-    assert 'self.connection_list.SetName("Publishing connections")' in body
+    assert 'self.connection_list.SetName("Saved publishing connections")' in body
+    assert 'self.summary.SetName("Selected publishing connection details")' in body
+
+
+def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> None:
+    source = _publishing_tools_source()
+    assert "self.connection_label.SetFocus()" in source
+    assert "self.connection_list.SetFocus()" in source
+    assert "self.reveal_secret.MoveAfterInTabOrder(self.secret)" in source
 
 
 def test_publishing_dialogs_have_no_storage_jargon() -> None:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from quill.core.publishing import (
     PublishingConnectionProfile,
-    current_publishing_connection,
     load_publishing_connections,
     load_publishing_secret,
     remove_publishing_connection,
@@ -59,12 +58,16 @@ class EditPublishingConnectionDialog:
 
         self.connection_label = wx.TextCtrl(panel)
         self.connection_label.SetValue(self._profile.label)
-        self.connection_label.SetName("Connection label")
-        panel_sizer.Add(wx.StaticText(panel, label="Connection label"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.connection_label.SetName("Publishing connection label")
+        panel_sizer.Add(
+            wx.StaticText(panel, label="Connection label"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+        )
         panel_sizer.Add(self.connection_label, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
-        self.provider = wx.Choice(panel, choices=[label for _value, label in self._PROVIDER_CHOICES])
-        self.provider.SetName("Provider")
+        self.provider = wx.Choice(
+            panel, choices=[label for _value, label in self._PROVIDER_CHOICES]
+        )
+        self.provider.SetName("Publishing provider")
         self.provider.SetSelection(self._provider_choice_index(self._profile.provider_id))
         panel_sizer.Add(wx.StaticText(panel, label="Provider"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         panel_sizer.Add(self.provider, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
@@ -73,13 +76,15 @@ class EditPublishingConnectionDialog:
 
         self.site_url = wx.TextCtrl(panel)
         self.site_url.SetValue(self._profile.site_url)
-        self.site_url.SetName("Site URL")
+        self.site_url.SetName("Publishing site URL")
         panel_sizer.Add(wx.StaticText(panel, label="Site URL"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         panel_sizer.Add(self.site_url, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.auth_method = wx.Choice(panel)
-        self.auth_method.SetName("Sign-in method")
-        panel_sizer.Add(wx.StaticText(panel, label="Sign-in method"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.auth_method.SetName("Publishing sign-in method")
+        panel_sizer.Add(
+            wx.StaticText(panel, label="Sign-in method"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+        )
         panel_sizer.Add(self.auth_method, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.auth_hint = wx.StaticText(panel, label="")
         panel_sizer.Add(self.auth_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
@@ -88,7 +93,7 @@ class EditPublishingConnectionDialog:
         panel_sizer.Add(self.identifier_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         self.account_identifier = wx.TextCtrl(panel)
         self.account_identifier.SetValue(self._profile.account_identifier)
-        self.account_identifier.SetName("Sign-in name or email")
+        self.account_identifier.SetName("Publishing sign-in name or email")
         panel_sizer.Add(self.account_identifier, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.secret_label = wx.StaticText(panel, label="Secret")
@@ -96,10 +101,10 @@ class EditPublishingConnectionDialog:
         self.secret_row = wx.BoxSizer(wx.HORIZONTAL)
         self.secret = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
         self.secret.SetValue(self._secret)
-        self.secret.SetName("Secret")
+        self.secret.SetName("Publishing secret")
         self.secret_row.Add(self.secret, 1, wx.EXPAND | wx.RIGHT, 8)
         self.reveal_secret = wx.Button(panel, label="Reveal")
-        self.reveal_secret.SetName("Reveal secret")
+        self.reveal_secret.SetName("Reveal publishing secret")
         self.secret_row.Add(self.reveal_secret, 0)
         panel_sizer.Add(self.secret_row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.secret_hint = wx.StaticText(panel, label="")
@@ -107,7 +112,9 @@ class EditPublishingConnectionDialog:
 
         self.verify_button = wx.Button(panel, label="Verify Connection")
         panel_sizer.Add(self.verify_button, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.connection_status = wx.StaticText(panel, label="Save and verify this connection before publishing.")
+        self.connection_status = wx.StaticText(
+            panel, label="Save and verify this connection before publishing."
+        )
         panel_sizer.Add(self.connection_status, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         panel.SetSizer(panel_sizer)
@@ -124,6 +131,8 @@ class EditPublishingConnectionDialog:
         self.reveal_secret.Bind(wx.EVT_BUTTON, self._on_toggle_secret_reveal)
         self._secret_revealed = False
         self._on_provider_changed(None)
+        self.reveal_secret.MoveAfterInTabOrder(self.secret)
+        self.connection_label.SetFocus()
 
     def _provider_choice_index(self, provider_id: str) -> int:
         normalized = provider_id.strip().lower()
@@ -194,11 +203,14 @@ class EditPublishingConnectionDialog:
         style = 0 if revealed else self._wx.TE_PASSWORD
         self.secret = self._wx.TextCtrl(parent, style=style)
         self.secret.SetValue(value)
-        self.secret.SetName("Secret")
+        self.secret.SetName("Publishing secret")
         self.secret_row.Insert(0, self.secret, 1, self._wx.EXPAND | self._wx.RIGHT, 8)
         self._secret_revealed = revealed
         self.reveal_secret.SetLabel("Hide" if revealed else "Reveal")
-        self.reveal_secret.SetName("Hide secret" if revealed else "Reveal secret")
+        self.reveal_secret.SetName(
+            "Hide publishing secret" if revealed else "Reveal publishing secret"
+        )
+        self.reveal_secret.MoveAfterInTabOrder(self.secret)
         self.dialog.Layout()
 
     def _on_verify_connection(self, _event: object) -> None:
@@ -268,7 +280,7 @@ class PublishingConnectionsDialog:
         )
 
         self.connection_list = wx.ListBox(self.dialog)
-        self.connection_list.SetName("Publishing connections")
+        self.connection_list.SetName("Saved publishing connections")
         root.Add(self.connection_list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.summary = wx.TextCtrl(
@@ -276,6 +288,7 @@ class PublishingConnectionsDialog:
             style=wx.TE_MULTILINE | wx.TE_READONLY | wx.BORDER_SIMPLE,
             size=(-1, 120),
         )
+        self.summary.SetName("Selected publishing connection details")
         root.Add(self.summary, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         actions = wx.BoxSizer(wx.HORIZONTAL)
@@ -306,12 +319,15 @@ class PublishingConnectionsDialog:
 
         self._store = load_publishing_connections()
         self._refresh_connections()
+        self.connection_list.SetFocus()
 
     def _refresh_connections(self) -> None:
         labels: list[str] = []
         selection = 0
         for index, item in enumerate(self._store.connections):
-            label = item.label or item.site_url or publishing_provider_display_name(item.provider_id)
+            label = (
+                item.label or item.site_url or publishing_provider_display_name(item.provider_id)
+            )
             if item.id == self._store.current_connection_id:
                 label += " (Current)"
                 selection = index
