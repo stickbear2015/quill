@@ -570,6 +570,10 @@ A pure snippet-only extension declares **no** capabilities.
 | `${date}` | Current date in the user's configured format |
 | `${time}` | Current time in the user's configured format |
 | `${filename}` | Current document file name (empty if unsaved) |
+| `${title}` | Document file name stem without extension (empty if unsaved) |
+| `${line_number}` | Current line number (1-indexed) |
+| `${word_at_cursor}` | Word immediately surrounding the insertion point |
+| `${uuid}` | A fresh UUID4 generated at expansion time |
 | `${cursor}` | Final cursor position marker after insertion |
 
 ### 14.4 Python API reference (Layer 2, `QuillExtensionApi` v1)
@@ -629,6 +633,55 @@ Error types an author may see: `CapabilityError`, `ConsentDeniedError`,
   }
 }
 ```
+
+### 14.5a Worked example A2 — new placeholders in action
+
+Demonstrates `${title}`, `${line_number}`, `${word_at_cursor}`, and `${uuid}`.
+
+`manifest.json`:
+
+```json
+{
+  "schema": "quill.extension/1",
+  "id": "com.example.context-inserts",
+  "name": "Context Inserts",
+  "version": "1.0.0",
+  "contributes": {
+    "commands": [
+      {
+        "id": "ext.context-inserts.front-matter",
+        "title": "Insert Front Matter",
+        "run": { "snippet": "---\ntitle: ${title}\ndate: ${date}\n---\n\n${cursor}" }
+      },
+      {
+        "id": "ext.context-inserts.bold-word",
+        "title": "Bold Word at Cursor",
+        "run": { "snippet": "**${word_at_cursor}**${cursor}" }
+      },
+      {
+        "id": "ext.context-inserts.line-anchor",
+        "title": "Insert Line Anchor",
+        "run": { "snippet": "<!-- anchor:${uuid} line:${line_number} -->${cursor}" }
+      }
+    ],
+    "menus": [
+      { "parent": "Insert", "command": "ext.context-inserts.front-matter" },
+      { "parent": "Format", "command": "ext.context-inserts.bold-word" },
+      { "parent": "Insert", "command": "ext.context-inserts.line-anchor" }
+    ],
+    "context_menu": [
+      { "command": "ext.context-inserts.bold-word", "when": "editor.hasText" }
+    ]
+  }
+}
+```
+
+Token behaviour at runtime:
+
+- `${title}` — for `notes.md` expands to `notes`; empty string when the buffer is unsaved.
+- `${word_at_cursor}` — cursor inside `hello` → `hello`; between words → empty string.
+- `${line_number}` — always 1-indexed regardless of how the file renders.
+- `${uuid}` — generates a different UUID4 on every invocation, so two calls always produce distinct anchors.
 
 ### 14.6 Worked example B — Python handler
 

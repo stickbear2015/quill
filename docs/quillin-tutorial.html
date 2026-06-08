@@ -241,13 +241,13 @@
   </style>
 </head>
 <body>
-<h1 id="quillin-tutorial--build-your-first-quillin">Quillin Tutorial —
+<h1 id="quillin-tutorial-build-your-first-quillin">Quillin Tutorial —
 build your first Quillin</h1>
 <p>This is a hands-on, build-it-from-scratch tutorial for Quillin
 contributors. By the end you will have authored, linted, tested, and
 prepared a real Quillin for submission — starting from a zero-capability
 snippet and growing into a sandboxed Python handler.</p>
-<p>It pairs with three references you'll reach for along the way:</p>
+<p>It pairs with three references you’ll reach for along the way:</p>
 <ul>
 <li><a href="scripting.md"><code>scripting.md</code></a> — the full
 design + authoring reference (§13 schema, §14 API, §15 the deterministic
@@ -266,7 +266,7 @@ itself is <code>wx</code>-free, so <code>pip install -e .</code> is
 enough to lint.</p>
 </blockquote>
 <hr />
-<h2 id="1-what-youre-building">1. What you're building</h2>
+<h2 id="what-youre-building">1. What you’re building</h2>
 <p>A Quillin called <strong>Word Count Tools</strong>
 (<code>com.example.wordcount</code>). It will:</p>
 <ol type="1">
@@ -275,11 +275,11 @@ enough to lint.</p>
 <li>grow a <strong>Layer 2</strong> Python handler that counts the words
 in the selection and <strong>announces</strong> the result.</li>
 </ol>
-<p>Along the way you'll see the two ideas that make Quillins safe:
+<p>Along the way you’ll see the two ideas that make Quillins safe:
 <strong>declare the minimum</strong> and <strong>announce every
 outcome</strong>.</p>
 <hr />
-<h2 id="2-anatomy-of-a-quillin">2. Anatomy of a Quillin</h2>
+<h2 id="anatomy-of-a-quillin">2. Anatomy of a Quillin</h2>
 <p>A Quillin is one directory:</p>
 <pre><code>word-count-tools/
   manifest.json     # the contract — required
@@ -305,8 +305,8 @@ bundled Quillins.</li>
 <code>MAJOR.MINOR.PATCH</code> and you bump it on every change.</li>
 </ul>
 <hr />
-<h2 id="3-step-1--a-layer-1-snippet-no-capabilities">3. Step 1 — a Layer
-1 snippet (no capabilities)</h2>
+<h2 id="step-1-a-layer-1-snippet-no-capabilities">3. Step 1 — a Layer 1
+snippet (no capabilities)</h2>
 <p>Create the directory and a manifest that contributes one snippet
 command. Snippets are declarative text with placeholders — <strong>no
 code runs</strong>, so a snippet-only Quillin needs <strong>no
@@ -345,6 +345,10 @@ so they can never collide with a built-in QUILL command.</li>
 </ul>
 <h3 id="snippet-placeholders">Snippet placeholders</h3>
 <table>
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 47%" />
+</colgroup>
 <thead>
 <tr>
 <th>Placeholder</th>
@@ -358,15 +362,37 @@ so they can never collide with a built-in QUILL command.</li>
 </tr>
 <tr>
 <td><code>${clipboard}</code></td>
-<td>the clipboard text</td>
+<td>the clipboard text (requires <code>clipboard.read</code>
+capability)</td>
 </tr>
 <tr>
-<td><code>${date}</code> / <code>${time}</code></td>
-<td>today's date / current time</td>
+<td><code>${date}</code></td>
+<td>today’s date in the user’s configured format</td>
+</tr>
+<tr>
+<td><code>${time}</code></td>
+<td>current time in the user’s configured format</td>
 </tr>
 <tr>
 <td><code>${filename}</code></td>
-<td>the current document's file name</td>
+<td>the current document’s file name (e.g. <code>notes.txt</code>)</td>
+</tr>
+<tr>
+<td><code>${title}</code></td>
+<td>the document’s file name stem without extension
+(e.g. <code>notes</code>)</td>
+</tr>
+<tr>
+<td><code>${line_number}</code></td>
+<td>current line number, 1-indexed</td>
+</tr>
+<tr>
+<td><code>${word_at_cursor}</code></td>
+<td>the word immediately surrounding the insertion point</td>
+</tr>
+<tr>
+<td><code>${uuid}</code></td>
+<td>a fresh UUID4 generated at expansion time</td>
 </tr>
 <tr>
 <td><code>${cursor}</code></td>
@@ -374,73 +400,86 @@ so they can never collide with a built-in QUILL command.</li>
 </tr>
 </tbody>
 </table>
-<h3 id="lint-it">Lint it</h3>
+<p><strong>Common patterns:</strong></p>
 <div class="sourceCode" id="cb4"><pre
-class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span></code></pre></div>
-<p>You'll get a couple of warnings (no README, no LICENSE). Add a
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Front</span> <span class="er">matter</span> <span class="er">header</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;run&quot;</span><span class="er">:</span> <span class="fu">{</span> <span class="dt">&quot;snippet&quot;</span><span class="fu">:</span> <span class="st">&quot;---</span><span class="ch">\n</span><span class="st">title: ${title}</span><span class="ch">\n</span><span class="st">date: ${date}</span><span class="ch">\n</span><span class="st">---</span><span class="ch">\n\n</span><span class="st">${cursor}&quot;</span> <span class="fu">}</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Wrap</span> <span class="er">selected</span> <span class="er">word</span> <span class="er">in</span> <span class="er">bold</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;run&quot;</span><span class="er">:</span> <span class="fu">{</span> <span class="dt">&quot;snippet&quot;</span><span class="fu">:</span> <span class="st">&quot;**${word_at_cursor}**${cursor}&quot;</span> <span class="fu">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Insert</span> <span class="er">a</span> <span class="er">unique</span> <span class="er">anchor</span> <span class="er">ID</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;run&quot;</span><span class="er">:</span> <span class="fu">{</span> <span class="dt">&quot;snippet&quot;</span><span class="fu">:</span> <span class="st">&quot;id=</span><span class="ch">\&quot;</span><span class="st">${uuid}</span><span class="ch">\&quot;</span><span class="st">${cursor}&quot;</span> <span class="fu">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Annotate</span> <span class="er">the</span> <span class="er">current</span> <span class="er">line</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;run&quot;</span><span class="er">:</span> <span class="fu">{</span> <span class="dt">&quot;snippet&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;!-- line ${line_number}: ${word_at_cursor} --&gt;${cursor}&quot;</span> <span class="fu">}</span></span></code></pre></div>
+<h3 id="lint-it">Lint it</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span></code></pre></div>
+<p>You’ll get a couple of warnings (no README, no LICENSE). Add a
 <code>README.md</code> and a <code>LICENSE</code> file (or keep the
-manifest <code>license</code> field) and re-run until it's green.
+manifest <code>license</code> field) and re-run until it’s green.
 <strong>That clean <code>--strict</code> run is your submission bar for
 Layer 1.</strong></p>
 <p>You now have a complete, useful Quillin with zero code and zero
 capabilities. Most Quillins never need more than this.</p>
 <hr />
-<h2 id="4-step-2--a-layer-2-python-handler">4. Step 2 — a Layer 2 Python
+<h2 id="step-2-a-layer-2-python-handler">4. Step 2 — a Layer 2 Python
 handler</h2>
 <p>Now add real logic: count the words in the selection and announce the
 count. Handlers run <strong>out-of-process</strong>, in a sandbox,
-behind QUILL's capability + consent gate.</p>
-<h3 id="4a-declare-what-you-need">4a. Declare what you need</h3>
+behind QUILL’s capability + consent gate.</p>
+<h3 id="a.-declare-what-you-need">4a. Declare what you need</h3>
 <p>A handler command requires two things in the manifest: a top-level
 <code>main</code> module and the <code>ui.command</code> capability. To
 read the selection and announce a result you also need
-<code>editor.read</code> and <code>ui.announce</code>. <strong>That's
+<code>editor.read</code> and <code>ui.announce</code>. <strong>That’s
 the minimum — declare nothing more.</strong></p>
 <p>Add to <code>manifest.json</code>:</p>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;capabilities&quot;</span><span class="er">:</span> <span class="ot">[</span><span class="st">&quot;editor.read&quot;</span><span class="ot">,</span> <span class="st">&quot;ui.announce&quot;</span><span class="ot">,</span> <span class="st">&quot;ui.command&quot;</span><span class="ot">]</span><span class="er">,</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;main&quot;</span><span class="er">:</span> <span class="st">&quot;extension.py&quot;</span><span class="er">,</span></span></code></pre></div>
-<p>and a second command in <code>contributes.commands</code>:</p>
 <div class="sourceCode" id="cb6"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;Count Words In Selection&quot;</span><span class="fu">,</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;run&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;handler&quot;</span><span class="fu">:</span> <span class="st">&quot;count_words&quot;</span> <span class="fu">}</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span></code></pre></div>
-<p>Wire it to a context-menu entry (only when there's a selection) and a
-hotkey:</p>
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;capabilities&quot;</span><span class="er">:</span> <span class="ot">[</span><span class="st">&quot;editor.read&quot;</span><span class="ot">,</span> <span class="st">&quot;ui.announce&quot;</span><span class="ot">,</span> <span class="st">&quot;ui.command&quot;</span><span class="ot">]</span><span class="er">,</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;main&quot;</span><span class="er">:</span> <span class="st">&quot;extension.py&quot;</span><span class="er">,</span></span></code></pre></div>
+<p>and a second command in <code>contributes.commands</code>:</p>
 <div class="sourceCode" id="cb7"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;context_menu&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span> <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span> <span class="dt">&quot;when&quot;</span><span class="fu">:</span> <span class="st">&quot;editor.hasSelection&quot;</span> <span class="fu">}</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="er">,</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;hotkeys&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span> <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span> <span class="dt">&quot;binding&quot;</span><span class="fu">:</span> <span class="st">&quot;Ctrl+Shift+W&quot;</span> <span class="fu">}</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;Count Words In Selection&quot;</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;run&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;handler&quot;</span><span class="fu">:</span> <span class="st">&quot;count_words&quot;</span> <span class="fu">}</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span></code></pre></div>
+<p>Wire it to a context-menu entry (only when there’s a selection) and a
+hotkey:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;context_menu&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span> <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span> <span class="dt">&quot;when&quot;</span><span class="fu">:</span> <span class="st">&quot;editor.hasSelection&quot;</span> <span class="fu">}</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="er">,</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;hotkeys&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span> <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;ext.wordcount.count&quot;</span><span class="fu">,</span> <span class="dt">&quot;binding&quot;</span><span class="fu">:</span> <span class="st">&quot;Ctrl+Shift+W&quot;</span> <span class="fu">}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span></span></code></pre></div>
 <p><code>when</code> guards accept <code>always</code>,
 <code>editor.hasSelection</code>, <code>editor.hasText</code>, or
 <code>editor.empty</code>. Hotkey conflicts are
 <strong>rejected</strong>, never silently overridden.</p>
-<h3 id="4b-write-the-handler">4b. Write the handler</h3>
+<h3 id="b.-write-the-handler">4b. Write the handler</h3>
 <p><code>extension.py</code>:</p>
-<div class="sourceCode" id="cb8"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;&quot;&quot;Word Count Tools — a Layer 2 Quillin handler.&quot;&quot;&quot;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> __future__ <span class="im">import</span> annotations</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> register(api):</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Entry point: QUILL calls this once to register handlers.&quot;&quot;&quot;</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    api.register_command(<span class="st">&quot;count_words&quot;</span>, count_words)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_words(api):</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Count words in the selection and announce the result.&quot;&quot;&quot;</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    selection <span class="op">=</span> api.get_selection()</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> selection.strip():</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        api.announce(<span class="st">&quot;Nothing selected.&quot;</span>)</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    count <span class="op">=</span> <span class="bu">len</span>(selection.split())</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    api.announce(<span class="ss">f&quot;</span><span class="sc">{</span>count<span class="sc">}</span><span class="ss"> word</span><span class="sc">{</span><span class="st">&#39;s&#39;</span> <span class="cf">if</span> count <span class="op">!=</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">&#39;&#39;</span><span class="sc">}</span><span class="ss"> selected.&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;&quot;&quot;Word Count Tools — a Layer 2 Quillin handler.&quot;&quot;&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> __future__ <span class="im">import</span> annotations</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> register(api):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Entry point: QUILL calls this once to register handlers.&quot;&quot;&quot;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    api.register_command(<span class="st">&quot;count_words&quot;</span>, count_words)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_words(api):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Count words in the selection and announce the result.&quot;&quot;&quot;</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    selection <span class="op">=</span> api.get_selection()</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> selection.strip():</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        api.announce(<span class="st">&quot;Nothing selected.&quot;</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    count <span class="op">=</span> <span class="bu">len</span>(selection.split())</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    api.announce(<span class="ss">f&quot;</span><span class="sc">{</span>count<span class="sc">}</span><span class="ss"> word</span><span class="sc">{</span><span class="st">&#39;s&#39;</span> <span class="cf">if</span> count <span class="op">!=</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">&#39;&#39;</span><span class="sc">}</span><span class="ss"> selected.&quot;</span>)</span></code></pre></div>
 <p>What to notice:</p>
 <ul>
 <li><strong><code>register(api)</code></strong> is the single entry
@@ -449,15 +488,20 @@ point. It binds the handler name used in the manifest
 <li>The handler receives the
 <strong><code>QuillExtensionApi</code></strong> (<code>api</code>). It
 can only do what your declared capabilities allow — calling something
-you didn't declare is blocked by the sandbox, not by politeness.</li>
+you didn’t declare is blocked by the sandbox, not by politeness.</li>
 <li><strong>It announces its outcome in every path</strong> — success
 <em>and</em> the empty-selection case. A silent success is a bug under
 the Author Covenant.</li>
 </ul>
-<h3 id="4c-the-capability-surface-layer-2">4c. The capability surface
+<h3 id="c.-the-capability-surface-layer-2">4c. The capability surface
 (Layer 2)</h3>
 <p>The API you can call maps directly onto declared capabilities:</p>
 <table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 59%" />
+<col style="width: 15%" />
+</colgroup>
 <thead>
 <tr>
 <th>You call</th>
@@ -511,59 +555,58 @@ the Author Covenant.</li>
 <strong>every</strong> use. Design for a graceful, announced refusal —
 never assume access is granted.</p>
 <hr />
-<h2 id="5-test-your-quillin">5. Test your Quillin</h2>
-<p>Mirror the bundled Quillin's test (<a
+<h2 id="test-your-quillin">5. Test your Quillin</h2>
+<p>Mirror the bundled Quillin’s test (<a
 href="../tests/unit/core/test_quillins_bundled_markdown.py"><code>tests/unit/core/test_quillins_bundled_markdown.py</code></a>).
 A good Layer 2 test validates the manifest, builds a conflict-free
 contribution registry, and drives the handler against a fake API:</p>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> quill.core.quillins.validation <span class="im">import</span> parse_manifest</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> quill.core.quillins.registry <span class="im">import</span> build_registry</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _manifest():</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    path <span class="op">=</span> Path(<span class="st">&quot;path/to/word-count-tools/manifest.json&quot;</span>)</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> parse_manifest(json.loads(path.read_text(encoding<span class="op">=</span><span class="st">&quot;utf-8&quot;</span>)))</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_manifest_is_valid_and_registry_has_no_conflicts():</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    manifest <span class="op">=</span> _manifest()</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    registry <span class="op">=</span> build_registry([manifest])</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="st">&quot;ext.wordcount.count&quot;</span> <span class="kw">in</span> registry.commands</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _FakeApi:</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, selection):</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._selection <span class="op">=</span> selection</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.announced <span class="op">=</span> []</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_selection(<span class="va">self</span>):</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._selection</span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> announce(<span class="va">self</span>, message):</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.announced.append(message)</span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_handler_counts_and_announces():</span>
-<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> importlib <span class="im">import</span> import_module  <span class="co"># or exec the extension module directly</span></span>
-<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    api <span class="op">=</span> _FakeApi(<span class="st">&quot;one two three&quot;</span>)</span>
-<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># call your count_words(api) here and assert:</span></span>
-<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># assert api.announced == [&quot;3 words selected.&quot;]</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> quill.core.quillins.validation <span class="im">import</span> parse_manifest</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> quill.core.quillins.registry <span class="im">import</span> build_registry</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _manifest():</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    path <span class="op">=</span> Path(<span class="st">&quot;path/to/word-count-tools/manifest.json&quot;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> parse_manifest(json.loads(path.read_text(encoding<span class="op">=</span><span class="st">&quot;utf-8&quot;</span>)))</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_manifest_is_valid_and_registry_has_no_conflicts():</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    manifest <span class="op">=</span> _manifest()</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    registry <span class="op">=</span> build_registry([manifest])</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="st">&quot;ext.wordcount.count&quot;</span> <span class="kw">in</span> registry.commands</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _FakeApi:</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, selection):</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._selection <span class="op">=</span> selection</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.announced <span class="op">=</span> []</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_selection(<span class="va">self</span>):</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._selection</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> announce(<span class="va">self</span>, message):</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.announced.append(message)</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_handler_counts_and_announces():</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> importlib <span class="im">import</span> import_module  <span class="co"># or exec the extension module directly</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    api <span class="op">=</span> _FakeApi(<span class="st">&quot;one two three&quot;</span>)</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># call your count_words(api) here and assert:</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># assert api.announced == [&quot;3 words selected.&quot;]</span></span></code></pre></div>
 <p>For real confidence, also drive the handler through the
 <strong>out-of-process host</strong> (see <a
 href="../tests/integration/test_quillins_host_integration.py"><code>tests/integration/test_quillins_host_integration.py</code></a>),
 which exercises the actual sandbox, capability gate, and consent
 flow.</p>
 <hr />
-<h2 id="6-lint-then-check-everything">6. Lint, then check
-everything</h2>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>pytest <span class="op">-</span>q path\to\your\test_word_count<span class="op">.</span><span class="fu">py</span></span></code></pre></div>
+<h2 id="lint-then-check-everything">6. Lint, then check everything</h2>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">quillin_lint</span> path\to\word-count-tools <span class="op">--</span>strict</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>pytest <span class="op">-</span>q path\to\your\test_word_count<span class="op">.</span><span class="fu">py</span></span></code></pre></div>
 <p>The linter applies three independent lenses, so a mistake is caught
 by whichever sees it first:</p>
 <ol type="1">
@@ -571,14 +614,14 @@ by whichever sees it first:</p>
 published JSON Schema (<code>quill/core/schemas/extension.json</code>),
 made executable inside the linter.</li>
 <li><strong>Manifest validation</strong> — the same contract validator
-the loader enforces (this is what flags "a handler command requires
-<code>main</code> + <code>ui.command</code>").</li>
+the loader enforces (this is what flags “a handler command requires
+<code>main</code> + <code>ui.command</code>”).</li>
 <li><strong>Structure &amp; capability hygiene</strong> — your
 <code>main</code> exists, README + license are present, and every
 consent-gated capability is surfaced for review.</li>
 </ol>
 <hr />
-<h2 id="7-submit">7. Submit</h2>
+<h2 id="submit">7. Submit</h2>
 <ol type="1">
 <li>Open the <strong>Quillin submission</strong> issue — its form
 scaffolds the <code>manifest.json</code> and records your Author
@@ -589,7 +632,7 @@ and complete its checklist.</li>
 <code>--strict</code> mode on your Quillin. Green check → ready for
 human review; red → fix and push.</li>
 </ol>
-<p>Review focuses on what machines can't fully judge: real accessibility
+<p>Review focuses on what machines can’t fully judge: real accessibility
 (does every action announce a clear outcome; is it keyboard-complete?),
 capability justification (is each one necessary and transparent?), and
 honesty (readable source, no silent network, behaviour matches
@@ -598,7 +641,7 @@ description).</p>
 <a
 href="quillin-submission.md"><code>quillin-submission.md</code></a>.</p>
 <hr />
-<h2 id="8-recap--the-rules-that-matter">8. Recap — the rules that
+<h2 id="recap-the-rules-that-matter">8. Recap — the rules that
 matter</h2>
 <ul>
 <li><strong>Start at Layer 1.</strong> Snippets cover most needs with

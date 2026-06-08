@@ -204,8 +204,9 @@
       </p>
       <p>
         A snippet Quillin adds menu items and keyboard shortcuts that insert
-        text &mdash; with optional placeholders like <code>${selection}</code>
-        and <code>${date}</code> &mdash; into your document. No Python required.
+        text &mdash; with optional placeholders like <code>${selection}</code>,
+        <code>${date}</code>, <code>${word_at_cursor}</code>, and
+        <code>${uuid}</code> &mdash; into your document. No Python required.
         <a href="/docs/quillin-tutorial.html">Follow the tutorial</a> to go
         further with Python handlers.
       </p>
@@ -325,8 +326,12 @@
           <h2 id="sec-caps">3. Capabilities (auto-derived)</h2>
           <p style="margin:0 0 0.75rem;color:var(--muted);font-size:0.95rem;">
             Snippet-only Quillins need no capabilities unless they use
-            <code>${clipboard}</code>. The wizard derives the correct set
-            automatically from your snippets.
+            <code>${clipboard}</code>, which requires the
+            <code>clipboard.read</code> capability. All other placeholders
+            &mdash; including <code>${title}</code>,
+            <code>${line_number}</code>, <code>${word_at_cursor}</code>, and
+            <code>${uuid}</code> &mdash; need no capabilities. The wizard
+            derives the correct set automatically from your snippets.
           </p>
           <div class="cap-badges" id="cap-badges" aria-live="polite" aria-label="Required capabilities">
             <span class="cap-badge" id="cap-none" style="font-style:italic;">None required</span>
@@ -395,12 +400,16 @@ const WHEN_OPTS   = [
   { value: "editor.empty",        label: "When document is empty" },
 ];
 const TOKENS = [
-  { token: "${selection}", tip: "Current selection (empty if none)" },
-  { token: "${clipboard}", tip: "Current clipboard text" },
-  { token: "${date}",      tip: "Today's date" },
-  { token: "${time}",      tip: "Current time" },
-  { token: "${filename}",  tip: "Current file name" },
-  { token: "${cursor}",    tip: "Final cursor position" },
+  { token: "${selection}",     tip: "Current selection (empty if none)" },
+  { token: "${clipboard}",     tip: "Current clipboard text (adds clipboard.read capability)" },
+  { token: "${date}",          tip: "Today's date in the user's configured format" },
+  { token: "${time}",          tip: "Current time in the user's configured format" },
+  { token: "${filename}",      tip: "Current document file name (e.g. notes.txt)" },
+  { token: "${title}",         tip: "Document file name without extension (e.g. notes)" },
+  { token: "${line_number}",   tip: "Current line number (1-indexed)" },
+  { token: "${word_at_cursor}",tip: "Word immediately surrounding the insertion point" },
+  { token: "${uuid}",          tip: "Fresh UUID4 generated at expansion time" },
+  { token: "${cursor}",        tip: "Final cursor position after insertion" },
 ];
 const LICENSE_OPTS = ["","MIT","Apache-2.0","GPL-3.0","LGPL-3.0","BSD-2-Clause",
                       "BSD-3-Clause","ISC","MPL-2.0","Unlicense","other"];

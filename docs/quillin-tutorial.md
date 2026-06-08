@@ -108,10 +108,31 @@ Two rules you just used:
 | Placeholder | Expands to |
 | ----------- | ---------- |
 | `${selection}` | the current selection (empty if none) |
-| `${clipboard}` | the clipboard text |
-| `${date}` / `${time}` | today's date / current time |
-| `${filename}` | the current document's file name |
+| `${clipboard}` | the clipboard text (requires `clipboard.read` capability) |
+| `${date}` | today's date in the user's configured format |
+| `${time}` | current time in the user's configured format |
+| `${filename}` | the current document's file name (e.g. `notes.txt`) |
+| `${title}` | the document's file name stem without extension (e.g. `notes`) |
+| `${line_number}` | current line number, 1-indexed |
+| `${word_at_cursor}` | the word immediately surrounding the insertion point |
+| `${uuid}` | a fresh UUID4 generated at expansion time |
 | `${cursor}` | where the caret lands after insertion |
+
+**Common patterns:**
+
+```json
+// Front matter header
+"run": { "snippet": "---\ntitle: ${title}\ndate: ${date}\n---\n\n${cursor}" }
+
+// Wrap selected word in bold
+"run": { "snippet": "**${word_at_cursor}**${cursor}" }
+
+// Insert a unique anchor ID
+"run": { "snippet": "id=\"${uuid}\"${cursor}" }
+
+// Annotate the current line
+"run": { "snippet": "<!-- line ${line_number}: ${word_at_cursor} -->${cursor}" }
+```
 
 ### Lint it
 

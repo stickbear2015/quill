@@ -51,6 +51,7 @@ from quill.core.quillins.registry import ContributionRegistry
 from quill.plugins import THIRD_PARTY_PLUGINS_FEATURE
 
 _QUILLINS_MANAGER_COMMAND = "tools.quillins_manager"
+_QUILLINS_WIZARD_COMMAND = "tools.quillin_wizard"
 
 
 class _EditorHostServices:
@@ -162,14 +163,21 @@ class QuillinsMenuMixin:
     def _build_quillins_menu(self) -> object:
         """Build the Tools > Quillins submenu and bind every item.
 
-        The Manager item is always present. When the SEC-8 flag is enabled, every
-        contributed ``ext.*`` command is also listed here so it is reachable by
-        keyboard even before per-menu placement; labels show any user binding via
-        ``_menu_label``.
+        The New Quillin and Manager items are always present. When the SEC-8 flag
+        is enabled, every contributed ``ext.*`` command is also listed here so it
+        is reachable by keyboard even before per-menu placement; labels show any
+        user binding via ``_menu_label``.
         """
 
         wx = self._wx
         menu = wx.Menu()
+
+        wizard_id = wx.NewIdRef()
+        menu.Append(
+            wizard_id,
+            self._menu_label("&New Quillin...", _QUILLINS_WIZARD_COMMAND),
+        )
+        self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_quillin_wizard(), id=wizard_id)
 
         manager_id = wx.NewIdRef()
         menu.Append(
@@ -225,6 +233,12 @@ class QuillinsMenuMixin:
 
     # -- command + runtime registration --------------------------------------
     def _register_quillins_commands(self) -> None:
+        self.commands.register(
+            _QUILLINS_WIZARD_COMMAND,
+            "New Quillin",
+            self.open_quillin_wizard,
+            self._binding_for(_QUILLINS_WIZARD_COMMAND),
+        )
         self.commands.register(
             _QUILLINS_MANAGER_COMMAND,
             "Manage Quillins",
@@ -326,10 +340,15 @@ class QuillinsMenuMixin:
 
     def _run_quillin_snippet(self, body: str) -> None:
         editor = self._frame_editor()
+        text = str(editor.GetValue())
+        pos = int(editor.GetInsertionPoint())
         context = SnippetContext(
             selection=str(editor.GetStringSelection()),
             clipboard=str(self._read_clipboard_text()),
             filename=self._current_filename(),
+            title=self._current_document_title(),
+            line_number=str(text.count("\n", 0, pos) + 1),
+            word_at_cursor=self._word_at_offset(text, pos),
         )
         expansion = expand_snippet(body, context)
         start, end = editor.GetSelection()
@@ -374,6 +393,19 @@ class QuillinsMenuMixin:
             return bool(dialog.ShowModal() == wx.ID_YES)
         finally:
             dialog.Destroy()
+
+    # -- Quillin Wizard (in-app manifest builder) ----------------------------
+    def open_quillin_wizard(self) -> None:
+        from quill.ui.quillin_wizard import open_quillin_wizard
+
+        open_quillin_wizard(
+            self.frame,
+            self._wx,
+            announce=self._announce,
+            show_modal=self._show_modal_dialog,
+            reload_callback=self._register_quillin_contributions,
+            third_party_locked=not self._quillins_enabled(),
+        )
 
     # -- Quillins Manager dialog (hardened custom) ---------------------------
     def open_quillins_manager(self) -> None:
@@ -534,6 +566,20 @@ class QuillinsMenuMixin:
         if path is None:
             return ""
         return Path(str(path)).name
+
+    def _current_document_title(self) -> str:
+        document = getattr(self, "document", None)
+        path = getattr(document, "path", None)
+        if path is None:
+            return ""
+        return Path(str(path)).stem
+
+    @staticmethod
+    def _word_at_offset(text: str, pos: int) -> str:
+        import re as _re
+        before = _re.search(r"\w+$", text[:pos])
+        after = _re.match(r"\w*", text[pos:])
+        return (before.group(0) if before else "") + (after.group(0) if after else "")
 
     def _quillin_list_label(self, item: Any) -> str:
         name = item.manifest.name if item.manifest is not None else item.id

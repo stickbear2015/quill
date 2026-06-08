@@ -13,6 +13,10 @@ Supported placeholders:
 * ``${date}`` — current date in the user's configured format
 * ``${time}`` — current time in the user's configured format
 * ``${filename}`` — current document file name (empty if unsaved)
+* ``${title}`` — document title (file name stem without extension; empty if unsaved)
+* ``${line_number}`` — current line number (1-indexed)
+* ``${word_at_cursor}`` — word immediately surrounding the insertion point
+* ``${uuid}`` — a fresh UUID4 generated at expansion time
 * ``${cursor}`` — marks where the caret lands after insertion
 
 Unknown ``${...}`` tokens are left untouched so an author sees their mistake in
@@ -22,6 +26,7 @@ the inserted text rather than silently losing it.
 from __future__ import annotations
 
 import re
+import uuid as _uuid_module
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -35,11 +40,18 @@ class SnippetContext:
     ``date`` and ``time`` may be pre-formatted by the caller (honouring the
     user's configured formats); when omitted they fall back to ISO-ish defaults
     so the engine stays usable and deterministic in tests.
+
+    ``line_number``, ``word_at_cursor``, and ``title`` are pre-computed by the
+    call site from the live editor state.  ``uuid`` is generated fresh inside
+    :func:`expand_snippet` and does not live in the context.
     """
 
     selection: str = ""
     clipboard: str = ""
     filename: str = ""
+    title: str = ""
+    line_number: str = ""
+    word_at_cursor: str = ""
     date: str | None = None
     time: str | None = None
 
@@ -66,8 +78,12 @@ def expand_snippet(body: str, context: SnippetContext) -> SnippetExpansion:
         "selection": context.selection,
         "clipboard": context.clipboard,
         "filename": context.filename,
+        "title": context.title,
+        "line_number": context.line_number,
+        "word_at_cursor": context.word_at_cursor,
         "date": date_value,
         "time": time_value,
+        "uuid": str(_uuid_module.uuid4()),
     }
 
     chunks: list[str] = []
