@@ -22,16 +22,13 @@ def _manager_dialog_source() -> str:
 
 def test_edit_connection_controls_set_accessible_names() -> None:
     body = _edit_dialog_source()
-    assert 'self.connection_label.SetName("Publishing connection label")' in body
-    assert 'self.provider.SetName("Publishing provider")' in body
-    assert 'self.site_url.SetName("Publishing site URL")' in body
-    assert 'self.auth_method.SetName("Publishing sign-in method")' in body
-    assert 'self.account_identifier.SetName("Publishing sign-in name or email")' in body
-    assert 'self.secret.SetName("Publishing secret")' in body
-    assert 'self.reveal_secret.SetName("Reveal publishing secret")' in body
-    assert 'self.connection_label.SetHint("Example: My blog or Team site")' in body
-    assert 'self.site_url.SetHint("Example: https://example.com")' in body
-    assert 'self.account_identifier.SetHint("Example: your username or email address")' in body
+    assert 'self.connection_label.SetName("Connection name")' in body
+    assert 'self.provider.SetName("Publishing type")' in body
+    assert 'self.site_url.SetName("Site address")' in body
+    assert 'self.auth_method.SetName("Sign-in method")' in body
+    assert 'self.account_identifier.SetName("Username or email")' in body
+    assert 'self.secret.SetName("Application password")' in body
+    assert 'self.reveal_secret.SetName("Reveal application password")' in body
 
 
 def test_manager_dialog_names_the_connections_list() -> None:
@@ -50,17 +47,22 @@ def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> N
 def test_publishing_dialogs_explain_field_purpose_in_plain_language() -> None:
     body = _edit_dialog_source()
     assert "Optional. Give this saved connection a short name" in body
-    assert "Enter the full site address for the site you want to publish to." in body
-    assert "Enter the username or email address used with this sign-in method." in body
-    assert "Provider details:" in body
-    assert "Sign-in method details:" in body
+    assert "Enter the full address of the site you want to publish to." in body
+    assert "Enter the username or email address you use to sign in to this site." in body
+    assert "Choose the kind of site you want to publish to." in body
+    assert "Enter the application password for this site." in body
+
+
+def test_publishing_dialogs_do_not_rely_on_placeholder_examples_for_labels() -> None:
+    body = _edit_dialog_source()
+    assert ".SetHint(" not in body
 
 
 def test_publishing_dialog_only_surfaces_working_wordpress_sign_in_method() -> None:
     source = _publishing_tools_source()
     assert "provider_auth_methods(provider_id)" in source
     assert "provider_supported_auth_methods(" not in source
-    assert 'Application password' not in source
+    assert "provider_help_text" not in source
 
 
 def test_publishing_dialogs_have_no_storage_jargon() -> None:

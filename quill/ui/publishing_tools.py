@@ -15,7 +15,6 @@ from quill.core.publishing_providers import (
     provider_auth_methods,
     publishing_auth_method_name,
     publishing_provider_display_name,
-    publishing_provider_help_text,
 )
 from quill.ui.dialog_contract import apply_modal_ids, show_modal_dialog
 
@@ -58,10 +57,9 @@ class EditPublishingConnectionDialog:
 
         self.connection_label = wx.TextCtrl(panel)
         self.connection_label.SetValue(self._profile.label)
-        self.connection_label.SetName("Publishing connection label")
-        self.connection_label.SetHint("Example: My blog or Team site")
+        self.connection_label.SetName("Connection name")
         panel_sizer.Add(
-            wx.StaticText(panel, label="Connection label"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+            wx.StaticText(panel, label="Connection name"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
         )
         panel_sizer.Add(self.connection_label, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.connection_label_hint = wx.StaticText(
@@ -75,27 +73,30 @@ class EditPublishingConnectionDialog:
         self.provider = wx.Choice(
             panel, choices=[label for _value, label in self._PROVIDER_CHOICES]
         )
-        self.provider.SetName("Publishing provider")
+        self.provider.SetName("Publishing type")
         self.provider.SetSelection(self._provider_choice_index(self._profile.provider_id))
-        panel_sizer.Add(wx.StaticText(panel, label="Provider"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        panel_sizer.Add(
+            wx.StaticText(panel, label="Publishing type"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+        )
         panel_sizer.Add(self.provider, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.provider_hint = wx.StaticText(panel, label="")
         panel_sizer.Add(self.provider_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.site_url = wx.TextCtrl(panel)
         self.site_url.SetValue(self._profile.site_url)
-        self.site_url.SetName("Publishing site URL")
-        self.site_url.SetHint("Example: https://example.com")
-        panel_sizer.Add(wx.StaticText(panel, label="Site URL"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.site_url.SetName("Site address")
+        panel_sizer.Add(
+            wx.StaticText(panel, label="Site address"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+        )
         panel_sizer.Add(self.site_url, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.site_url_hint = wx.StaticText(
             panel,
-            label="Enter the full site address for the site you want to publish to.",
+            label="Enter the full address of the site you want to publish to.",
         )
         panel_sizer.Add(self.site_url_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.auth_method = wx.Choice(panel)
-        self.auth_method.SetName("Publishing sign-in method")
+        self.auth_method.SetName("Sign-in method")
         panel_sizer.Add(
             wx.StaticText(panel, label="Sign-in method"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
         )
@@ -103,28 +104,26 @@ class EditPublishingConnectionDialog:
         self.auth_hint = wx.StaticText(panel, label="")
         panel_sizer.Add(self.auth_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
-        self.identifier_label = wx.StaticText(panel, label="Sign-in name or email")
+        self.identifier_label = wx.StaticText(panel, label="Username or email")
         panel_sizer.Add(self.identifier_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         self.account_identifier = wx.TextCtrl(panel)
         self.account_identifier.SetValue(self._profile.account_identifier)
-        self.account_identifier.SetName("Publishing sign-in name or email")
-        self.account_identifier.SetHint("Example: your username or email address")
+        self.account_identifier.SetName("Username or email")
         panel_sizer.Add(self.account_identifier, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.account_identifier_hint = wx.StaticText(panel, label="")
         panel_sizer.Add(
             self.account_identifier_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8
         )
 
-        self.secret_label = wx.StaticText(panel, label="Secret")
+        self.secret_label = wx.StaticText(panel, label="Application password")
         panel_sizer.Add(self.secret_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         self.secret_row = wx.BoxSizer(wx.HORIZONTAL)
         self.secret = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
         self.secret.SetValue(self._secret)
-        self.secret.SetName("Publishing secret")
-        self.secret.SetHint("Enter the sign-in secret for this connection")
+        self.secret.SetName("Application password")
         self.secret_row.Add(self.secret, 1, wx.EXPAND | wx.RIGHT, 8)
         self.reveal_secret = wx.Button(panel, label="Reveal")
-        self.reveal_secret.SetName("Reveal publishing secret")
+        self.reveal_secret.SetName("Reveal application password")
         self.secret_row.Add(self.reveal_secret, 0)
         panel_sizer.Add(self.secret_row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         self.secret_hint = wx.StaticText(panel, label="")
@@ -188,7 +187,7 @@ class EditPublishingConnectionDialog:
     def _on_provider_changed(self, _event: object | None) -> None:
         provider_id = self._provider_value()
         self.provider_hint.SetLabel(
-            f"Provider details: {publishing_provider_help_text(provider_id)}"
+            "Choose the kind of site you want to publish to."
         )
         methods = provider_auth_methods(provider_id)
         self.auth_method.SetItems([publishing_auth_method_name(item) for item in methods])
@@ -201,7 +200,7 @@ class EditPublishingConnectionDialog:
 
     def _on_auth_method_changed(self, _event: object | None) -> None:
         method = auth_method_definition(self._auth_method_value())
-        self.auth_hint.SetLabel(f"Sign-in method details: {method.description}")
+        self.auth_hint.SetLabel(method.description)
         self.identifier_label.Show(method.requires_identifier)
         self.account_identifier.Show(method.requires_identifier)
         self.account_identifier_hint.Show(method.requires_identifier)
@@ -210,14 +209,17 @@ class EditPublishingConnectionDialog:
         self.reveal_secret.Show(method.requires_secret)
         if method.requires_identifier:
             self.account_identifier_hint.SetLabel(
-                "Enter the username or email address used with this sign-in method."
+                "Enter the username or email address you use to sign in to this site."
             )
         else:
             self.account_identifier_hint.SetLabel("")
+        self.secret_label.SetLabel(
+            "Application password" if method.requires_secret else "Saved sign-in secret"
+        )
         self.secret_hint.SetLabel(
-            "Saved sign-in data, when present, is stored securely on this device."
+            "Enter the application password for this site."
             if method.requires_secret
-            else "This sign-in method does not currently require a saved secret."
+            else "This sign-in method does not require a saved secret."
         )
         self.dialog.Layout()
 
@@ -232,12 +234,12 @@ class EditPublishingConnectionDialog:
         style = 0 if revealed else self._wx.TE_PASSWORD
         self.secret = self._wx.TextCtrl(parent, style=style)
         self.secret.SetValue(value)
-        self.secret.SetName("Publishing secret")
+        self.secret.SetName("Application password")
         self.secret_row.Insert(0, self.secret, 1, self._wx.EXPAND | self._wx.RIGHT, 8)
         self._secret_revealed = revealed
         self.reveal_secret.SetLabel("Hide" if revealed else "Reveal")
         self.reveal_secret.SetName(
-            "Hide publishing secret" if revealed else "Reveal publishing secret"
+            "Hide application password" if revealed else "Reveal application password"
         )
         self.reveal_secret.MoveAfterInTabOrder(self.secret)
         self.dialog.Layout()
