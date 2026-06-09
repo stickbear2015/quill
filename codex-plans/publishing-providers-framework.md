@@ -52,6 +52,7 @@ These decisions are now the recommended baseline for future implementation unles
 - the first content path should prefer HTML-oriented output, with any source transformation explained plainly to the user
 - publishing includes both posts and pages from the first approved product design
 - simplicity is a hard requirement: reuse existing Quill patterns and avoid inventing parallel systems unless the current codebase truly lacks the needed hook
+- every publishing dialog control must have one visible label positioned immediately above or immediately to the left of the control, with no helper text inserted between the label and the field in reading or tab-flow order
 
 These decisions can still be changed, but the burden should be on the change proposal to explain why the current spec is no longer the safest fit for Quill.
 
@@ -226,6 +227,10 @@ Additional planning implication from the dialog governance tooling:
 - any publishing dialog implementation will need both human checklist coverage in `dialogs.md` and machine registry coverage in `tests/unit/ui/fixtures/dialog_inventory.json`
 - a plan that adds too many secondary or nested dialogs too early will create unnecessary maintenance pressure
 - any custom publishing dialog must use Quill's shared dialog contract helpers (`apply_modal_ids`, `show_modal_dialog`, and the associated focus-routing behavior) instead of raw `ShowModal()` or one-off modal wiring
+- this requirement is not new policy invented for publishing; it is consistent with the existing repo-wide accessibility contract already stated in `docs/QUILL-PRD.md`, especially the label-association and label-in-name expectations and the A11Y-4 dialog-governance work
+- publishing dialog fields should follow the repo's clearer native pattern: one visible label directly paired with one control in the same row or immediately above it, with accessible names that begin with the same visible label text
+- publishing helper or reassurance copy should live in intro, status, or verification text, not as free-floating field-adjacent text that can be announced as though it belongs to the next control
+- publishing code and tests should explicitly guard against label-order regressions found in human screen-reader testing, including JAWS and other manual validation called for by the dialog contract
 
 ### Existing connection-flow precedent
 

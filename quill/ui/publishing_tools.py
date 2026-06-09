@@ -54,69 +54,46 @@ class EditPublishingConnectionDialog:
 
         panel = wx.Panel(self.dialog)
         panel_sizer = wx.BoxSizer(wx.VERTICAL)
+        form = wx.FlexGridSizer(0, 2, 8, 8)
+        form.AddGrowableCol(1, 1)
 
+        def add_row(label: object, control: object) -> None:
+            form.Add(label, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
+            form.Add(control, 1, wx.EXPAND | wx.RIGHT, 8)
+
+        self.connection_label_caption = wx.StaticText(panel, label="Connection name")
         self.connection_label = wx.TextCtrl(panel)
         self.connection_label.SetValue(self._profile.label)
         self.connection_label.SetName("Connection name")
-        panel_sizer.Add(
-            wx.StaticText(panel, label="Connection name"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
-        )
-        panel_sizer.Add(self.connection_label, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.connection_label_hint = wx.StaticText(
-            panel,
-            label="Optional. Give this saved connection a short name you will recognize later.",
-        )
-        panel_sizer.Add(
-            self.connection_label_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8
-        )
+        add_row(self.connection_label_caption, self.connection_label)
 
+        self.provider_caption = wx.StaticText(panel, label="Publishing type")
         self.provider = wx.Choice(
             panel, choices=[label for _value, label in self._PROVIDER_CHOICES]
         )
         self.provider.SetName("Publishing type")
         self.provider.SetSelection(self._provider_choice_index(self._profile.provider_id))
-        panel_sizer.Add(
-            wx.StaticText(panel, label="Publishing type"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
-        )
-        panel_sizer.Add(self.provider, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.provider_hint = wx.StaticText(panel, label="")
-        panel_sizer.Add(self.provider_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        add_row(self.provider_caption, self.provider)
 
+        self.site_url_caption = wx.StaticText(panel, label="Site address")
         self.site_url = wx.TextCtrl(panel)
         self.site_url.SetValue(self._profile.site_url)
         self.site_url.SetName("Site address")
-        panel_sizer.Add(
-            wx.StaticText(panel, label="Site address"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
-        )
-        panel_sizer.Add(self.site_url, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.site_url_hint = wx.StaticText(
-            panel,
-            label="Enter the full address of the site you want to publish to.",
-        )
-        panel_sizer.Add(self.site_url_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        add_row(self.site_url_caption, self.site_url)
 
+        self.auth_method_caption = wx.StaticText(panel, label="Sign-in method")
         self.auth_method = wx.Choice(panel)
         self.auth_method.SetName("Sign-in method")
-        panel_sizer.Add(
-            wx.StaticText(panel, label="Sign-in method"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
-        )
-        panel_sizer.Add(self.auth_method, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.auth_hint = wx.StaticText(panel, label="")
-        panel_sizer.Add(self.auth_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        add_row(self.auth_method_caption, self.auth_method)
 
         self.identifier_label = wx.StaticText(panel, label="Username or email")
-        panel_sizer.Add(self.identifier_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         self.account_identifier = wx.TextCtrl(panel)
         self.account_identifier.SetValue(self._profile.account_identifier)
         self.account_identifier.SetName("Username or email")
-        panel_sizer.Add(self.account_identifier, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.account_identifier_hint = wx.StaticText(panel, label="")
-        panel_sizer.Add(
-            self.account_identifier_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8
-        )
+        form.Add(self.identifier_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
+        form.Add(self.account_identifier, 1, wx.EXPAND | wx.RIGHT, 8)
 
         self.secret_label = wx.StaticText(panel, label="Application password")
-        panel_sizer.Add(self.secret_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         self.secret_row = wx.BoxSizer(wx.HORIZONTAL)
         self.secret = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
         self.secret.SetValue(self._secret)
@@ -125,9 +102,10 @@ class EditPublishingConnectionDialog:
         self.reveal_secret = wx.Button(panel, label="Reveal")
         self.reveal_secret.SetName("Reveal application password")
         self.secret_row.Add(self.reveal_secret, 0)
-        panel_sizer.Add(self.secret_row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        self.secret_hint = wx.StaticText(panel, label="")
-        panel_sizer.Add(self.secret_hint, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        form.Add(self.secret_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
+        form.Add(self.secret_row, 1, wx.EXPAND | wx.RIGHT, 8)
+
+        panel_sizer.Add(form, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 8)
 
         self.verify_button = wx.Button(panel, label="Verify Connection")
         panel_sizer.Add(self.verify_button, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
@@ -186,9 +164,6 @@ class EditPublishingConnectionDialog:
 
     def _on_provider_changed(self, _event: object | None) -> None:
         provider_id = self._provider_value()
-        self.provider_hint.SetLabel(
-            "Choose the kind of site you want to publish to."
-        )
         methods = provider_auth_methods(provider_id)
         self.auth_method.SetItems([publishing_auth_method_name(item) for item in methods])
         try:
@@ -200,27 +175,16 @@ class EditPublishingConnectionDialog:
 
     def _on_auth_method_changed(self, _event: object | None) -> None:
         method = auth_method_definition(self._auth_method_value())
-        self.auth_hint.SetLabel(method.description)
         self.identifier_label.Show(method.requires_identifier)
         self.account_identifier.Show(method.requires_identifier)
-        self.account_identifier_hint.Show(method.requires_identifier)
         self.secret_label.Show(method.requires_secret)
         self.secret.Show(method.requires_secret)
         self.reveal_secret.Show(method.requires_secret)
-        if method.requires_identifier:
-            self.account_identifier_hint.SetLabel(
-                "Enter the username or email address you use to sign in to this site."
-            )
-        else:
-            self.account_identifier_hint.SetLabel("")
         self.secret_label.SetLabel(
             "Application password" if method.requires_secret else "Saved sign-in secret"
         )
-        self.secret_hint.SetLabel(
-            "Enter the application password for this site."
-            if method.requires_secret
-            else "This sign-in method does not require a saved secret."
-        )
+        if not method.requires_secret:
+            self._set_secret_revealed(False)
         self.dialog.Layout()
 
     def _on_toggle_secret_reveal(self, _event: object) -> None:
