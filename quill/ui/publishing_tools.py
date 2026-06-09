@@ -95,10 +95,18 @@ class EditPublishingConnectionDialog:
 
         self.secret_label = wx.StaticText(panel, label="Application password")
         self.secret_row = wx.BoxSizer(wx.HORIZONTAL)
-        self.secret = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
-        self.secret.SetValue(self._secret)
-        self.secret.SetName("Application password")
-        self.secret_row.Add(self.secret, 1, wx.EXPAND | wx.RIGHT, 8)
+        self.secret_stack = wx.BoxSizer(wx.VERTICAL)
+        self.secret_masked = wx.TextCtrl(panel, style=wx.TE_PASSWORD)
+        self.secret_masked.SetValue(self._secret)
+        self.secret_masked.SetName("Application password")
+        self.secret_plain = wx.TextCtrl(panel)
+        self.secret_plain.SetValue(self._secret)
+        self.secret_plain.SetName("Application password")
+        self.secret_plain.Hide()
+        self.secret = self.secret_masked
+        self.secret_stack.Add(self.secret_masked, 1, wx.EXPAND)
+        self.secret_stack.Add(self.secret_plain, 1, wx.EXPAND)
+        self.secret_row.Add(self.secret_stack, 1, wx.EXPAND | wx.RIGHT, 8)
         self.reveal_secret = wx.Button(panel, label="Reveal")
         self.reveal_secret.SetName("Reveal application password")
         self.secret_row.Add(self.reveal_secret, 0)
@@ -192,14 +200,11 @@ class EditPublishingConnectionDialog:
 
     def _set_secret_revealed(self, revealed: bool) -> None:
         value = self.secret.GetValue()
-        parent = self.secret.GetParent()
-        self.secret_row.Detach(self.secret)
-        self.secret.Destroy()
-        style = 0 if revealed else self._wx.TE_PASSWORD
-        self.secret = self._wx.TextCtrl(parent, style=style)
-        self.secret.SetValue(value)
-        self.secret.SetName("Application password")
-        self.secret_row.Insert(0, self.secret, 1, self._wx.EXPAND | self._wx.RIGHT, 8)
+        self.secret_masked.SetValue(value)
+        self.secret_plain.SetValue(value)
+        self.secret_masked.Show(not revealed)
+        self.secret_plain.Show(revealed)
+        self.secret = self.secret_plain if revealed else self.secret_masked
         self._secret_revealed = revealed
         self.reveal_secret.SetLabel("Hide" if revealed else "Reveal")
         self.reveal_secret.SetName(

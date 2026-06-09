@@ -27,7 +27,8 @@ def test_edit_connection_controls_set_accessible_names() -> None:
     assert 'self.site_url.SetName("Site address")' in body
     assert 'self.auth_method.SetName("Sign-in method")' in body
     assert 'self.account_identifier.SetName("Username or email")' in body
-    assert 'self.secret.SetName("Application password")' in body
+    assert 'self.secret_masked.SetName("Application password")' in body
+    assert 'self.secret_plain.SetName("Application password")' in body
     assert 'self.reveal_secret.SetName("Reveal application password")' in body
 
 
@@ -45,6 +46,9 @@ def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> N
     assert "self.connection_list.SetFocus()" in source
     assert "self.reveal_secret.MoveAfterInTabOrder(self.secret)" in source
     assert "self.verify_button.MoveAfterInTabOrder(self.reveal_secret)" in source
+    assert "self.secret_masked = wx.TextCtrl(panel, style=wx.TE_PASSWORD)" in source
+    assert "self.secret_plain = wx.TextCtrl(panel)" in source
+    assert "self.secret_plain.Hide()" in source
 
 
 def test_publishing_dialogs_keep_a_simple_label_then_control_flow() -> None:
@@ -85,6 +89,7 @@ def test_publishing_dialog_labels_are_immediately_paired_with_controls() -> None
 def test_publishing_dialogs_do_not_rely_on_placeholder_examples_for_labels() -> None:
     body = _edit_dialog_source()
     assert ".SetHint(" not in body
+    assert "self.secret.Destroy()" not in body
 
 
 def test_publishing_dialog_only_surfaces_working_wordpress_sign_in_method() -> None:
