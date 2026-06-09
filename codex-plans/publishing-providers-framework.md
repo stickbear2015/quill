@@ -22,7 +22,7 @@ This document is the active planning and implementation spec for the publishing 
 This document now serves two roles:
 
 - a planning record of the repo audit and integration constraints
-- a pre-implementation product and engineering spec for the first approved publishing slices
+- an implementation-driving product and engineering spec for the approved publishing slices
 
 Anything in this document labeled as a recommendation is the current preferred direction unless a later review explicitly changes it.
 
@@ -527,7 +527,7 @@ Because that structure already exists, publishing should be planned as an extens
 
 ## Phase 1 product spec
 
-This section defines the desired behavior for the first coherent user-visible publishing phase. It is intentionally specific enough to guide later implementation and review.
+This section defines the current target behavior for the first coherent user-visible publishing phase. Connection management and verification are already implemented, so this section now mainly guides the first real remote content workflows built on that foundation.
 
 ### Phase 1 scope
 
@@ -538,6 +538,9 @@ Phase 1 should include:
 - a provider-agnostic connection manager surface
 - WordPress connection verification for the first implemented auth method
 - publish-current-document confirmation and draft creation
+- browse existing remote items
+- open remote items into Quill for review and editing
+- update existing remote items after explicit confirmation
 - support for both posts and pages
 - explicit result reporting
 - command and menu discoverability for the approved actions
@@ -561,10 +564,11 @@ The intended first user journey is:
 3. The user creates or selects a saved publishing connection profile.
 4. Only after choosing a provider does Quill show provider-specific fields or auth language.
 5. The user verifies the selected connection using the auth method supported for that provider/profile.
-6. The user returns to the current document and chooses an action such as `Create Draft...` or `Publish Current Document...`.
-7. Quill presents a review-first confirmation dialog with content type, title, destination summary, publish state, and network explanation.
-8. Quill performs the explicit remote action.
-9. Quill reports the outcome through the dialog result, status text, and notifications.
+6. The user returns to the current document and chooses an action such as `Create Draft...`, `Publish Current Document...`, or `Browse Published Content...`.
+7. For a new publish, Quill presents a review-first confirmation dialog with content type, title, destination summary, publish state, and network explanation.
+8. For browse or edit, Quill presents a provider-neutral remote-content browser that clearly distinguishes posts from pages and reports the selected site's host.
+9. Quill performs the explicit remote action only after the user confirms it.
+10. Quill reports the outcome through the dialog result, status text, and notifications.
 
 ### Phase 1 command set
 
@@ -579,7 +583,7 @@ The recommended phase 1 command family is:
 - `publishing.create_page_draft`
 - `publishing.publish_current_page`
 
-The following commands should be planned but deferred from the first user-visible slice:
+The following commands should be planned into the next active content-workflow slice, with only `publishing.schedule_publish` remaining deferred after that:
 
 - `publishing.browse_content`
 - `publishing.open_remote_item`
@@ -599,7 +603,7 @@ The recommended phase 1 menu contract is:
 - `File -> Create Page Draft...`
 - `File -> Publish Current Page...`
 
-`Browse Published Content...` should remain planned for a later slice unless it is explicitly approved into the first user-visible rollout.
+`Browse Published Content...` is now part of the next approved content-workflow slice and should be implemented in a provider-neutral way even though WordPress is the first backing provider.
 
 ### Exact hook-in plan
 
@@ -666,7 +670,7 @@ Recommended initial submenu items:
 
 Phase 1 refinement:
 
-- for the first coherent user-visible rollout, `Browse Published Content...` is recommended as deferred unless review decides that draft creation without browse support would be too limiting
+- `Browse Published Content...` is now part of the next approved content-workflow slice and should stay in the `File` menu contract once that slice is implemented
 
 What this avoids breaking:
 
@@ -810,7 +814,7 @@ Based on the current menu layout, the best planning path is:
 
 Use the existing `File` menu for the first implementation slices. That keeps publishing near save, open, and other document lifecycle actions, and it matches the updated product direction.
 
-Implementation note for that later slice:
+Implementation note for that slice:
 
 - add publishing actions through the existing `File` menu construction in `quill/ui/main_frame_menu.py`
 - keep the new actions inside the existing menu-customization and menu-editor model rather than treating them as a shell special case
@@ -979,7 +983,7 @@ Recommended controls:
 - open button
 - refresh button
 
-This should likely come after connection and initial publish flows are proven.
+This is now part of the next approved implementation slice. The same caution still applies: keep it provider-neutral in shell language and governed by the same dialog and command contracts as the connection work.
 
 ### Dialog governance requirements
 
@@ -1224,22 +1228,22 @@ Guardrail:
 
 - publish-now should remain an explicit user choice in the dialog, never the menu command's silent default
 
-### Browse in the first visible rollout
+### Browse in the next content-workflow rollout
 
 Recommendation:
 
-- `Browse Published Content...` should stay deferred from the first visible rollout
+- `Browse Published Content...` should be implemented in the next approved content-workflow slice
 
 Rationale:
 
-- connection plus draft/publish-current is the smallest coherent workflow
+- the connection and verification foundation is already built
 - page support should not be deferred, because it is now part of the approved content scope
-- browse adds more dialog surface, more remote state complexity, and more inventory/test burden
-- deferring browse keeps the first user-visible slice easier to review and stabilize
+- browse still adds more dialog surface, more remote state complexity, and more inventory/test burden
+- browse should therefore land only in the same disciplined provider-neutral architecture, not as a one-off WordPress browser
 
-Revisit trigger:
+Refinement trigger after the first browse/edit implementation:
 
-- browse should be reconsidered after draft creation and publish-now are stable and their local-to-remote linkage model is proven
+- refine browse further only after the initial browse, open, and update loop is stable and its local-to-remote linkage model is proven
 
 ### Success result model
 
@@ -1338,7 +1342,23 @@ Rationale:
 - unit tests for those pieces
 - feature-registry and feature-gating integration
 
-No publishing menu or dialog should be implemented in this slice unless specifically approved as part of the slice. This slice is primarily architecture and connection validation.
+Status:
+
+- completed
+
+Delivered scope:
+
+- publishing provider metadata
+- connection profile model
+- auth method model
+- multi-connection storage model
+- secure secret storage
+- endpoint security validation
+- WordPress verification flow for the first supported auth method
+- publishing menu placement inside `File`
+- publishing connections manager and add or edit connection dialogs
+- accessibility hardening for those dialogs
+- related menu, dialog-inventory, egress-audit, and size-budget updates needed to keep the repo gates honest
 
 Planned tests and governance for this slice:
 
@@ -1346,9 +1366,9 @@ Planned tests and governance for this slice:
 - no dialog inventory changes
 - no menu contract changes
 
-This slice does not need post editing yet. Its job is to prove that the framework shape is sound.
+This slice proved that the framework shape is sound and that the connection surfaces can meet the repo's accessibility and governance bar before the larger content workflows land.
 
-### Slice 2: WordPress draft publishing
+### Slice 2: first remote content workflows on the approved connection foundation
 
 - create draft from current QUILL document
 - send title and body
@@ -1356,6 +1376,14 @@ This slice does not need post editing yet. Its job is to prove that the framewor
 - announce success clearly
 - add the first approved publishing entry points under `File`
 - add the first approved publishing dialogs
+- browse existing posts and pages
+- open a selected remote item into Quill for review and editing
+- update an existing post, page, or draft after explicit confirmation
+
+Architecture requirement for this slice:
+
+- the commands, service layer, and dialogs must stay provider-neutral in shape even though the first live backend is WordPress
+- content-type handling must be framed as Quill concepts such as post, page, browse, open remote item, and update remote item rather than hard-coded WordPress endpoint language in the shell
 
 Planned tests and governance for this slice:
 
@@ -1365,19 +1393,18 @@ Planned tests and governance for this slice:
 - user-facing text reviewed for plain-language and explicit-consent wording
 - relevant accessibility and usability tests in `tests/` must be run against the publishing dialogs and menu flow before the slice is considered complete
 
-### Slice 3: update and browse
+### Slice 3: schedule and refinement after create, browse, and update are stable
 
-- list existing posts
-- fetch a post into QUILL
-- update an existing draft or post
-- extend menu coverage once the browse flow is real
-- add dialog inventory coverage for browse and update surfaces
+- schedule publish
+- compare local versus remote state
+- define the first honest sync model
+- refine browse summaries, filtering, and remote-state reporting once the base browse-edit loop is stable
 
 Planned tests and governance for this slice:
 
-- browse dialog added to dialog registry and checklist
-- command coverage expanded for remote-item actions
-- feature gating verified across new browse/update commands
+- any new schedule or sync-related dialog added to dialog registry and checklist
+- command coverage expanded only as later refinement genuinely adds new actions
+- feature gating verified across all added publishing commands
 
 ### Slice 4: schedule and sync polish
 
