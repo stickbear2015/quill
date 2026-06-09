@@ -35,7 +35,7 @@ def test_publishing_connections_round_trip_multiple_profiles(
         label="Work blog",
         provider_id="wordpress",
         site_url="https://work.example.com",
-        auth_method=AUTH_METHOD_EMAIL_LINK,
+        auth_method=AUTH_METHOD_APP_PASSWORD,
         account_identifier="writer@example.com",
     )
     store = publishing.PublishingConnectionStore(
@@ -47,7 +47,7 @@ def test_publishing_connections_round_trip_multiple_profiles(
     assert len(loaded.connections) == 2
     assert loaded.current_connection_id == "pub-two"
     assert loaded.connections[0].label == "Personal site"
-    assert loaded.connections[1].auth_method == AUTH_METHOD_EMAIL_LINK
+    assert loaded.connections[1].auth_method == AUTH_METHOD_APP_PASSWORD
 
 
 def test_upsert_and_remove_publishing_connection(
@@ -166,7 +166,7 @@ def test_verify_publishing_connection_allows_local_http(
     assert "Publishing connection verified for localhost:8080." == message
 
 
-def test_supported_but_unimplemented_auth_method_is_preserved_in_storage_model() -> None:
+def test_unsupported_wordpress_auth_method_is_normalized_to_app_password() -> None:
     normalized = PublishingConnectionProfile.from_dict(
         {
             "id": "pub-one",
@@ -177,7 +177,7 @@ def test_supported_but_unimplemented_auth_method_is_preserved_in_storage_model()
             "account_identifier": "writer",
         }
     )
-    assert normalized.auth_method == AUTH_METHOD_BROWSER_SESSION
+    assert normalized.auth_method == AUTH_METHOD_APP_PASSWORD
 
 
 def test_verify_publishing_connection_reports_auth_failure(
@@ -217,7 +217,7 @@ def test_provider_metadata_keeps_ui_honest_about_implemented_auth_methods() -> N
     assert AUTH_METHOD_APP_PASSWORD in methods
     assert AUTH_METHOD_BROWSER_SESSION not in methods
     assert AUTH_METHOD_EMAIL_LINK not in methods
-    assert AUTH_METHOD_BROWSER_SESSION in supported
-    assert AUTH_METHOD_EMAIL_LINK in supported
+    assert AUTH_METHOD_BROWSER_SESSION not in supported
+    assert AUTH_METHOD_EMAIL_LINK not in supported
     assert publishing_auth_method_name(AUTH_METHOD_EMAIL_LINK) == "Email sign-in link"
     assert "WordPress.com" in publishing_provider_help_text("wordpress")

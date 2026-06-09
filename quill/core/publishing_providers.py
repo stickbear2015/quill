@@ -67,12 +67,7 @@ PROVIDER_DEFINITIONS: dict[str, PublishingProviderDefinition] = {
             "that expose the standard WordPress REST API."
         ),
         default_content_format="html",
-        supported_auth_methods=(
-            AUTH_METHOD_APP_PASSWORD,
-            AUTH_METHOD_PASSWORD,
-            AUTH_METHOD_BROWSER_SESSION,
-            AUTH_METHOD_EMAIL_LINK,
-        ),
+        supported_auth_methods=(AUTH_METHOD_APP_PASSWORD,),
         implemented_auth_methods=(AUTH_METHOD_APP_PASSWORD,),
     ),
 }

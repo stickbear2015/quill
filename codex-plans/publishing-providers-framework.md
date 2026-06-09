@@ -1,6 +1,6 @@
 # Publishing Providers Framework Plan
 
-Status: Proposed. Owner: product and engineering. Scope: planning only, no implementation approved yet.
+Status: Approved and in implementation. Owner: product and engineering. Scope: active implementation guided by this spec.
 
 Tracking:
 
@@ -15,7 +15,7 @@ Introduce a provider-based publishing framework that lets QUILL connect to exter
 
 WordPress is the first planned provider because it is common, mature, and exposes a stable REST API. The framework should still be designed so later providers can plug into the same concepts, workflows, and UI surfaces.
 
-This document is a planning artifact only. It describes the proposed architecture, rollout path, risks, and decision points before any code is accepted.
+This document is the active planning and implementation spec for the publishing work. It describes the approved architecture, rollout path, current constraints, and decision points that should guide implementation changes.
 
 ## Spec status
 
@@ -25,6 +25,11 @@ This document now serves two roles:
 - a pre-implementation product and engineering spec for the first approved publishing slices
 
 Anything in this document labeled as a recommendation is the current preferred direction unless a later review explicitly changes it.
+
+Implementation note:
+
+- planning is complete enough for coding and refinement work to continue against this spec
+- implementation changes should update this document when they materially clarify architecture, supported provider behavior, or accessibility requirements
 
 ## Goals
 
@@ -47,6 +52,7 @@ These decisions are now the recommended baseline for future implementation unles
 - publishing must support multiple saved publishing connections, not a single global site
 - publishing connection UX must stay provider-agnostic until a provider is explicitly chosen
 - publishing authentication cannot assume application passwords are the only realistic user credential path
+- for the current WordPress provider, Quill must only surface sign-in methods that are real, standards-based remote WordPress flows we can honestly support today
 - local-to-remote linkage starts in a Quill-local registry, not inside the source document
 - the first publish path is explicit, review-first, and never silent
 - the first content path should prefer HTML-oriented output, with any source transformation explained plainly to the user
@@ -250,6 +256,8 @@ Additional planning implication:
 
 - publishing connection UX should reuse the app's existing pattern of "configure, verify, then discover or act"
 - secure-secret handling should follow the same split between ordinary settings and secure credential storage
+- generic auth-method architecture may describe more than one future sign-in style, but a provider must not advertise or surface a method unless that provider actually supports a real remote flow Quill can implement honestly
+- for WordPress specifically, the current implementation scope should treat application passwords as the built-in remote REST-auth path; browser-session, email-link, and ordinary-site-password flows stay architectural concepts for future providers or explicit provider-specific integrations, not current WordPress UI choices
 
 ### Notifications and status bar
 
