@@ -25,6 +25,8 @@ class MenuBuilderMixin:
         self._id_preferences = wx.NewIdRef()
         self._id_menu_editor = wx.NewIdRef()
         self._id_open_url = wx.NewIdRef()
+        self._id_ssh_quick_connect = wx.NewIdRef()
+        self._id_ssh_site_manager = wx.NewIdRef()
         self._id_close_document = wx.NewIdRef()
         self._id_save_all = wx.NewIdRef()
         self._id_reload_from_disk = wx.NewIdRef()
@@ -48,6 +50,10 @@ class MenuBuilderMixin:
         file_menu.AppendSubMenu(self._recent_menu, "Open &Recent")
         self._refresh_recent_menu()
         file_menu.Append(self._id_open_url, "Open from &URL...")
+        ssh_menu = wx.Menu()
+        ssh_menu.Append(self._id_ssh_quick_connect, "&Quick Connect...")
+        ssh_menu.Append(self._id_ssh_site_manager, "&Site Manager...")
+        file_menu.AppendSubMenu(ssh_menu, "Open over SS&H")
         file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
         # New document from clipboard sits beside New (Power Tools recirculation,
         # menus.md Phase 4).
@@ -1372,6 +1378,7 @@ class MenuBuilderMixin:
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.new_file(), id=self._id_new)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_file(), id=self._id_open)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_url(), id=self._id_open_url)
+        self._bind_ssh_file_menu()
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.save_file(), id=self._id_save)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.save_file_as(), id=self._id_save_as)
         self.frame.Bind(

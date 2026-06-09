@@ -484,6 +484,7 @@ from quill.ui.main_frame_quill_key import QuillKeyMixin
 from quill.ui.main_frame_quillins import QuillinsMenuMixin
 from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
+from quill.ui.main_frame_ssh import SshEditingMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
 from quill.ui.palette import CommandPaletteDialog
 from quill.ui.rich_text_surface import RichTextSurface
@@ -747,6 +748,7 @@ class MainFrame(
     IntellisensePopupMixin,
     LineCommandsMixin,
     ProfilePickerMixin,
+    SshEditingMixin,
     PowerToolsActionsMixin,
     PowerToolsMenuMixin,
     QuillinsMenuMixin,
@@ -1159,6 +1161,18 @@ class MainFrame(
             "Open File...",
             self.open_file,
             self._binding_for("file.open"),
+        )
+        self.commands.register(
+            "file.ssh_quick_connect",
+            "Open over SSH: Quick Connect...",
+            self.open_ssh_quick_connect,
+            self._binding_for("file.ssh_quick_connect"),
+        )
+        self.commands.register(
+            "file.ssh_site_manager",
+            "Open over SSH: Site Manager...",
+            self.open_ssh_site_manager,
+            self._binding_for("file.ssh_site_manager"),
         )
         self.commands.register(
             "file.save",
@@ -4383,6 +4397,7 @@ class MainFrame(
         self._watch_service.stop()
         self._unregister_global_hotkeys()
         self._remove_tray_icon()
+        self.close_ssh_connections()
         save_settings(self.settings)
         self.flush_persistent_undo()
         mark_clean_exit(self.session_id)
@@ -5982,6 +5997,9 @@ class MainFrame(
         self.flush_persistent_undo()
         self._refresh_title()
         self._set_status(f"Saved {self.document.name}")
+        # If this file was opened over SSH, upload it back to the remote host
+        # with a tilde backup in its original newline style (#139).
+        self.maybe_upload_remote_on_save()
 
     def save_all_files(self) -> None:
         for index in range(len(self._document_tabs)):
