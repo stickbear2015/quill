@@ -28,7 +28,6 @@ editor effects on the UI thread per the host services contract.
 
 from __future__ import annotations
 
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -49,82 +48,10 @@ from quill.core.quillins.loader import (
 )
 from quill.core.quillins.registry import ContributionRegistry
 from quill.plugins import THIRD_PARTY_PLUGINS_FEATURE
+from quill.ui.main_frame_quillins_host import _EditorHostServices
 
 _QUILLINS_MANAGER_COMMAND = "tools.quillins_manager"
-
-
-class _EditorHostServices:
-    """Adapt :class:`MainFrame`'s editor to the host ``HostServices`` protocol.
-
-    Editor writes go through the same ``wx.TextCtrl`` the user edits, so they
-    participate in normal undo. Filesystem/network/clipboard methods are only
-    ever reached after the host's capability + consent gate has approved them.
-    """
-
-    def __init__(self, frame: Any) -> None:
-        self._frame = frame
-
-    def get_text(self) -> str:
-        return str(self._frame.editor.GetValue())
-
-    def get_selection(self) -> str:
-        return str(self._frame.editor.GetStringSelection())
-
-    def get_cursor(self) -> dict[str, int]:
-        editor = self._frame.editor
-        position = int(editor.GetInsertionPoint())
-        text = str(editor.GetValue())
-        line = text.count("\n", 0, position) + 1
-        column = position - (text.rfind("\n", 0, position) + 1) + 1
-        percent = int((position / len(text)) * 100) if text else 0
-        return {"line": line, "column": column, "percent": percent}
-
-    def insert_text(self, text: str) -> None:
-        self._frame.editor.WriteText(text)
-
-    def replace_selection(self, text: str) -> None:
-        editor = self._frame.editor
-        start, end = editor.GetSelection()
-        if start == end:
-            editor.WriteText(text)
-        else:
-            editor.Replace(start, end, text)
-
-    def set_text(self, text: str) -> None:
-        """Replace the whole document as one undoable edit and sync the model."""
-
-        self._frame._replace_document_text(text)
-        self._frame.document.set_text(text)
-
-    def open_buffer(self, text: str, title: str) -> None:
-        """Open ``text`` in a new editor tab, leaving the current one untouched."""
-
-        self._frame._power_tools_open_text_in_new_buffer(text, title or "Opened Quillin result")
-
-    def announce(self, message: str) -> None:
-        self._frame._announce(message)
-
-    def prompt(self, title: str, label: str, default: str) -> str | None:
-        return self._frame._power_tools_prompt_single(title, label, default)
-
-    def read_file(self, path: str) -> str:
-        return Path(path).read_text(encoding="utf-8")
-
-    def write_file(self, path: str, text: str) -> None:
-        Path(path).write_text(text, encoding="utf-8")
-
-    def fetch(self, url: str, method: str, body: str | None) -> dict[str, Any]:
-        data = body.encode("utf-8") if body is not None else None
-        request = urllib.request.Request(url, data=data, method=method)  # noqa: S310
-        with urllib.request.urlopen(request, timeout=15) as response:  # noqa: S310
-            payload = response.read().decode("utf-8", errors="replace")
-            return {"status": int(getattr(response, "status", 200)), "body": payload}
-
-    def get_clipboard(self) -> str:
-        return str(self._frame._read_clipboard_text())
-
-    def set_clipboard(self, text: str) -> None:
-        self._frame._write_clipboard_text(text)
+_QUILLINS_WIZARD_COMMAND = "tools.quillin_wizard"
 
 
 class QuillinsMenuMixin:
@@ -134,14 +61,21 @@ class QuillinsMenuMixin:
     def _build_quillins_menu(self) -> object:
         """Build the Tools > Quillins submenu and bind every item.
 
-        The Manager item is always present. When the SEC-8 flag is enabled, every
-        contributed ``ext.*`` command is also listed here so it is reachable by
-        keyboard even before per-menu placement; labels show any user binding via
-        ``_menu_label``.
+        The New Quillin and Manager items are always present. When the SEC-8 flag
+        is enabled, every contributed ``ext.*`` command is also listed here so it
+        is reachable by keyboard even before per-menu placement; labels show any
+        user binding via ``_menu_label``.
         """
 
         wx = self._wx
         menu = wx.Menu()
+
+        wizard_id = wx.NewIdRef()
+        menu.Append(
+            wizard_id,
+            self._menu_label("&New Quillin...", _QUILLINS_WIZARD_COMMAND),
+        )
+        self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_quillin_wizard(), id=wizard_id)
 
         manager_id = wx.NewIdRef()
         menu.Append(
@@ -197,6 +131,12 @@ class QuillinsMenuMixin:
 
     # -- command + runtime registration --------------------------------------
     def _register_quillins_commands(self) -> None:
+        self.commands.register(
+            _QUILLINS_WIZARD_COMMAND,
+            "New Quillin",
+            self.open_quillin_wizard,
+            self._binding_for(_QUILLINS_WIZARD_COMMAND),
+        )
         self.commands.register(
             _QUILLINS_MANAGER_COMMAND,
             "Manage Quillins",
@@ -298,10 +238,15 @@ class QuillinsMenuMixin:
 
     def _run_quillin_snippet(self, body: str) -> None:
         editor = self._frame_editor()
+        text = str(editor.GetValue())
+        pos = int(editor.GetInsertionPoint())
         context = SnippetContext(
             selection=str(editor.GetStringSelection()),
             clipboard=str(self._read_clipboard_text()),
             filename=self._current_filename(),
+            title=self._current_document_title(),
+            line_number=str(text.count("\n", 0, pos) + 1),
+            word_at_cursor=self._word_at_offset(text, pos),
         )
         expansion = expand_snippet(body, context)
         start, end = editor.GetSelection()
@@ -314,8 +259,13 @@ class QuillinsMenuMixin:
     def _run_quillin_handler(
         self, manifest: ExtensionManifest, directory: Path, command_id: str
     ) -> None:
+        if not hasattr(self, "_quillin_storage_data"):
+            self._quillin_storage_data: dict[str, dict[str, str]] = {}
+        storage = self._quillin_storage_data.setdefault(manifest.id, {})
         services = _EditorHostServices(self)
-        host = ExtensionHost(manifest, directory, services, consent=self._quillin_consent)
+        host = ExtensionHost(
+            manifest, directory, services, consent=self._quillin_consent, storage=storage
+        )
         try:
             host.start()
             host.load()
@@ -341,6 +291,19 @@ class QuillinsMenuMixin:
             return bool(dialog.ShowModal() == wx.ID_YES)
         finally:
             dialog.Destroy()
+
+    # -- Quillin Wizard (in-app manifest builder) ----------------------------
+    def open_quillin_wizard(self) -> None:
+        from quill.ui.quillin_wizard import open_quillin_wizard
+
+        open_quillin_wizard(
+            self.frame,
+            self._wx,
+            announce=self._announce,
+            show_modal=self._show_modal_dialog,
+            reload_callback=self._register_quillin_contributions,
+            third_party_locked=not self._quillins_enabled(),
+        )
 
     # -- Quillins Manager dialog (hardened custom) ---------------------------
     def open_quillins_manager(self) -> None:
@@ -501,6 +464,21 @@ class QuillinsMenuMixin:
         if path is None:
             return ""
         return Path(str(path)).name
+
+    def _current_document_title(self) -> str:
+        document = getattr(self, "document", None)
+        path = getattr(document, "path", None)
+        if path is None:
+            return ""
+        return Path(str(path)).stem
+
+    @staticmethod
+    def _word_at_offset(text: str, pos: int) -> str:
+        import re as _re
+
+        before = _re.search(r"\w+$", text[:pos])
+        after = _re.match(r"\w*", text[pos:])
+        return (before.group(0) if before else "") + (after.group(0) if after else "")
 
     def _quillin_list_label(self, item: Any) -> str:
         name = item.manifest.name if item.manifest is not None else item.id

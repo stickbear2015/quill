@@ -167,17 +167,10 @@ from quill.core.file_search import (
 )
 from quill.core.format_ops import (
     continue_markdown_list,
-    convert_indentation_to_spaces,
-    convert_indentation_to_tabs,
     indent_lines,
-    normalize_whitespace,
     outdent_lines,
-    remove_duplicate_lines,
-    reverse_lines,
-    sort_lines,
     toggle_block_comment,
     toggle_line_comment,
-    trim_trailing_whitespace,
 )
 from quill.core.glow import build_audit_report, build_fix_report, fix_text
 from quill.core.glow_updates import (
@@ -231,13 +224,6 @@ from quill.core.lexical import (
     render_lookup,
 )
 from quill.core.lexical_preload import start_lexical_preload
-from quill.core.line_ops import (
-    delete_line,
-    duplicate_line,
-    join_selected_lines,
-    move_lines_down,
-    move_lines_up,
-)
 from quill.core.link_inventory import collect_link_inventory, render_link_inventory_report
 from quill.core.links import build_link_text, find_link_at_cursor, infer_markup_kind
 from quill.core.locations import LocationRing
@@ -489,13 +475,16 @@ from quill.ui.main_frame_ai_actions import AiActionsMixin
 from quill.ui.main_frame_browse import BrowseModeMixin
 from quill.ui.main_frame_image import ImageCaptureMixin
 from quill.ui.main_frame_intellisense import IntellisensePopupMixin
+from quill.ui.main_frame_line_commands import LineCommandsMixin
 from quill.ui.main_frame_menu import MenuBuilderMixin
 from quill.ui.main_frame_power_tools import PowerToolsActionsMixin
 from quill.ui.main_frame_power_tools_menu import PowerToolsMenuMixin
+from quill.ui.main_frame_profile_picker import ProfilePickerMixin
 from quill.ui.main_frame_quill_key import QuillKeyMixin
 from quill.ui.main_frame_quillins import QuillinsMenuMixin
 from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
+from quill.ui.main_frame_ssh import SshEditingMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
 from quill.ui.palette import CommandPaletteDialog
 from quill.ui.publishing_tools import PublishingConnectionsDialog
@@ -758,6 +747,9 @@ class MainFrame(
     SessionsMixin,
     StatusBarMixin,
     IntellisensePopupMixin,
+    LineCommandsMixin,
+    ProfilePickerMixin,
+    SshEditingMixin,
     PowerToolsActionsMixin,
     PowerToolsMenuMixin,
     QuillinsMenuMixin,
@@ -1094,6 +1086,7 @@ class MainFrame(
         for label, task in (
             ("crash recovery", self._offer_crash_recovery),
             ("first-run onboarding", self._maybe_run_first_run_onboarding),
+            ("startup profile prompt", self.run_startup_profile_prompt),
             ("watch-folder startup", self._maybe_start_watch_folder),
             ("lexical cache warm-up", start_lexical_preload),
         ):
@@ -1169,6 +1162,18 @@ class MainFrame(
             "Open File...",
             self.open_file,
             self._binding_for("file.open"),
+        )
+        self.commands.register(
+            "file.ssh_quick_connect",
+            "Open over SSH: Quick Connect...",
+            self.open_ssh_quick_connect,
+            self._binding_for("file.ssh_quick_connect"),
+        )
+        self.commands.register(
+            "file.ssh_site_manager",
+            "Open over SSH: Site Manager...",
+            self.open_ssh_site_manager,
+            self._binding_for("file.ssh_site_manager"),
         )
         self.commands.register(
             "file.save",
@@ -4405,6 +4410,7 @@ class MainFrame(
         self._watch_service.stop()
         self._unregister_global_hotkeys()
         self._remove_tray_icon()
+        self.close_ssh_connections()
         save_settings(self.settings)
         self.flush_persistent_undo()
         mark_clean_exit(self.session_id)
@@ -5418,6 +5424,8 @@ class MainFrame(
         self._refresh_title()
         self._last_intake_report = build_intake_report(loaded)
         self._set_status(build_intake_summary(loaded))
+        # Switch to the profile mapped to this file's extension, if one is set (#138).
+        self.maybe_switch_profile_for_open(selected_path)
 
     def _position_editor_at(self, line: int | None = None, column: int | None = None) -> None:
         if line is None and column is None:
@@ -6002,6 +6010,9 @@ class MainFrame(
         self.flush_persistent_undo()
         self._refresh_title()
         self._set_status(f"Saved {self.document.name}")
+        # If this file was opened over SSH, upload it back to the remote host
+        # with a tilde backup in its original newline style (#139).
+        self.maybe_upload_remote_on_save()
 
     def save_all_files(self) -> None:
         for index in range(len(self._document_tabs)):
@@ -10841,10 +10852,18 @@ class MainFrame(
         if not misspellings:
             self._set_status("No misspellings found")
             return
-        selection = self._choose_misspelling_with_context(misspellings, text, dictionary)
-        if selection == wx.NOT_FOUND:
-            return
-        item = misspellings[selection]
+        # A single typo (the common case, e.g. "This is a bligtest") goes straight
+        # to its corrections. Previously F7 always opened a "choose the misspelling"
+        # chooser first, which showed no correction options and made spell check
+        # look broken (#129). Multiple misspellings still use the chooser so each
+        # can be reviewed in context.
+        if len(misspellings) == 1:
+            item = misspellings[0]
+        else:
+            selection = self._choose_misspelling_with_context(misspellings, text, dictionary)
+            if selection == wx.NOT_FOUND:
+                return
+            item = misspellings[selection]
         suggestions = suggest_words(item.word, dictionary)
         if suggestions:
             with wx.SingleChoiceDialog(
@@ -10897,8 +10916,9 @@ class MainFrame(
             wx.StaticText(
                 panel,
                 label=(
-                    "Choose misspelled word. Tab to Context to read the nearby sentence before "
-                    "continuing. Use Speak Word to hear the word and spelling."
+                    "Choose a misspelled word, then Show Corrections to see replacement "
+                    "options. Tab to Context to read the nearby sentence; use Speak Word to "
+                    "hear the word and its spelling."
                 ),
             ),
             0,
@@ -10920,7 +10940,7 @@ class MainFrame(
         root.Add(context_field, 1, wx.ALL | wx.EXPAND, 8)
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         speak_button = wx.Button(panel, label="Speak Word")
-        review_button = wx.Button(panel, id=wx.ID_OK, label="Review Word")
+        review_button = wx.Button(panel, id=wx.ID_OK, label="Show Corrections...")
         cancel_button = wx.Button(panel, id=wx.ID_CANCEL, label="Cancel")
         buttons.AddStretchSpacer(1)
         buttons.Add(speak_button, 0, wx.RIGHT, 8)
@@ -16563,67 +16583,6 @@ class MainFrame(
             "Outdented lines",
         )
 
-    def move_line_up(self) -> None:
-        # Selection-aware (issue #133): a multi-line selection moves as one block.
-        self._apply_selection_operation(move_lines_up, "Moved line up")
-
-    def move_line_down(self) -> None:
-        self._apply_selection_operation(move_lines_down, "Moved line down")
-
-    def duplicate_line(self) -> None:
-        self._apply_line_operation(duplicate_line, "Duplicated line")
-
-    def delete_line(self) -> None:
-        self._apply_line_operation(delete_line, "Deleted line")
-
-    def join_lines(self) -> None:
-        # Selection-aware (issue #135): joins the whole selection, or the
-        # caret's paragraph when there is no selection, instead of only the
-        # current line and the next one.
-        self._apply_selection_operation(join_selected_lines, "Joined lines")
-
-    def sort_lines_ascending(self) -> None:
-        self._apply_text_block_operation(
-            lambda text: sort_lines(text, descending=False),
-            "Sorted lines ascending",
-        )
-
-    def sort_lines_descending(self) -> None:
-        self._apply_text_block_operation(
-            lambda text: sort_lines(text, descending=True),
-            "Sorted lines descending",
-        )
-
-    def reverse_lines(self) -> None:
-        self._apply_text_block_operation(reverse_lines, "Reversed lines")
-
-    def remove_duplicate_lines(self) -> None:
-        self._apply_text_block_operation(
-            remove_duplicate_lines,
-            "Removed duplicate lines",
-        )
-
-    def trim_trailing_whitespace(self) -> None:
-        self._apply_text_block_operation(
-            trim_trailing_whitespace,
-            "Trimmed trailing whitespace",
-        )
-
-    def normalize_whitespace(self) -> None:
-        self._apply_text_block_operation(normalize_whitespace, "Normalized whitespace")
-
-    def convert_indentation_to_spaces(self) -> None:
-        self._apply_text_block_operation(
-            lambda text: convert_indentation_to_spaces(text, self._indent_width()),
-            "Converted indentation to spaces",
-        )
-
-    def convert_indentation_to_tabs(self) -> None:
-        self._apply_text_block_operation(
-            lambda text: convert_indentation_to_tabs(text, self._indent_width()),
-            "Converted indentation to tabs",
-        )
-
     def format_italic(self) -> None:
         if not self._feature_enabled("core.format"):
             self._set_status("Italic is unavailable in this profile")
@@ -17498,6 +17457,8 @@ class MainFrame(
         self,
         operation: Callable[[str, int, int], tuple[str, int, int]],
         status: str,
+        *,
+        no_change_status: str | None = None,
     ) -> None:
         if not self._feature_enabled("core.format"):
             self._set_status(f"{status} is unavailable in this profile")
@@ -17508,6 +17469,11 @@ class MainFrame(
         text = self.editor.GetValue()
         start, end = self.editor.GetSelection()
         updated, new_start, new_end = operation(text, start, end)
+        if no_change_status is not None and updated == text:
+            # The operation was a no-op (e.g. moving the top block up): announce
+            # that accurately instead of a misleading "Moved..." status (#133).
+            self._set_status(no_change_status)
+            return
         self._replace_document_text(updated)
         self.document.set_text(updated)
         if new_start == new_end:
@@ -18162,68 +18128,9 @@ class MainFrame(
         self._refresh_title()
 
     def switch_feature_profile(self) -> None:
-        wx = self._wx
-        entries = self._combined_profile_entries()
-        if not entries:
-            self._set_status("No profiles available")
-            return
-        choices = [
-            name if kind == "built_in" else f"{name} (Custom)"
-            for kind, _profile_id, name in entries
-        ]
-        with wx.SingleChoiceDialog(
-            self.frame,
-            "Choose a feature profile:",
-            "Switch Feature Profile",
-            choices=choices,
-        ) as dialog:
-            if self._show_modal_dialog(dialog, "Switch Feature Profile") != wx.ID_OK:
-                return
-            selection = dialog.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        kind, target_profile_id, target_name = entries[selection]
-        if kind == "built_in" and target_profile_id == self.features.active_profile_id:
-            self._set_status(f"Already using {self.features.active_profile.name}")
-            return
-        preview = self.features.change_profile_preview(target_profile_id)
-        if kind == "custom":
-            custom_profile = self._load_custom_profiles().get(target_profile_id)
-            if custom_profile is None:
-                self._set_status("Custom profile is no longer available")
-                return
-            preview = self._custom_profile_summary(custom_profile)
-        with wx.MessageDialog(
-            self.frame,
-            preview + "\n\nSwitch profiles now?",
-            "Switch Feature Profile",
-            wx.YES_NO | wx.ICON_QUESTION,
-        ) as confirm_dialog:
-            if self._show_modal_dialog(confirm_dialog, "Switch Feature Profile") != wx.ID_YES:
-                self._set_status("Profile switch cancelled")
-                return
-        if kind == "custom":
-            custom_profile = self._load_custom_profiles().get(target_profile_id)
-            if custom_profile is None:
-                self._set_status("Custom profile is no longer available")
-                return
-            self._apply_custom_profile(custom_profile)
-            self._set_status(f"Profile changed to {target_name}.")
-            self._show_message_box(
-                self._custom_profile_summary(custom_profile),
-                "Feature Profile",
-                wx.ICON_INFORMATION | wx.OK,
-            )
-        else:
-            self.features.switch_profile(target_profile_id)
-            profile = self.features.active_profile
-            self._set_status(f"Profile changed to {profile.name}. Undo available.")
-            self._show_message_box(
-                self.features.profile_summary(),
-                "Feature Profile",
-                wx.ICON_INFORMATION | wx.OK,
-            )
-        self._apply_accelerators()
+        # The dedicated, accessible profile picker (Alt+Shift+P) replaced the old
+        # SingleChoiceDialog + confirm + info-box flow (#138).
+        self.open_profile_picker()
 
     def show_feature_profile_health_check(self) -> None:
         report = self.features.health_report(self.commands.list())

@@ -6,11 +6,10 @@ from pathlib import Path
 
 def _menu_source() -> str:
     ui = Path(__file__).resolve().parents[3] / "quill" / "ui"
-    return (
-        (ui / "main_frame.py").read_text(encoding="utf-8")
-        + "\n"
-        + (ui / "main_frame_menu.py").read_text(encoding="utf-8")
-    )
+    parts: list[str] = []
+    for path in sorted(ui.glob("main_frame*.py")):
+        parts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(parts)
 
 
 def test_menu_item_ids_have_menu_bindings() -> None:

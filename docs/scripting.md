@@ -31,6 +31,10 @@ wire/code identifiers; the experience speaks of **Quillins**.
 | Sandboxed worker + `QuillExtensionApi` (§5, §14.4) | `quill/core/quillins/host_worker.py` | `tests/integration/test_quillins_host_integration.py` |
 | Tools ▸ Quillins menu, runtime, Quillins Manager dialog (§7, §17) | `quill/ui/main_frame_quillins.py` | `tests/unit/ui/test_main_frame_quillins.py`, A11Y-4 dialog inventory |
 | Bundled Quillin (Tier C: Layer 1 snippet + Layer 2 handler) | `quill/quillins_bundled/markdown-helpers/` | `tests/unit/core/test_quillins_bundled_markdown.py` |
+| Bundled Quillin: Insert Character | `quill/quillins_bundled/insert-character/` | `tests/unit/core/test_quillins_bundled_insert_character.py` |
+| Bundled Quillin: Line Tools (6 cursor-aware line operations) | `quill/quillins_bundled/line-tools/` | `tests/unit/core/test_quillins_bundled_line_tools.py` |
+| Bundled Quillin: Text Tools (HTML-to-Markdown + text transforms) | `quill/quillins_bundled/text-tools/` | `tests/unit/core/test_quillins_bundled_text_tools.py`, `test_quillins_bundled_text_tools_html.py` |
+| Extended host API (cursor offsets, status, choices, storage) | `quill/core/quillins/host.py`, `host_worker.py` | `tests/unit/core/test_quillins_host_extended.py` |
 
 A complete, loadable **bundled Quillin** ships in
 [`quill/quillins_bundled/markdown-helpers/`](../quill/quillins_bundled/markdown-helpers/):
@@ -389,6 +393,9 @@ against this before submission.
           "editor.write",
           "ui.announce",
           "ui.command",
+          "ui.status",
+          "ui.choices",
+          "storage",
           "fs.read",
           "fs.write",
           "net",
@@ -535,6 +542,9 @@ alone, with no access to QUILL source.
 | `fs.read` / `fs.write` | Read/write files by path | Per-action consent gate | Paths validated; no access outside granted scope |
 | `net` | Outbound HTTP(S) | Per-action consent gate, visible progress | No silent network calls — ever |
 | `clipboard.read` / `clipboard.write` | Read/write the system clipboard | Install-time disclosure | |
+| `ui.status` | Set the status bar message | Install-time disclosure | Required by `set_status`; not consent-gated |
+| `ui.choices` | Show a native single-choice dialog and receive the user's pick | Install-time disclosure | Required by `show_choices` |
+| `storage` | Per-extension persistent key/value store (in-memory, per session) | Install-time disclosure | Required by `get_storage`, `set_storage`, `delete_storage`; isolated per extension id |
 
 A pure snippet-only extension declares **no** capabilities.
 
@@ -560,6 +570,10 @@ A pure snippet-only extension declares **no** capabilities.
 | `${date}` | Current date in the user's configured format |
 | `${time}` | Current time in the user's configured format |
 | `${filename}` | Current document file name (empty if unsaved) |
+| `${title}` | Document file name stem without extension (empty if unsaved) |
+| `${line_number}` | Current line number (1-indexed) |
+| `${word_at_cursor}` | Word immediately surrounding the insertion point |
+| `${uuid}` | A fresh UUID4 generated at expansion time |
 | `${cursor}` | Final cursor position marker after insertion |
 
 ### 14.4 Python API reference (Layer 2, `QuillExtensionApi` v1)
@@ -583,6 +597,15 @@ host. Methods raise `CapabilityError` if the required capability was not granted
 | `api.fetch(url, *, method="GET", body=None)` | `net` | `Response` | HTTP(S) request (consent-gated, visible progress) |
 | `api.get_clipboard()` | `clipboard.read` | `str` | Clipboard text |
 | `api.set_clipboard(text)` | `clipboard.write` | `None` | Set clipboard text |
+| `api.get_cursor_offset()` | `editor.read` | `int` | Cursor position as a character offset from the start of the document |
+| `api.get_selection_range()` | `editor.read` | `dict` | Selection bounds as `{"start": int, "end": int}` character offsets; `start == end` when no selection |
+| `api.set_cursor(offset)` | `editor.write` | `None` | Move the cursor to a character offset |
+| `api.replace_range(start, end, text)` | `editor.write` | `None` | Replace the text between `start` and `end` offsets with `text` (undoable) |
+| `api.set_status(message)` | `ui.status` | `None` | Set the editor status bar text; no consent gate |
+| `api.show_choices(title, items)` | `ui.choices` | `str \| None` | Show a native single-choice dialog; returns the selected string or `None` if cancelled |
+| `api.get_storage(key)` | `storage` | `str \| None` | Get a persisted value for `key`; returns `None` if not set |
+| `api.set_storage(key, value)` | `storage` | `None` | Store `value` under `key`; both must be strings |
+| `api.delete_storage(key)` | `storage` | `None` | Remove `key` from storage; no-op if not present |
 
 `handler(ctx)` receives a `ctx` exposing the same read/write/announce surface
 scoped to the invocation, so a handler typically reads, computes, and writes back.
@@ -610,6 +633,55 @@ Error types an author may see: `CapabilityError`, `ConsentDeniedError`,
   }
 }
 ```
+
+### 14.5a Worked example A2 — new placeholders in action
+
+Demonstrates `${title}`, `${line_number}`, `${word_at_cursor}`, and `${uuid}`.
+
+`manifest.json`:
+
+```json
+{
+  "schema": "quill.extension/1",
+  "id": "com.example.context-inserts",
+  "name": "Context Inserts",
+  "version": "1.0.0",
+  "contributes": {
+    "commands": [
+      {
+        "id": "ext.context-inserts.front-matter",
+        "title": "Insert Front Matter",
+        "run": { "snippet": "---\ntitle: ${title}\ndate: ${date}\n---\n\n${cursor}" }
+      },
+      {
+        "id": "ext.context-inserts.bold-word",
+        "title": "Bold Word at Cursor",
+        "run": { "snippet": "**${word_at_cursor}**${cursor}" }
+      },
+      {
+        "id": "ext.context-inserts.line-anchor",
+        "title": "Insert Line Anchor",
+        "run": { "snippet": "<!-- anchor:${uuid} line:${line_number} -->${cursor}" }
+      }
+    ],
+    "menus": [
+      { "parent": "Insert", "command": "ext.context-inserts.front-matter" },
+      { "parent": "Format", "command": "ext.context-inserts.bold-word" },
+      { "parent": "Insert", "command": "ext.context-inserts.line-anchor" }
+    ],
+    "context_menu": [
+      { "command": "ext.context-inserts.bold-word", "when": "editor.hasText" }
+    ]
+  }
+}
+```
+
+Token behaviour at runtime:
+
+- `${title}` — for `notes.md` expands to `notes`; empty string when the buffer is unsaved.
+- `${word_at_cursor}` — cursor inside `hello` → `hello`; between words → empty string.
+- `${line_number}` — always 1-indexed regardless of how the file renders.
+- `${uuid}` — generates a different UUID4 on every invocation, so two calls always produce distinct anchors.
 
 ### 14.6 Worked example B — Python handler
 
@@ -685,6 +757,10 @@ module that loads under §14.4.
 | reads/writes files | `fs.read` / `fs.write` |
 | makes network requests | `net` |
 | touches the clipboard | `clipboard.read` / `clipboard.write` |
+| uses cursor offsets or `replace_range` | `editor.read` and/or `editor.write` (already covers these methods) |
+| sets status bar text | `ui.status` |
+| shows a choice dialog | `ui.choices` |
+| persists data between invocations | `storage` |
 
 **Machine-readable contract summary (for prompt embedding):**
 

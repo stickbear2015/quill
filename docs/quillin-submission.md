@@ -21,8 +21,9 @@ A Quillin is a small, sandboxed extension described by a `manifest.json`
 
 - **Layer 1 — snippet only.** Declarative text insertion with placeholders
   (`${selection}`, `${clipboard}`, `${date}`, `${time}`, `${filename}`,
-  `${cursor}`). **No code, no capabilities.** This covers most needs and is the
-  safest, fastest path to acceptance.
+  `${title}`, `${line_number}`, `${word_at_cursor}`, `${uuid}`, `${cursor}`).
+  **No code, no capabilities** (except `clipboard.read` when `${clipboard}` is
+  used). This covers most needs and is the safest, fastest path to acceptance.
 - **Layer 2 — Python handler.** A `main` entry module registers handler
   functions via `api.register_command`. Requires the `ui.command` capability and
   runs **out-of-process** behind QUILL's capability + consent gate.

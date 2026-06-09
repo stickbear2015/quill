@@ -6,7 +6,12 @@
 
 **QUILL: A quality, usable, inclusive, lightweight, and literate editor built for everyone who writes, codes, learns, and creates.**
 
+## 🌟 The Quillin Hub
+Expand your editor's powers with the [Quillin Hub](https://hub.quillforall.org). Discover a curated gallery of community-created extensions—from research tools to accessibility auditors—all verified for security and WCAG 2.2 AA compliance.
+
 ## What Quill is
+...existing code...
+
 
 Quill is a screen-reader-first writing and document environment for **Windows and macOS**, focused on practical keyboard workflows, stable editing, and accessible diagnostics/support flows.
 

@@ -88,7 +88,7 @@ _REVIEWED_EGRESS: dict[str, str] = {
         "connection; remote endpoints are HTTPS-enforced and HTTPS uses a verified "
         "TLS context."
     ),
-    "ui/main_frame_quillins.py::fetch": (
+    "ui/main_frame_quillins_host.py::fetch": (
         "Quillin host 'net' capability bridge. A Quillin can only reach this "
         "method when its manifest declares the default-deny 'net' capability AND "
         "the user grants explicit per-action consent at the runtime consent gate "

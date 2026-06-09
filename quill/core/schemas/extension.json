@@ -42,7 +42,10 @@
           "fs.write",
           "net",
           "clipboard.read",
-          "clipboard.write"
+          "clipboard.write",
+          "ui.status",
+          "ui.choices",
+          "storage"
         ]
       }
     },
@@ -78,7 +81,7 @@
                     "properties": {
                       "snippet": {
                         "type": "string",
-                        "description": "Literal text inserted/replacing selection. Supports ${selection}, ${clipboard}, ${date}, ${time}, ${filename} placeholders. No code execution."
+                        "description": "Literal text inserted/replacing selection. Supports ${selection}, ${clipboard}, ${date}, ${time}, ${filename}, ${title}, ${line_number}, ${word_at_cursor}, ${uuid} placeholders. No code execution."
                       }
                     }
                   },

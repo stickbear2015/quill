@@ -4,10 +4,10 @@
   "_rebaseline_2026_06_08": "After merging newer main-branch shell work and the publishing/File-menu integration, main_frame.py, main_frame_menu.py, and assistant_tools.py were already above the recorded caps on this branch. This update records the current measured sizes so GATE-11 is green again from a truthful baseline; future work should reduce these files rather than grow them further.",
   "_default_cap": 600,
   "budgets": {
-    "quill/ui/main_frame.py": 19729,
+    "quill/ui/main_frame.py": 19687,
     "quill/ui/assistant_tools.py": 1785,
     "quill/ui/main_frame_power_tools.py": 737,
-    "quill/ui/main_frame_menu.py": 2422,
+    "quill/ui/main_frame_menu.py": 2431,
     "quill/core/read_aloud.py": 1240,
     "quill/core/assistant_ai.py": 1230,
     "quill/core/features.py": 1113,

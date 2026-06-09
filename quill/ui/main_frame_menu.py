@@ -25,6 +25,8 @@ class MenuBuilderMixin:
         self._id_preferences = wx.NewIdRef()
         self._id_menu_editor = wx.NewIdRef()
         self._id_open_url = wx.NewIdRef()
+        self._id_ssh_quick_connect = wx.NewIdRef()
+        self._id_ssh_site_manager = wx.NewIdRef()
         self._id_close_document = wx.NewIdRef()
         self._id_save_all = wx.NewIdRef()
         self._id_reload_from_disk = wx.NewIdRef()
@@ -48,6 +50,10 @@ class MenuBuilderMixin:
         file_menu.AppendSubMenu(self._recent_menu, "Open &Recent")
         self._refresh_recent_menu()
         file_menu.Append(self._id_open_url, "Open from &URL...")
+        ssh_menu = wx.Menu()
+        ssh_menu.Append(self._id_ssh_quick_connect, "&Quick Connect...")
+        ssh_menu.Append(self._id_ssh_site_manager, "&Site Manager...")
+        file_menu.AppendSubMenu(ssh_menu, "Open over SS&H")
         file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
         self._id_publishing_connections = wx.NewIdRef()
         self._id_publishing_verify_connection = wx.NewIdRef()
@@ -935,9 +941,11 @@ class MenuBuilderMixin:
         ai_menu.Check(self._id_ai_enabled, load_ai_enabled())
         ai_menu.AppendSeparator()
         ai_menu.Append(self._id_ai_status_badge, "AI Status: Not checked")
-        ai_menu.Append(
-            self._id_ai_status_detail, "AI Detail: Open AI Connection to verify settings"
-        )
+        # AI Status and AI Detail are informational status lines (selecting either
+        # re-checks the backend). Connection setup lives in one place — "AI Model &
+        # Connection..." — so AI Detail no longer doubles as a second launcher for
+        # the connection dialog (#132).
+        ai_menu.Append(self._id_ai_status_detail, "AI Detail: Not checked")
         ai_menu.Append(
             self._id_ai_hub,
             self._menu_label("AI &Hub...", "tools.ai_hub"),
@@ -1386,6 +1394,7 @@ class MenuBuilderMixin:
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.new_file(), id=self._id_new)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_file(), id=self._id_open)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.open_url(), id=self._id_open_url)
+        self._bind_ssh_file_menu()
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.save_file(), id=self._id_save)
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.save_file_as(), id=self._id_save_as)
         self.frame.Bind(
@@ -1518,7 +1527,7 @@ class MenuBuilderMixin:
         )
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self.open_ai_preferences(),
+            lambda _e: self._refresh_ai_status(),
             id=self._id_ai_status_detail,
         )
         self.frame.Bind(wx.EVT_MENU, self._on_toggle_ai_enabled, id=self._id_ai_enabled)

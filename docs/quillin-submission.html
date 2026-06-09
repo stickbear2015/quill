@@ -266,8 +266,12 @@ It comes in two layers:</p>
 <li><strong>Layer 1 — snippet only.</strong> Declarative text insertion
 with placeholders (<code>${selection}</code>, <code>${clipboard}</code>,
 <code>${date}</code>, <code>${time}</code>, <code>${filename}</code>,
-<code>${cursor}</code>). <strong>No code, no capabilities.</strong> This
-covers most needs and is the safest, fastest path to acceptance.</li>
+<code>${title}</code>, <code>${line_number}</code>,
+<code>${word_at_cursor}</code>, <code>${uuid}</code>,
+<code>${cursor}</code>). <strong>No code, no capabilities</strong>
+(except <code>clipboard.read</code> when <code>${clipboard}</code> is
+used). This covers most needs and is the safest, fastest path to
+acceptance.</li>
 <li><strong>Layer 2 — Python handler.</strong> A <code>main</code> entry
 module registers handler functions via
 <code>api.register_command</code>. Requires the <code>ui.command</code>

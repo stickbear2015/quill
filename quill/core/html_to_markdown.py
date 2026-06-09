@@ -11,6 +11,12 @@ result.
 The converter targets the everyday "copied from a web page or word processor"
 case (headings, paragraphs, bold/italic, links, lists, code, block quotes). It is
 deliberately forgiving: unknown tags are dropped and their text is kept.
+
+Migration note: the same converter is now vendored into
+``quill/quillins_bundled/text-tools/html_ops.py`` for the ``ext.text.html_to_markdown``
+Quillin command. The first-party "Paste HTML as Markdown" (QUILL Key + M) still
+uses this module. When that command is retired (migration plan Wave N), this
+module can be removed and the Quillin becomes the sole implementation.
 """
 
 from __future__ import annotations

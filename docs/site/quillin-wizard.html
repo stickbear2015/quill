@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quillin Snippet Wizard &mdash; QUILL</title>
+  <meta name="description" content="Build a valid snippet-only Quillin manifest.json step by step. No coding required.">
+  <link rel="stylesheet" href="/assets/style.css">
+  <style>
+    .wiz-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--surface);
+    }
+    .wiz-section > h2 {
+      margin: 0 0 1.1rem;
+      font-size: 1.25rem;
+      border: none;
+      padding: 0;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .field label { font-weight: 600; font-size: 0.95rem; }
+    .field .hint { font-size: 0.82rem; color: var(--muted); }
+    .field input, .field select, .field textarea {
+      padding: 0.5rem 0.7rem;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .field textarea { resize: vertical; min-height: 5rem; font-family: "Cascadia Code", Consolas, monospace; font-size: 0.93rem; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+      border-color: var(--accent);
+    }
+    .field .err-msg { font-size: 0.82rem; color: #c43535; display: none; }
+    .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: #c43535; }
+    .field.invalid .err-msg { display: block; }
+    .required-mark { color: var(--accent); font-weight: 700; }
+
+    .cmd-block {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem 1.25rem;
+      margin-bottom: 1rem;
+      background: var(--bg);
+    }
+    .cmd-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .cmd-header h3 { margin: 0; font-size: 1rem; }
+    .btn-remove {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      padding: 0.25rem 0.65rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-remove:hover { border-color: #c43535; color: #c43535; }
+    .btn-remove:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    .token-bar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
+    .token-btn {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .token-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .token-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    .placement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .placement-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      background: var(--surface-2);
+    }
+    .placement-card .check-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+    .placement-card input[type="checkbox"] { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+    .placement-sub {
+      margin-top: 0.6rem;
+      display: none;
+    }
+    .placement-sub.visible { display: block; }
+    .placement-sub select {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+    .placement-sub select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .placement-sub label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 0.3rem; }
+
+    .cap-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .cap-badge {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .cap-badge.active {
+      background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .json-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      white-space: pre;
+      tab-size: 2;
+      min-height: 6rem;
+      color: var(--text);
+    }
+    .err-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .err-list li { color: #c43535; font-size: 0.9rem; padding: 0.15rem 0; }
+    .err-list li::before { content: "! "; font-weight: 700; }
+    .copy-hint { font-size: 0.85rem; color: var(--muted); margin-left: 0.5rem; }
+    .no-cmds { color: var(--muted); font-size: 0.95rem; padding: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="quill">QUILL</span>
+        <span class="tag">Quillin Wizard</span>
+      </a>
+      <nav class="site" aria-label="Primary">
+        <ul>
+          <li><a href="https://hub.quillforall.org">Quillin Hub</a></li>
+          <li><a href="/docs/quillin-tutorial.html">Tutorial</a></li>
+          <li><a href="/docs/scripting.html">Reference</a></li>
+          <li><a href="/faq.html">FAQ</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="prose">
+    <div class="wrap">
+      <h1>Quillin Snippet Wizard</h1>
+      <p class="lede">
+        Build a snippet-only (Layer 1) Quillin without writing a single line of
+        code. Fill in the form, then copy or download your
+        <code>manifest.json</code>.
+      </p>
+      <p>
+        A snippet Quillin adds menu items and keyboard shortcuts that insert
+        text &mdash; with optional placeholders like <code>${selection}</code>,
+        <code>${date}</code>, <code>${word_at_cursor}</code>, and
+        <code>${uuid}</code> &mdash; into your document. No Python required.
+        <a href="/docs/quillin-tutorial.html">Follow the tutorial</a> to go
+        further with Python handlers.
+      </p>
+
+      <form id="wizard" novalidate autocomplete="off">
+
+        <!-- ── 1. IDENTITY ───────────────────────────────────────────── -->
+        <section class="wiz-section" aria-labelledby="sec-identity">
+          <h2 id="sec-identity">1. Extension identity</h2>
+
+          <div class="field-row">
+            <div class="field" id="f-name">
+              <label for="ext-name">
+                Display name <span class="required-mark" aria-label="required">*</span>
+              </label>
+              <span class="hint">Shown in menus and the Quillins Manager. Max 80 characters.</span>
+              <input type="text" id="ext-name" name="name" maxlength="80"
+                     placeholder="e.g. My Wrap Tools" autocomplete="off">
+              <span class="err-msg" role="alert">Name is required (max 80 characters).</span>
+            </div>
+
+            <div class="field" id="f-id">
+              <label for="ext-id">
+                Extension ID <span class="required-mark" aria-label="required">*</span>
+              </label>
+              <span class="hint">Reverse-DNS, all lowercase. e.g. <code>com.example.wraptools</code></span>
+              <input type="text" id="ext-id" name="id" maxlength="128"
+                     placeholder="com.yourname.quillinname" autocomplete="off"
+                     aria-describedby="ext-id-hint">
+              <span class="err-msg" role="alert" id="ext-id-err">
+                Must be lowercase letters, digits, dots, hyphens, or underscores. Min 3 chars.
+              </span>
+            </div>
+
+            <div class="field" id="f-version">
+              <label for="ext-version">
+                Version <span class="required-mark" aria-label="required">*</span>
+              </label>
+              <span class="hint">Semantic version: MAJOR.MINOR.PATCH</span>
+              <input type="text" id="ext-version" name="version" value="1.0.0"
+                     placeholder="1.0.0" autocomplete="off">
+              <span class="err-msg" role="alert">Must be MAJOR.MINOR.PATCH, e.g. 1.0.0</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="ext-author">Author</label>
+              <span class="hint">Your name or handle. Optional.</span>
+              <input type="text" id="ext-author" name="author" maxlength="120"
+                     placeholder="e.g. Jane Power-User" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="ext-license">License</label>
+              <span class="hint">Choose a licence for your Quillin.</span>
+              <select id="ext-license" name="license">
+                <option value="">-- choose --</option>
+                <option value="MIT" selected>MIT</option>
+                <option value="Apache-2.0">Apache-2.0</option>
+                <option value="GPL-3.0">GPL-3.0</option>
+                <option value="LGPL-3.0">LGPL-3.0</option>
+                <option value="BSD-2-Clause">BSD-2-Clause</option>
+                <option value="BSD-3-Clause">BSD-3-Clause</option>
+                <option value="ISC">ISC</option>
+                <option value="MPL-2.0">MPL-2.0</option>
+                <option value="Unlicense">Unlicense</option>
+                <option value="other">Other (type below)</option>
+              </select>
+            </div>
+
+            <div class="field" id="f-license-custom" style="display:none">
+              <label for="ext-license-custom">Custom licence identifier</label>
+              <span class="hint">SPDX identifier or short description.</span>
+              <input type="text" id="ext-license-custom" name="license_custom"
+                     maxlength="64" placeholder="e.g. Proprietary" autocomplete="off">
+            </div>
+
+            <div class="field" id="f-min-ver">
+              <label for="ext-min-ver">Minimum QUILL version</label>
+              <span class="hint">Leave blank unless you need a specific version. e.g. 1.0.0</span>
+              <input type="text" id="ext-min-ver" name="min_quill_version"
+                     placeholder="optional" autocomplete="off">
+              <span class="err-msg" role="alert">Must be MAJOR.MINOR.PATCH if provided.</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="ext-desc">Description</label>
+              <span class="hint">One or two sentences about what your Quillin does. Max 400 characters.</span>
+              <textarea id="ext-desc" name="description" maxlength="400" rows="2"
+                        placeholder="e.g. Wraps selected text in Markdown code fences or inserts a dated journal header."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── 2. COMMANDS ──────────────────────────────────────────── -->
+        <section class="wiz-section" aria-labelledby="sec-commands">
+          <h2 id="sec-commands">2. Commands and snippets</h2>
+          <p style="margin:0 0 1rem;color:var(--muted);font-size:0.95rem;">
+            Each command adds one item to a menu. The snippet is the text
+            inserted when the command runs. Use the placeholder buttons to add
+            dynamic tokens.
+          </p>
+
+          <div id="cmd-list" aria-live="polite" aria-label="Command list"></div>
+
+          <button type="button" id="btn-add-cmd" class="btn secondary"
+                  style="margin-top:0.5rem;">
+            + Add a command
+          </button>
+        </section>
+
+        <!-- ── 3. AUTO-DERIVED CAPABILITIES ────────────────────────── -->
+        <section class="wiz-section" aria-labelledby="sec-caps">
+          <h2 id="sec-caps">3. Capabilities (auto-derived)</h2>
+          <p style="margin:0 0 0.75rem;color:var(--muted);font-size:0.95rem;">
+            Snippet-only Quillins need no capabilities unless they use
+            <code>${clipboard}</code>, which requires the
+            <code>clipboard.read</code> capability. All other placeholders
+            &mdash; including <code>${title}</code>,
+            <code>${line_number}</code>, <code>${word_at_cursor}</code>, and
+            <code>${uuid}</code> &mdash; need no capabilities. The wizard
+            derives the correct set automatically from your snippets.
+          </p>
+          <div class="cap-badges" id="cap-badges" aria-live="polite" aria-label="Required capabilities">
+            <span class="cap-badge" id="cap-none" style="font-style:italic;">None required</span>
+          </div>
+        </section>
+
+        <!-- ── 4. GENERATED JSON ─────────────────────────────────────── -->
+        <section class="wiz-section" aria-labelledby="sec-output">
+          <h2 id="sec-output">4. Your manifest.json</h2>
+          <p style="margin:0 0 0.75rem;color:var(--muted);font-size:0.95rem;">
+            The manifest updates as you type. Fix any errors above, then copy
+            or download.
+          </p>
+
+          <ul class="err-list" id="err-list" aria-live="polite" aria-label="Validation errors"></ul>
+
+          <div class="json-box" id="json-output" role="region"
+               aria-label="Generated manifest JSON" tabindex="0"></div>
+
+          <div class="cta" style="margin-top:1rem;">
+            <button type="button" id="btn-copy" class="btn">Copy JSON</button>
+            <button type="button" id="btn-download" class="btn secondary">Download manifest.json</button>
+            <span class="copy-hint" id="copy-hint" aria-live="polite"></span>
+          </div>
+        </section>
+
+      </form>
+    </div>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <p class="note">
+        <strong class="quill" style="color:var(--accent)">QUILL</strong> &mdash;
+        Quality, Usable, Inclusive, Lightweight, Literate.
+      </p>
+      <nav aria-label="Documentation">
+        <h4>Documentation</h4>
+        <ul>
+          <li><a href="/docs/quillin-tutorial.html">Quillin tutorial</a></li>
+          <li><a href="/docs/scripting.html">Authoring reference</a></li>
+          <li><a href="/faq.html">FAQ</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Project">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://hub.quillforall.org">Quillin Hub</a></li>
+          <li><a href="/docs/quillin-submission.html">Submit a Quillin</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+<script>
+"use strict";
+// ── constants ──────────────────────────────────────────────────────────────
+const ID_PATTERN  = /^[a-z0-9]+([._-][a-z0-9]+)*$/;
+const VER_PATTERN = /^\d+\.\d+\.\d+$/;
+const CMD_PATTERN = /^ext\.[a-z0-9]+([._-][a-z0-9]+)*$/;
+const MENUS       = ["File","Edit","Insert","Format","Tools","Navigate","Search","View","Help"];
+const WHEN_OPTS   = [
+  { value: "always",              label: "Always" },
+  { value: "editor.hasSelection", label: "When text is selected" },
+  { value: "editor.hasText",      label: "When document has text" },
+  { value: "editor.empty",        label: "When document is empty" },
+];
+const TOKENS = [
+  { token: "${selection}",     tip: "Current selection (empty if none)" },
+  { token: "${clipboard}",     tip: "Current clipboard text (adds clipboard.read capability)" },
+  { token: "${date}",          tip: "Today's date in the user's configured format" },
+  { token: "${time}",          tip: "Current time in the user's configured format" },
+  { token: "${filename}",      tip: "Current document file name (e.g. notes.txt)" },
+  { token: "${title}",         tip: "Document file name without extension (e.g. notes)" },
+  { token: "${line_number}",   tip: "Current line number (1-indexed)" },
+  { token: "${word_at_cursor}",tip: "Word immediately surrounding the insertion point" },
+  { token: "${uuid}",          tip: "Fresh UUID4 generated at expansion time" },
+  { token: "${cursor}",        tip: "Final cursor position after insertion" },
+];
+const LICENSE_OPTS = ["","MIT","Apache-2.0","GPL-3.0","LGPL-3.0","BSD-2-Clause",
+                      "BSD-3-Clause","ISC","MPL-2.0","Unlicense","other"];
+
+let cmdCounter = 0;
+
+// ── helpers ────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+}
+
+function suggestExtId(name) {
+  const slug = slugify(name);
+  return slug ? "com.example." + slug : "";
+}
+
+function suggestCmdId(extId, title) {
+  const base = extId.split(".").pop() || "ext";
+  const slug = slugify(title);
+  return slug ? "ext." + base + "." + slug : "";
+}
+
+// ── command blocks ─────────────────────────────────────────────────────────
+function makeMenuSelect(selectId, labelText) {
+  const opts = MENUS.map(m => `<option value="${m}">${m}</option>`).join("");
+  return `
+    <label for="${selectId}">${esc(labelText)}</label>
+    <select id="${selectId}">${opts}</select>`;
+}
+
+function makeWhenSelect(selectId) {
+  const opts = WHEN_OPTS.map(o =>
+    `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("");
+  return `
+    <label for="${selectId}">Show when:</label>
+    <select id="${selectId}">${opts}</select>`;
+}
+
+function addCommandBlock() {
+  const n = ++cmdCounter;
+  const list = document.getElementById("cmd-list");
+
+  // Remove the "no commands" placeholder if present
+  const placeholder = list.querySelector(".no-cmds");
+  if (placeholder) placeholder.remove();
+
+  const block = document.createElement("div");
+  block.className = "cmd-block";
+  block.id = `cmd-block-${n}`;
+  block.dataset.cmdNum = n;
+
+  const tokenBtns = TOKENS.map(t =>
+    `<button type="button" class="token-btn"
+       data-token="${esc(t.token)}" data-target="cmd-snippet-${n}"
+       title="${esc(t.tip)}">${esc(t.token)}</button>`
+  ).join("");
+
+  const menuOpts = MENUS.map(m => `<option value="${m}">${m}</option>`).join("");
+  const whenOpts = WHEN_OPTS.map(o =>
+    `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("");
+
+  block.innerHTML = `
+    <div class="cmd-header">
+      <h3 id="cmd-heading-${n}">Command ${n}</h3>
+      <button type="button" class="btn-remove" data-remove="${n}"
+              aria-label="Remove command ${n}">Remove</button>
+    </div>
+    <div class="field-row">
+      <div class="field" id="f-cmd-id-${n}">
+        <label for="cmd-id-${n}">
+          Command ID <span class="required-mark" aria-label="required">*</span>
+        </label>
+        <span class="hint">Must start with <code>ext.</code> — e.g. <code>ext.wraptools.fence</code></span>
+        <input type="text" id="cmd-id-${n}" class="cmd-id-field"
+               maxlength="128" placeholder="ext.yourext.commandname"
+               data-cmd="${n}" autocomplete="off">
+        <span class="err-msg" role="alert">
+          Must start with <code>ext.</code> and use only lowercase letters, digits, dots, hyphens, or underscores.
+        </span>
+      </div>
+      <div class="field" id="f-cmd-title-${n}">
+        <label for="cmd-title-${n}">
+          Menu title <span class="required-mark" aria-label="required">*</span>
+        </label>
+        <span class="hint">Text shown in the menu. Max 80 characters.</span>
+        <input type="text" id="cmd-title-${n}" class="cmd-title-field"
+               maxlength="80" placeholder="e.g. Wrap in Code Fence"
+               data-cmd="${n}" autocomplete="off">
+        <span class="err-msg" role="alert">Title is required (max 80 characters).</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="cmd-snippet-${n}">
+        Snippet text <span class="required-mark" aria-label="required">*</span>
+      </label>
+      <span class="hint">The text inserted when the command runs. Click a placeholder to add it at the cursor.</span>
+      <textarea id="cmd-snippet-${n}" class="cmd-snippet-field"
+                rows="4" data-cmd="${n}"
+                placeholder="e.g. \`\`\`\n\${selection}\n\`\`\`\n\${cursor}"></textarea>
+      <div class="token-bar" role="group" aria-label="Insert placeholder token">
+        ${tokenBtns}
+      </div>
+      <span class="err-msg" role="alert">Snippet text is required.</span>
+    </div>
+
+    <div class="placement-grid" style="margin-top:1rem;">
+      <div class="placement-card">
+        <label class="check-label">
+          <input type="checkbox" id="cmd-addmenu-${n}" class="cmd-addmenu" data-cmd="${n}">
+          Add to a menu
+        </label>
+        <div class="placement-sub" id="cmd-menu-sub-${n}">
+          <label for="cmd-menu-${n}">Menu:</label>
+          <select id="cmd-menu-${n}" class="cmd-menu-field" data-cmd="${n}">
+            ${menuOpts}
+          </select>
+        </div>
+      </div>
+      <div class="placement-card">
+        <label class="check-label">
+          <input type="checkbox" id="cmd-addctx-${n}" class="cmd-addctx" data-cmd="${n}">
+          Add to right-click menu
+        </label>
+        <div class="placement-sub" id="cmd-ctx-sub-${n}">
+          ${makeWhenSelect(`cmd-ctx-when-${n}`, "")}
+        </div>
+      </div>
+      <div class="placement-card">
+        <label class="check-label" for="cmd-hotkey-${n}">
+          Keyboard shortcut
+        </label>
+        <div class="placement-sub visible">
+          <label for="cmd-hotkey-${n}" style="display:none">Binding</label>
+          <input type="text" id="cmd-hotkey-${n}" class="cmd-hotkey-field"
+                 data-cmd="${n}" placeholder="e.g. Ctrl+Shift+Grave, F"
+                 style="width:100%;padding:0.4rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.92rem;"
+                 autocomplete="off">
+          <span style="font-size:0.8rem;color:var(--muted);display:block;margin-top:0.3rem;">
+            Use the QUILL Key prefix <code>Ctrl+Shift+Grave,</code> to avoid conflicts.
+            Leave blank if no shortcut.
+          </span>
+        </div>
+      </div>
+    </div>`;
+
+  list.appendChild(block);
+
+  // wire toggle for "add to menu"
+  block.querySelector(`#cmd-addmenu-${n}`).addEventListener("change", e => {
+    document.getElementById(`cmd-menu-sub-${n}`)
+      .classList.toggle("visible", e.target.checked);
+    rebuild();
+  });
+
+  // wire toggle for "add to context menu"
+  block.querySelector(`#cmd-addctx-${n}`).addEventListener("change", e => {
+    document.getElementById(`cmd-ctx-sub-${n}`)
+      .classList.toggle("visible", e.target.checked);
+    rebuild();
+  });
+
+  // wire remove button
+  block.querySelector(`[data-remove="${n}"]`).addEventListener("click", () => {
+    block.remove();
+    if (!document.getElementById("cmd-list").querySelector(".cmd-block")) {
+      document.getElementById("cmd-list").innerHTML =
+        '<p class="no-cmds">No commands yet. Add one above.</p>';
+    }
+    rebuild();
+  });
+
+  // wire token buttons
+  block.querySelectorAll(".token-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ta = document.getElementById(btn.dataset.target);
+      if (!ta) return;
+      const token = btn.dataset.token;
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      const before = ta.value.slice(0, start);
+      const after  = ta.value.slice(end);
+      ta.value = before + token + after;
+      const pos = start + token.length;
+      ta.setSelectionRange(pos, pos);
+      ta.focus();
+      rebuild();
+    });
+  });
+
+  // auto-suggest command ID when title changes
+  block.querySelector(`#cmd-title-${n}`).addEventListener("input", e => {
+    const idField = document.getElementById(`cmd-id-${n}`);
+    const extId = document.getElementById("ext-id").value.trim();
+    if (!idField.value || idField.dataset.autofilled === "1") {
+      const suggested = suggestCmdId(extId, e.target.value);
+      if (suggested) {
+        idField.value = suggested;
+        idField.dataset.autofilled = "1";
+      }
+    }
+    rebuild();
+  });
+
+  // clear the autofill flag if the user manually edits the ID
+  block.querySelector(`#cmd-id-${n}`).addEventListener("input", e => {
+    e.target.dataset.autofilled = "";
+    rebuild();
+  });
+
+  rebuild();
+  document.getElementById(`cmd-title-${n}`).focus();
+}
+
+function showPlaceholder() {
+  const list = document.getElementById("cmd-list");
+  if (!list.querySelector(".cmd-block")) {
+    list.innerHTML = '<p class="no-cmds">No commands yet. Add one above.</p>';
+  }
+}
+
+// ── collect form state ──────────────────────────────────────────────────────
+function collectCommands() {
+  return Array.from(document.querySelectorAll(".cmd-block")).map(block => {
+    const n = block.dataset.cmdNum;
+    return {
+      id:        (document.getElementById(`cmd-id-${n}`)?.value     || "").trim(),
+      title:     (document.getElementById(`cmd-title-${n}`)?.value  || "").trim(),
+      snippet:   document.getElementById(`cmd-snippet-${n}`)?.value  || "",
+      addMenu:   document.getElementById(`cmd-addmenu-${n}`)?.checked || false,
+      menu:      document.getElementById(`cmd-menu-${n}`)?.value     || "Format",
+      addCtx:    document.getElementById(`cmd-addctx-${n}`)?.checked || false,
+      ctxWhen:   document.getElementById(`cmd-ctx-when-${n}`)?.value || "always",
+      hotkey:    (document.getElementById(`cmd-hotkey-${n}`)?.value  || "").trim(),
+    };
+  });
+}
+
+// ── build manifest object ───────────────────────────────────────────────────
+function buildManifest(cmds) {
+  const name    = document.getElementById("ext-name").value.trim();
+  const id      = document.getElementById("ext-id").value.trim();
+  const version = document.getElementById("ext-version").value.trim();
+  const author  = document.getElementById("ext-author").value.trim();
+  const licSel  = document.getElementById("ext-license").value;
+  const licCust = document.getElementById("ext-license-custom").value.trim();
+  const license = licSel === "other" ? licCust : licSel;
+  const minVer  = document.getElementById("ext-min-ver").value.trim();
+  const desc    = document.getElementById("ext-desc").value.trim();
+
+  // auto-derive capabilities
+  const needsClipboard = cmds.some(c => c.snippet.includes("${clipboard}"));
+  const caps = needsClipboard ? ["clipboard.read"] : [];
+
+  const manifest = { schema: "quill.extension/1" };
+  if (id)      manifest.id      = id;
+  if (name)    manifest.name    = name;
+  if (version) manifest.version = version;
+  if (author)  manifest.author  = author;
+  if (desc)    manifest.description = desc;
+  if (license) manifest.license = license;
+  if (minVer)  manifest.min_quill_version = minVer;
+  if (caps.length) manifest.capabilities = caps;
+
+  if (cmds.length) {
+    const commands = cmds.filter(c => c.id || c.title).map(c => {
+      const cmd = { id: c.id, title: c.title };
+      if (c.snippet) cmd.run = { snippet: c.snippet };
+      return cmd;
+    });
+    const menus = cmds
+      .filter(c => c.addMenu && c.id)
+      .map(c => ({ parent: c.menu, command: c.id }));
+    const context_menu = cmds
+      .filter(c => c.addCtx && c.id)
+      .map(c => {
+        const entry = { command: c.id };
+        if (c.ctxWhen !== "always") entry.when = c.ctxWhen;
+        return entry;
+      });
+    const hotkeys = cmds
+      .filter(c => c.hotkey && c.id)
+      .map(c => ({ command: c.id, binding: c.hotkey }));
+
+    manifest.contributes = {};
+    if (commands.length)      manifest.contributes.commands     = commands;
+    if (menus.length)         manifest.contributes.menus        = menus;
+    if (context_menu.length)  manifest.contributes.context_menu = context_menu;
+    if (hotkeys.length)       manifest.contributes.hotkeys      = hotkeys;
+  }
+
+  return manifest;
+}
+
+// ── validation ──────────────────────────────────────────────────────────────
+function validate(cmds) {
+  const errors = [];
+  const name    = document.getElementById("ext-name").value.trim();
+  const id      = document.getElementById("ext-id").value.trim();
+  const version = document.getElementById("ext-version").value.trim();
+  const minVer  = document.getElementById("ext-min-ver").value.trim();
+
+  function setField(fId, bad, msg) {
+    const el = document.getElementById(fId);
+    if (!el) return;
+    el.classList.toggle("invalid", bad);
+    if (bad) errors.push(msg);
+  }
+
+  setField("f-name",    !name || name.length > 80,
+    "Display name is required (max 80 characters).");
+  setField("f-id",      !id || !ID_PATTERN.test(id) || id.length < 3,
+    "Extension ID must match reverse-DNS format (all lowercase, dots/hyphens allowed).");
+  setField("f-version", !version || !VER_PATTERN.test(version),
+    "Version must be MAJOR.MINOR.PATCH.");
+  setField("f-min-ver", !!minVer && !VER_PATTERN.test(minVer),
+    "Minimum QUILL version must be MAJOR.MINOR.PATCH if provided.");
+
+  if (cmds.length === 0) {
+    errors.push("Add at least one command.");
+  }
+
+  const seenCmdIds = new Set();
+  cmds.forEach((c, i) => {
+    const num = i + 1;
+    const badId    = !c.id    || !CMD_PATTERN.test(c.id);
+    const badTitle = !c.title || c.title.length > 80;
+    const badSnip  = !c.snippet;
+
+    document.getElementById(`f-cmd-id-${document.querySelectorAll(".cmd-block")[i]?.dataset.cmdNum}`)
+      ?.classList.toggle("invalid", badId);
+    document.getElementById(`f-cmd-title-${document.querySelectorAll(".cmd-block")[i]?.dataset.cmdNum}`)
+      ?.classList.toggle("invalid", badTitle);
+    document.querySelector(`.cmd-block:nth-child(${num}) .field:has(textarea)`)
+      ?.classList.toggle("invalid", badSnip);
+
+    if (badId)    errors.push(`Command ${num}: ID must start with "ext." and use lowercase/digits/dots/hyphens.`);
+    else if (seenCmdIds.has(c.id)) errors.push(`Command ${num}: duplicate ID "${c.id}".`);
+    else seenCmdIds.add(c.id);
+
+    if (badTitle) errors.push(`Command ${num}: menu title is required (max 80 characters).`);
+    if (badSnip)  errors.push(`Command ${num}: snippet text is required.`);
+  });
+
+  return errors;
+}
+
+// ── update capability badges ────────────────────────────────────────────────
+function updateCaps(cmds) {
+  const needsClipboard = cmds.some(c => c.snippet.includes("${clipboard}"));
+  const box  = document.getElementById("cap-badges");
+  const none = document.getElementById("cap-none");
+  none.style.display = needsClipboard ? "none" : "";
+  let badge = document.getElementById("cap-clipboard-read");
+  if (needsClipboard && !badge) {
+    badge = document.createElement("span");
+    badge.className = "cap-badge active";
+    badge.id = "cap-clipboard-read";
+    badge.textContent = "clipboard.read";
+    badge.title = "Required because a snippet uses ${clipboard}";
+    box.appendChild(badge);
+  } else if (!needsClipboard && badge) {
+    badge.remove();
+  }
+}
+
+// ── main rebuild ────────────────────────────────────────────────────────────
+function rebuild() {
+  const cmds = collectCommands();
+  const manifest = buildManifest(cmds);
+  const errors = validate(cmds);
+  updateCaps(cmds);
+
+  // Update JSON preview
+  document.getElementById("json-output").textContent =
+    JSON.stringify(manifest, null, 2);
+
+  // Update error list
+  const errList = document.getElementById("err-list");
+  if (errors.length) {
+    errList.innerHTML = errors.map(e => `<li>${esc(e)}</li>`).join("");
+  } else {
+    errList.innerHTML = "";
+  }
+
+  // Enable/disable download+copy by whether there are errors
+  const noErrors = errors.length === 0;
+  document.getElementById("btn-copy").disabled = !noErrors;
+  document.getElementById("btn-download").disabled = !noErrors;
+}
+
+// ── copy / download ──────────────────────────────────────────────────────────
+document.getElementById("btn-copy").addEventListener("click", async () => {
+  const json = document.getElementById("json-output").textContent;
+  const hint = document.getElementById("copy-hint");
+  try {
+    await navigator.clipboard.writeText(json);
+    hint.textContent = "Copied!";
+  } catch {
+    // fallback for browsers that block clipboard API
+    const ta = document.createElement("textarea");
+    ta.value = json;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    hint.textContent = "Copied!";
+  }
+  setTimeout(() => { hint.textContent = ""; }, 2500);
+});
+
+document.getElementById("btn-download").addEventListener("click", () => {
+  const json = document.getElementById("json-output").textContent;
+  const blob = new Blob([json], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = "manifest.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── auto-suggest extension ID from name ─────────────────────────────────────
+document.getElementById("ext-name").addEventListener("input", e => {
+  const idField = document.getElementById("ext-id");
+  if (!idField.value || idField.dataset.autofilled === "1") {
+    const suggested = suggestExtId(e.target.value);
+    if (suggested) {
+      idField.value = suggested;
+      idField.dataset.autofilled = "1";
+    }
+  }
+  // also refresh command IDs that were auto-filled
+  document.querySelectorAll(".cmd-title-field").forEach(tf => {
+    tf.dispatchEvent(new Event("input"));
+  });
+  rebuild();
+});
+document.getElementById("ext-id").addEventListener("input", e => {
+  e.target.dataset.autofilled = "";
+  rebuild();
+});
+
+// ── license "other" toggle ───────────────────────────────────────────────────
+document.getElementById("ext-license").addEventListener("change", e => {
+  const show = e.target.value === "other";
+  document.getElementById("f-license-custom").style.display = show ? "" : "none";
+  rebuild();
+});
+
+// ── generic "rebuild on any input" ──────────────────────────────────────────
+document.getElementById("wizard").addEventListener("input", () => rebuild());
+document.getElementById("wizard").addEventListener("change", () => rebuild());
+
+// ── add command button ───────────────────────────────────────────────────────
+document.getElementById("btn-add-cmd").addEventListener("click", addCommandBlock);
+
+// ── init ─────────────────────────────────────────────────────────────────────
+showPlaceholder();
+rebuild();
+</script>
+</body>
+</html>
