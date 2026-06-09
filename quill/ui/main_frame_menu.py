@@ -51,18 +51,20 @@ class MenuBuilderMixin:
         file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
         self._id_publishing_connections = wx.NewIdRef()
         self._id_publishing_verify_connection = wx.NewIdRef()
-        file_menu.AppendSeparator()
-        file_menu.Append(
+        self._publishing_file_menu = wx.Menu()
+        self._publishing_file_menu.Append(
             self._id_publishing_connections,
             self._menu_label("Publishing &Connections...", "publishing.connections"),
         )
-        file_menu.Append(
+        self._publishing_file_menu.Append(
             self._id_publishing_verify_connection,
             self._menu_label(
                 "&Verify Current Publishing Connection",
                 "publishing.verify_connection",
             ),
         )
+        file_menu.AppendSeparator()
+        file_menu.AppendSubMenu(self._publishing_file_menu, "P&ublish")
         # New document from clipboard sits beside New (Power Tools recirculation,
         # menus.md Phase 4).
         self._append_power_tools_file_create_items(file_menu)
@@ -1417,12 +1419,12 @@ class MenuBuilderMixin:
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.exit_app(), id=self._id_exit)
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self.open_publishing_connections(),
+            lambda _e: self._open_publishing_connections(),
             id=self._id_publishing_connections,
         )
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self.verify_current_publishing_connection(),
+            lambda _e: self._verify_current_publishing_connection(),
             id=self._id_publishing_verify_connection,
         )
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.show_about_quill(), id=self._id_about_quill)

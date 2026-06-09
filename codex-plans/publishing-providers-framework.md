@@ -169,7 +169,7 @@ Additional planning implication from the menu source:
 
 - `quill/ui/main_frame_menu.py` is already a large contract-heavy surface, so the safest approach is to add publishing by following the existing menu-construction and binding style exactly
 - any first implementation should avoid spreading publishing menu construction across multiple new mixins unless there is already an established pattern for that split
-- since the shell already supports many top-level menus, adding a `Publishing` top-level menu is acceptable if it stays disciplined and uses the same contract-heavy pattern as the rest of the shell
+- publishing should stay inside the existing `File` menu grouping so it remains close to other document lifecycle actions and avoids unnecessary top-level menu sprawl
 
 ### Command system
 
@@ -748,7 +748,7 @@ The planned entry path is:
 
 - feature registry enables publishing for the active profile
 - command registry exposes publishing commands
-- the top-level `Publishing` menu surfaces the approved subset of those commands
+- the `File` menu surfaces the approved subset of those commands
 - dialogs handle connection setup and explicit remote actions
 - notifications and status text report outcomes
 
@@ -779,7 +779,7 @@ This keeps the UI language mostly provider-neutral while still allowing the firs
 
 The current planning model is deliberately conservative:
 
-- one bounded top-level menu change only: add `Publishing` near `Tools`, with no broader menu reorganization in the first slices
+- one bounded menu change only: add publishing actions inside `File`, with no broader top-level menu reorganization in the first slices
 - no new status-bar cell in the first slices
 - no plugin-runtime dependency
 - no silent background sync
@@ -792,21 +792,17 @@ That is the core reason this plan should integrate cleanly with the existing cod
 
 Based on the current menu layout, the best planning path is:
 
-### Phase A: use a top-level `Publishing` menu
+### Phase A: use the `File` menu
 
-Use a dedicated top-level `Publishing` menu near `Tools` for the first implementation slices. That reflects the updated product direction and gives publishing first-class discoverability.
+Use the existing `File` menu for the first implementation slices. That keeps publishing near save, open, and other document lifecycle actions, and it matches the updated product direction.
 
 Implementation note for that later slice:
 
-- update the factory top-level menu definition list in `quill/ui/main_frame.py`
-- keep the new menu inside the existing menu-customization and menu-editor model rather than treating it as a shell special case
+- add publishing actions through the existing `File` menu construction in `quill/ui/main_frame_menu.py`
+- keep the new actions inside the existing menu-customization and menu-editor model rather than treating them as a shell special case
 - keep the final order stable across menu build, menu customization, command palette discoverability, and help text
 
-Recommended initial menu label:
-
-- `Publishing`
-
-Recommended first commands in that menu:
+Recommended first commands in `File`:
 
 - `Publishing Connection...`
 - `Verify Publishing Connection`
@@ -823,9 +819,9 @@ Planning note from the menu contract audit:
 - each new publishing menu id must have a matching `wx.EVT_MENU` binding
 - the plan should treat that as part of the acceptance criteria for any implementation slice that adds menu items
 
-### Phase B: keep `Publishing` as a disciplined top-level menu
+### Phase B: keep publishing in `File`
 
-The current direction is to keep publishing as a top-level menu, not a temporary promotion that later moves again.
+The current direction is to keep publishing inside `File`, not move it back to a dedicated top-level menu later.
 
 ### Command palette integration
 
@@ -1087,7 +1083,7 @@ The plan should consider a future slice ready for implementation only if the sli
 
 ### Acceptance criteria for the first user-visible slice
 
-- the menu location is fixed as the top-level `Publishing` menu
+- the menu location is fixed inside the `File` menu
 - the command names and labels are fixed
 - the dialog list is fixed and minimal
 - the user journey is explicit and review-first
@@ -1194,6 +1190,7 @@ Accessibility and usability requirement:
 - helper text must explain what belongs in a field instead of giving only provider background or overly chatty prose
 - no field should feel effectively unlabeled just because nearby visual text exists
 - every publishing dialog must use Quill's shared dialog contract for modal ids, title announcement, focus routing, and escape/affirmative behavior
+- provider-specific sign-in choices shown in the UI must be limited to the methods that genuinely work in the current slice, not broader “planned” concepts that only exist in metadata
 
 ### First visible remote action
 
@@ -1525,7 +1522,7 @@ That slice is small enough to review clearly and large enough to validate the ar
 
 If the foundation slice succeeds, the next recommended slice should be limited to:
 
-- top-level `Publishing` menu wiring
+- `File` menu publishing action wiring
 - `Publishing Connection Dialog`
 - `Publish Current Content Dialog`
 - WordPress draft creation from the current document

@@ -56,6 +56,13 @@ def test_publishing_dialogs_explain_field_purpose_in_plain_language() -> None:
     assert "Sign-in method details:" in body
 
 
+def test_publishing_dialog_only_surfaces_working_wordpress_sign_in_method() -> None:
+    source = _publishing_tools_source()
+    assert "provider_auth_methods(provider_id)" in source
+    assert "provider_supported_auth_methods(" not in source
+    assert 'Application password' not in source
+
+
 def test_publishing_dialogs_have_no_storage_jargon() -> None:
     source = _publishing_tools_source()
     for term in ("Credential Manager", "DPAPI", "encrypted fallback"):

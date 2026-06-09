@@ -112,5 +112,12 @@ def test_insert_link_is_not_duplicated_in_edit_menu() -> None:
 def test_publishing_actions_live_in_file_menu_not_top_level_publishing_menu() -> None:
     source = _menu_source()
     assert 'menu_bar.Append(publishing_menu, "P&ublishing")' not in source
-    assert 'file_menu.Append(\n            self._id_publishing_connections,' in source
-    assert 'file_menu.Append(\n            self._id_publishing_verify_connection,' in source
+    assert 'file_menu.AppendSubMenu(self._publishing_file_menu, "P&ublish")' in source
+    assert (
+        'self._publishing_file_menu.Append(\n'
+        '            self._id_publishing_connections,' in source
+    )
+    assert (
+        'self._publishing_file_menu.Append(\n'
+        '            self._id_publishing_verify_connection,' in source
+    )

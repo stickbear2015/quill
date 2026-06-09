@@ -12,6 +12,7 @@ from quill.core.publishing_providers import (
     AUTH_METHOD_BROWSER_SESSION,
     AUTH_METHOD_EMAIL_LINK,
     provider_auth_methods,
+    provider_supported_auth_methods,
     publishing_auth_method_name,
     publishing_provider_help_text,
 )
@@ -165,18 +166,18 @@ def test_verify_publishing_connection_allows_local_http(
     assert "Publishing connection verified for localhost:8080." == message
 
 
-def test_verify_publishing_connection_reports_unimplemented_auth_method() -> None:
-    profile = PublishingConnectionProfile(
-        id="pub-one",
-        label="Site one",
-        provider_id="wordpress",
-        site_url="https://example.com",
-        auth_method=AUTH_METHOD_BROWSER_SESSION,
-        account_identifier="writer",
+def test_supported_but_unimplemented_auth_method_is_preserved_in_storage_model() -> None:
+    normalized = PublishingConnectionProfile.from_dict(
+        {
+            "id": "pub-one",
+            "label": "Site one",
+            "provider_id": "wordpress",
+            "site_url": "https://example.com",
+            "auth_method": AUTH_METHOD_BROWSER_SESSION,
+            "account_identifier": "writer",
+        }
     )
-    ok, message = publishing.verify_publishing_connection(profile, "")
-    assert ok is False
-    assert "is planned" in message
+    assert normalized.auth_method == AUTH_METHOD_BROWSER_SESSION
 
 
 def test_verify_publishing_connection_reports_auth_failure(
@@ -210,10 +211,13 @@ def test_verify_publishing_connection_reports_auth_failure(
     assert "Authentication failed" in message
 
 
-def test_provider_metadata_supports_multiple_auth_concepts() -> None:
+def test_provider_metadata_keeps_ui_honest_about_implemented_auth_methods() -> None:
     methods = provider_auth_methods("wordpress")
+    supported = provider_supported_auth_methods("wordpress")
     assert AUTH_METHOD_APP_PASSWORD in methods
-    assert AUTH_METHOD_BROWSER_SESSION in methods
-    assert AUTH_METHOD_EMAIL_LINK in methods
+    assert AUTH_METHOD_BROWSER_SESSION not in methods
+    assert AUTH_METHOD_EMAIL_LINK not in methods
+    assert AUTH_METHOD_BROWSER_SESSION in supported
+    assert AUTH_METHOD_EMAIL_LINK in supported
     assert publishing_auth_method_name(AUTH_METHOD_EMAIL_LINK) == "Email sign-in link"
     assert "WordPress.com" in publishing_provider_help_text("wordpress")

@@ -25,7 +25,7 @@ class PublishingProviderDefinition:
     name: str
     help_text: str
     default_content_format: str
-    auth_methods: tuple[str, ...]
+    supported_auth_methods: tuple[str, ...]
     implemented_auth_methods: tuple[str, ...]
 
 
@@ -67,7 +67,7 @@ PROVIDER_DEFINITIONS: dict[str, PublishingProviderDefinition] = {
             "that expose the standard WordPress REST API."
         ),
         default_content_format="html",
-        auth_methods=(
+        supported_auth_methods=(
             AUTH_METHOD_APP_PASSWORD,
             AUTH_METHOD_PASSWORD,
             AUTH_METHOD_BROWSER_SESSION,
@@ -107,7 +107,11 @@ def publishing_auth_method_name(auth_method_id: str) -> str:
 
 
 def provider_auth_methods(provider_id: str) -> tuple[str, ...]:
-    return publishing_provider_definition(provider_id).auth_methods
+    return publishing_provider_definition(provider_id).implemented_auth_methods
+
+
+def provider_supported_auth_methods(provider_id: str) -> tuple[str, ...]:
+    return publishing_provider_definition(provider_id).supported_auth_methods
 
 
 def provider_implemented_auth_methods(provider_id: str) -> tuple[str, ...]:

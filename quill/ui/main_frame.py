@@ -1425,13 +1425,13 @@ class MainFrame(
         self.commands.register(
             "publishing.connections",
             "Publishing Connections...",
-            self.open_publishing_connections,
+            self._open_publishing_connections,
             None,
         )
         self.commands.register(
             "publishing.verify_connection",
             "Verify Current Publishing Connection",
-            self.verify_current_publishing_connection,
+            self._verify_current_publishing_connection,
             None,
         )
         self.commands.register(
@@ -7671,14 +7671,14 @@ class MainFrame(
         else:
             self._set_status("AI connection settings cancelled")
 
-    def open_publishing_connections(self) -> None:
+    def _open_publishing_connections(self) -> None:
         dialog = PublishingConnectionsDialog(self.frame)
         if dialog.show_modal():
             self._set_status("Updated publishing connections")
         else:
             self._set_status("Publishing connections cancelled")
 
-    def verify_current_publishing_connection(self) -> None:
+    def _verify_current_publishing_connection(self) -> None:
         from quill.core.publishing import (
             current_publishing_connection,
             load_publishing_secret,

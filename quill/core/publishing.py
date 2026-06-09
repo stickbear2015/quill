@@ -15,8 +15,8 @@ from quill.core.paths import app_data_dir
 from quill.core.publishing_providers import (
     AUTH_METHOD_APP_PASSWORD,
     default_content_format_for_provider,
-    provider_auth_methods,
     provider_implemented_auth_methods,
+    provider_supported_auth_methods,
     publishing_auth_method_name,
     publishing_provider_display_name,
 )
@@ -45,7 +45,7 @@ class PublishingConnectionProfile:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> PublishingConnectionProfile:
         provider_id = str(data.get("provider_id", "wordpress")).strip().lower() or "wordpress"
-        allowed_auth = set(provider_auth_methods(provider_id))
+        allowed_auth = set(provider_supported_auth_methods(provider_id))
         auth_method = str(data.get("auth_method", AUTH_METHOD_APP_PASSWORD)).strip().lower()
         if auth_method not in allowed_auth:
             auth_method = AUTH_METHOD_APP_PASSWORD
