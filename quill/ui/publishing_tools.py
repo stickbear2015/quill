@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from quill.core.publishing import (
     PublishingConnectionProfile,
+    browse_publishing_content,
+    current_publishing_connection,
     load_publishing_connections,
+    load_publishing_remote_item,
     load_publishing_secret,
     remove_publishing_connection,
     save_publishing_secret,
@@ -10,9 +13,12 @@ from quill.core.publishing import (
     upsert_publishing_connection,
     verify_publishing_connection,
 )
+from quill.core.publishing_clients import PublishingRemoteDocument, PublishingRemoteItemSummary
 from quill.core.publishing_providers import (
     auth_method_definition,
+    available_publishing_providers,
     provider_auth_methods,
+    provider_content_kinds,
     publishing_auth_method_name,
     publishing_provider_display_name,
 )
@@ -20,12 +26,13 @@ from quill.ui.dialog_contract import apply_modal_ids, show_modal_dialog
 
 
 class EditPublishingConnectionDialog:
-    _PROVIDER_CHOICES: tuple[tuple[str, str], ...] = (("wordpress", "WordPress"),)
-
     def __init__(self, parent: object, profile: PublishingConnectionProfile | None = None) -> None:
         import wx
 
         self._wx = wx
+        self._provider_choices = tuple(
+            (item.id, item.name) for item in available_publishing_providers()
+        )
         self.dialog = wx.Dialog(
             parent,
             title="Edit Publishing Connection",
@@ -69,7 +76,8 @@ class EditPublishingConnectionDialog:
 
         self.provider_caption = wx.StaticText(panel, label="Publishing type")
         self.provider = wx.Choice(
-            panel, choices=[label for _value, label in self._PROVIDER_CHOICES]
+            panel,
+            choices=[label for _value, label in self._provider_choices],
         )
         self.provider.SetName("Publishing type")
         self.provider.SetSelection(self._provider_choice_index(self._profile.provider_id))
@@ -141,16 +149,16 @@ class EditPublishingConnectionDialog:
 
     def _provider_choice_index(self, provider_id: str) -> int:
         normalized = provider_id.strip().lower()
-        for index, (value, _label) in enumerate(self._PROVIDER_CHOICES):
+        for index, (value, _label) in enumerate(self._provider_choices):
             if value == normalized:
                 return index
         return 0
 
     def _provider_value(self) -> str:
         selection = self.provider.GetSelection()
-        if selection < 0 or selection >= len(self._PROVIDER_CHOICES):
-            return self._PROVIDER_CHOICES[0][0]
-        return self._PROVIDER_CHOICES[selection][0]
+        if selection < 0 or selection >= len(self._provider_choices):
+            return self._provider_choices[0][0]
+        return self._provider_choices[selection][0]
 
     def _auth_method_value(self) -> str:
         selection = self.auth_method.GetSelection()
@@ -253,6 +261,184 @@ class EditPublishingConnectionDialog:
             save_publishing_secret(saved.id, self.secret.GetValue())
             self._profile = saved
             return saved
+        finally:
+            self.dialog.Destroy()
+
+
+class BrowsePublishingContentDialog:
+    def __init__(self, parent: object) -> None:
+        import wx
+
+        self._wx = wx
+        self._profile = current_publishing_connection()
+        self._secret = load_publishing_secret(self._profile.id) if self._profile is not None else ""
+        self._items: list[PublishingRemoteItemSummary] = []
+        self._selected_document: PublishingRemoteDocument | None = None
+
+        self.dialog = wx.Dialog(
+            parent,
+            title="Browse Published Content",
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
+        self.dialog.SetSize((860, 620))
+
+        root = wx.BoxSizer(wx.VERTICAL)
+        root.Add(
+            wx.StaticText(
+                self.dialog,
+                label=(
+                    "Browse posts and pages from the current publishing connection, "
+                    "then open one in Quill."
+                ),
+            ),
+            0,
+            wx.EXPAND | wx.ALL,
+            8,
+        )
+
+        filters = wx.BoxSizer(wx.HORIZONTAL)
+        self.content_scope_caption = wx.StaticText(self.dialog, label="Content to browse")
+        filters.Add(self.content_scope_caption, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.content_scope = wx.Choice(
+            self.dialog,
+            choices=["Posts and pages", "Posts only", "Pages only"],
+        )
+        self.content_scope.SetName("Content to browse")
+        self.content_scope.SetSelection(0)
+        filters.Add(self.content_scope, 0)
+        root.Add(filters, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        self.load_button = wx.Button(self.dialog, label="Load Content")
+        root.Add(self.load_button, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        root.Add(
+            wx.StaticText(self.dialog, label="Published content"),
+            0,
+            wx.LEFT | wx.RIGHT,
+            8,
+        )
+        self.content_list = wx.ListBox(self.dialog)
+        self.content_list.SetName("Published content")
+        root.Add(self.content_list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        root.Add(
+            wx.StaticText(self.dialog, label="Selected published content details"),
+            0,
+            wx.LEFT | wx.RIGHT,
+            8,
+        )
+        self.summary = wx.TextCtrl(
+            self.dialog,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.BORDER_SIMPLE,
+            size=(-1, 140),
+        )
+        self.summary.SetName("Selected published content details")
+        root.Add(self.summary, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.open_button = wx.Button(self.dialog, wx.ID_OK, label="Open in Quill")
+        self.open_button.SetName("Open in Quill")
+        buttons.Add(self.open_button, 0, wx.RIGHT, 8)
+        buttons.Add(wx.Button(self.dialog, wx.ID_CANCEL, label="Close"), 0)
+        root.Add(buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 8)
+
+        self.dialog.SetSizerAndFit(root)
+        apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+        self.load_button.Bind(wx.EVT_BUTTON, self._on_load)
+        self.content_list.Bind(wx.EVT_LISTBOX, self._on_selection_changed)
+        self.content_list.Bind(wx.EVT_LISTBOX_DCLICK, self._on_open)
+        self.open_button.Bind(wx.EVT_BUTTON, self._on_open)
+        self._update_summary("Choose Load Content to browse published content.")
+        self.content_scope.SetFocus()
+
+    def _scope_kinds(self) -> tuple[str, ...]:
+        if self._profile is None:
+            return ("post", "page")
+        available = provider_content_kinds(self._profile.provider_id)
+        selection = self.content_scope.GetSelection()
+        if selection == 1:
+            return tuple(kind for kind in available if kind == "post")
+        if selection == 2:
+            return tuple(kind for kind in available if kind == "page")
+        return available
+
+    def _selected_item(self) -> PublishingRemoteItemSummary | None:
+        selection = self.content_list.GetSelection()
+        if selection == self._wx.NOT_FOUND or selection < 0:
+            return None
+        if selection >= len(self._items):
+            return None
+        return self._items[selection]
+
+    def _item_label(self, item: PublishingRemoteItemSummary) -> str:
+        kind = "Post" if item.content_kind == "post" else "Page"
+        status = item.status or "unknown"
+        return f"{kind}: {item.title} ({status})"
+
+    def _update_summary(self, fallback: str | None = None) -> None:
+        selected = self._selected_item()
+        if selected is None:
+            self.summary.SetValue(fallback or "No published content selected.")
+            return
+        lines = [
+            f"Title: {selected.title}",
+            f"Type: {'Post' if selected.content_kind == 'post' else 'Page'}",
+            f"Status: {selected.status or 'unknown'}",
+            f"Updated: {selected.updated_at or '(unknown)'}",
+            f"Link: {selected.remote_url or '(not available)'}",
+        ]
+        self.summary.SetValue("\n".join(lines))
+
+    def _on_load(self, _event: object) -> None:
+        if self._profile is None:
+            self._update_summary("No current publishing connection is selected.")
+            return
+        ok, message, items = browse_publishing_content(
+            self._profile,
+            self._secret,
+            content_kinds=self._scope_kinds(),
+        )
+        self._items = items
+        self.content_list.Set([self._item_label(item) for item in items])
+        if items:
+            self.content_list.SetSelection(0)
+        self._update_summary(message if not items else None)
+        if ok and items:
+            self._update_summary()
+        icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
+        self._wx.MessageBox(message, "Browse Published Content", icon | self._wx.OK)
+
+    def _on_selection_changed(self, _event: object) -> None:
+        self._update_summary()
+
+    def _on_open(self, _event: object) -> None:
+        selected = self._selected_item()
+        if selected is None or self._profile is None:
+            self._update_summary("Select published content before opening it.")
+            return
+        ok, message, document = load_publishing_remote_item(
+            self._profile,
+            self._secret,
+            content_kind=selected.content_kind,
+            remote_id=selected.remote_id,
+        )
+        if not ok or document is None:
+            self._wx.MessageBox(
+                message,
+                "Browse Published Content",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._update_summary(message)
+            return
+        self._selected_document = document
+        self.dialog.EndModal(self._wx.ID_OK)
+
+    def show_modal(self) -> PublishingRemoteDocument | None:
+        self.dialog.CentreOnParent()
+        try:
+            if show_modal_dialog(self.dialog, "Browse Published Content") != self._wx.ID_OK:
+                return None
+            return self._selected_document
         finally:
             self.dialog.Destroy()
 

@@ -258,6 +258,7 @@ Additional planning implication:
 - secure-secret handling should follow the same split between ordinary settings and secure credential storage
 - generic auth-method architecture may describe more than one future sign-in style, but a provider must not advertise or surface a method unless that provider actually supports a real remote flow Quill can implement honestly
 - for WordPress specifically, the current implementation scope should treat application passwords as the built-in remote REST-auth path; browser-session, email-link, and ordinary-site-password flows stay architectural concepts for future providers or explicit provider-specific integrations, not current WordPress UI choices
+- browse, open, and later update flows should route through a provider-client seam in `quill/core` so the UI never owns WordPress endpoint knowledge directly
 
 ### Notifications and status bar
 
@@ -317,6 +318,12 @@ Planning implication:
 
 - this plan must not depend on Quillins for the first implementation
 - future provider extensibility should be architected internally first, then exposed later when plugin runtime policy actually supports it
+
+Implementation clarification:
+
+- the current approved implementation should provide a built-in provider registry and provider-client contract for publishing actions
+- WordPress is the first built-in provider client using that contract
+- future Quillins may eventually contribute providers through an adapter to that same contract, but the current implementation must not pretend live Quillin provider loading exists before the plugin runtime policy changes
 
 ### Test and enforcement audit
 
@@ -1393,6 +1400,23 @@ Planned tests and governance for this slice:
 - user-facing text reviewed for plain-language and explicit-consent wording
 - relevant accessibility and usability tests in `tests/` must be run against the publishing dialogs and menu flow before the slice is considered complete
 - publishing-focused unit tests may stay grouped in a small dedicated publishing test module at first; if the command family, provider matrix, or remote-content workflows grow substantially, split those tests into narrower publishing-specific files rather than folding more coverage into unrelated general test modules
+
+Current implementation progress inside this slice:
+
+- publishing now has a built-in provider-client seam in `quill/core` for browse and open actions
+- WordPress browse currently supports both posts and pages through that provider-client seam
+- the `File -> Publish` submenu now includes `Browse Published Content...`
+- the browse dialog loads published content through the current connection and can open the selected remote post or page into a normal Quill editor tab
+- loaded remote content currently enters the editor as an untitled local tab with publishing metadata attached in `Document.source_metadata`
+- this keeps the editor flow simple now while leaving room for a later local linkage registry and explicit update flow
+
+Next implementation steps for this slice:
+
+- add an explicit `Update Remote Content...` flow that reads the publishing metadata from the current document and confirms the target site, content type, and remote item before sending changes
+- define and implement the first Quill-local linkage registry for local file path to remote id plus remote URL so saved local documents can reconnect to the correct remote item without relying only on the open tab state
+- add the first publish/create dialogs for current-document post and page creation using the same provider-client seam instead of a WordPress-specific UI path
+- ensure loaded remote posts and pages announce enough plain-language context in the editor and status text that users understand whether they are editing local-only content or content already linked to a remote site
+- expand focused publishing tests to cover update preconditions, linkage-record persistence, and command wiring for the next publish and update actions before broader sync work begins
 
 ### Slice 3: schedule and refinement after create, browse, and update are stable
 

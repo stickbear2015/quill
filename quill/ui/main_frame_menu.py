@@ -57,6 +57,7 @@ class MenuBuilderMixin:
         file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
         self._id_publishing_connections = wx.NewIdRef()
         self._id_publishing_verify_connection = wx.NewIdRef()
+        self._id_publishing_browse_content = wx.NewIdRef()
         self._publishing_file_menu = wx.Menu()
         self._publishing_file_menu.Append(
             self._id_publishing_connections,
@@ -68,6 +69,10 @@ class MenuBuilderMixin:
                 "&Verify Current Publishing Connection",
                 "publishing.verify_connection",
             ),
+        )
+        self._publishing_file_menu.Append(
+            self._id_publishing_browse_content,
+            self._menu_label("&Browse Published Content...", "publishing.browse_content"),
         )
         file_menu.AppendSeparator()
         file_menu.AppendSubMenu(self._publishing_file_menu, "P&ublish")
@@ -1435,6 +1440,11 @@ class MenuBuilderMixin:
             wx.EVT_MENU,
             lambda _e: self._verify_current_publishing_connection(),
             id=self._id_publishing_verify_connection,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self._browse_publishing_content(),
+            id=self._id_publishing_browse_content,
         )
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.show_about_quill(), id=self._id_about_quill)
         # macOS routes the application-menu "About" to wx.ID_ABOUT — wire it to

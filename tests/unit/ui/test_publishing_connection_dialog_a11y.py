@@ -40,10 +40,21 @@ def test_manager_dialog_names_the_connections_list() -> None:
     assert 'self.summary.SetName("Selected publishing connection details")' in body
 
 
+def test_browse_dialog_names_the_content_list() -> None:
+    source = _publishing_tools_source()
+    assert 'title="Browse Published Content"' in source
+    assert 'wx.StaticText(self.dialog, label="Published content")' in source
+    assert 'self.content_list.SetName("Published content")' in source
+    assert 'wx.StaticText(self.dialog, label="Selected published content details")' in source
+    assert 'self.summary.SetName("Selected published content details")' in source
+    assert 'self.content_scope.SetName("Content to browse")' in source
+
+
 def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> None:
     source = _publishing_tools_source()
     assert "self.connection_label.SetFocus()" in source
     assert "self.connection_list.SetFocus()" in source
+    assert "self.content_scope.SetFocus()" in source
     assert "self.reveal_secret.MoveAfterInTabOrder(self.secret)" in source
     assert "self.verify_button.MoveAfterInTabOrder(self.reveal_secret)" in source
     assert "self.secret_masked = wx.TextCtrl(panel, style=wx.TE_PASSWORD)" in source
@@ -68,6 +79,7 @@ def test_publishing_dialogs_keep_plain_language_status_copy() -> None:
     source = _publishing_tools_source()
     assert "Create or edit a publishing connection." in source
     assert "Save and verify this connection before publishing." in source
+    assert "Browse posts and pages from the current publishing connection" in source
     assert "Manage your saved publishing connections here." not in source
 
 
@@ -110,3 +122,9 @@ def test_publishing_dialogs_use_modal_contract() -> None:
     assert "apply_modal_ids(" in source
     assert "show_modal_dialog(" in source
     assert ".ShowModal()" not in source
+
+
+def test_publishing_provider_choices_come_from_registry() -> None:
+    body = _edit_dialog_source()
+    assert "available_publishing_providers()" in body
+    assert "_PROVIDER_CHOICES" not in body

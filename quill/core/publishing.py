@@ -12,9 +12,15 @@ from uuid import uuid4
 
 from quill.core.net import verified_ssl_context
 from quill.core.paths import app_data_dir
+from quill.core.publishing_clients import (
+    PublishingRemoteDocument,
+    PublishingRemoteItemSummary,
+    publishing_provider_client,
+)
 from quill.core.publishing_providers import (
     AUTH_METHOD_APP_PASSWORD,
     default_content_format_for_provider,
+    provider_content_kinds,
     provider_implemented_auth_methods,
     provider_supported_auth_methods,
     publishing_auth_method_name,
@@ -241,6 +247,95 @@ def verify_publishing_connection(
     return (
         False,
         f"{publishing_auth_method_name(normalized.auth_method)} is not implemented yet.",
+    )
+
+
+def browse_publishing_content(
+    profile: PublishingConnectionProfile,
+    secret: str,
+    *,
+    content_kinds: tuple[str, ...] | None = None,
+    timeout_seconds: float = 10.0,
+) -> tuple[bool, str, list[PublishingRemoteItemSummary]]:
+    normalized = _normalized_profile(profile)
+    if not normalized.site_url:
+        return False, "Enter a site URL before browsing published content.", []
+    policy_error = _validate_endpoint_security(normalized.site_url)
+    if policy_error:
+        return False, policy_error, []
+    if normalized.auth_method not in provider_implemented_auth_methods(normalized.provider_id):
+        return (
+            False,
+            (
+                f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
+                f"{publishing_provider_display_name(normalized.provider_id)}, "
+                "but is not implemented yet."
+            ),
+            [],
+        )
+    client = publishing_provider_client(normalized.provider_id)
+    if client is None:
+        provider_name = publishing_provider_display_name(normalized.provider_id)
+        return (
+            False,
+            f"{provider_name} browsing is not implemented yet.",
+            [],
+        )
+    requested_kinds = content_kinds or provider_content_kinds(normalized.provider_id)
+    allowed_kinds = set(provider_content_kinds(normalized.provider_id))
+    filtered_kinds = tuple(kind for kind in requested_kinds if kind in allowed_kinds)
+    if not filtered_kinds:
+        return False, "No supported publishing content types are available for this provider.", []
+    return client.browse_content(
+        normalized,
+        secret,
+        content_kinds=filtered_kinds,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def load_publishing_remote_item(
+    profile: PublishingConnectionProfile,
+    secret: str,
+    *,
+    content_kind: str,
+    remote_id: str,
+    timeout_seconds: float = 10.0,
+) -> tuple[bool, str, PublishingRemoteDocument | None]:
+    normalized = _normalized_profile(profile)
+    if not normalized.site_url:
+        return False, "Enter a site URL before opening published content.", None
+    policy_error = _validate_endpoint_security(normalized.site_url)
+    if policy_error:
+        return False, policy_error, None
+    if normalized.auth_method not in provider_implemented_auth_methods(normalized.provider_id):
+        return (
+            False,
+            (
+                f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
+                f"{publishing_provider_display_name(normalized.provider_id)}, "
+                "but is not implemented yet."
+            ),
+            None,
+        )
+    client = publishing_provider_client(normalized.provider_id)
+    if client is None:
+        provider_name = publishing_provider_display_name(normalized.provider_id)
+        return (
+            False,
+            f"{provider_name} loading is not implemented yet.",
+            None,
+        )
+    if content_kind not in provider_content_kinds(normalized.provider_id):
+        return False, "That publishing content type is not supported for this provider.", None
+    if not remote_id.strip():
+        return False, "Select published content before opening it.", None
+    return client.load_remote_item(
+        normalized,
+        secret,
+        content_kind=content_kind,
+        remote_id=remote_id,
+        timeout_seconds=timeout_seconds,
     )
 
 

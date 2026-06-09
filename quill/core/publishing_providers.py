@@ -27,6 +27,8 @@ class PublishingProviderDefinition:
     default_content_format: str
     supported_auth_methods: tuple[str, ...]
     implemented_auth_methods: tuple[str, ...]
+    supported_content_kinds: tuple[str, ...]
+    implemented_content_kinds: tuple[str, ...]
 
 
 AUTH_METHOD_DEFINITIONS: dict[str, PublishingAuthMethodDefinition] = {
@@ -69,8 +71,14 @@ PROVIDER_DEFINITIONS: dict[str, PublishingProviderDefinition] = {
         default_content_format="html",
         supported_auth_methods=(AUTH_METHOD_APP_PASSWORD,),
         implemented_auth_methods=(AUTH_METHOD_APP_PASSWORD,),
+        supported_content_kinds=("post", "page"),
+        implemented_content_kinds=("post", "page"),
     ),
 }
+
+
+def available_publishing_providers() -> tuple[PublishingProviderDefinition, ...]:
+    return tuple(PROVIDER_DEFINITIONS.values())
 
 
 def publishing_provider_definition(provider_id: str) -> PublishingProviderDefinition:
@@ -111,3 +119,11 @@ def provider_supported_auth_methods(provider_id: str) -> tuple[str, ...]:
 
 def provider_implemented_auth_methods(provider_id: str) -> tuple[str, ...]:
     return publishing_provider_definition(provider_id).implemented_auth_methods
+
+
+def provider_content_kinds(provider_id: str) -> tuple[str, ...]:
+    return publishing_provider_definition(provider_id).implemented_content_kinds
+
+
+def provider_supported_content_kinds(provider_id: str) -> tuple[str, ...]:
+    return publishing_provider_definition(provider_id).supported_content_kinds

@@ -487,7 +487,7 @@ from quill.ui.main_frame_sessions import SessionsMixin
 from quill.ui.main_frame_ssh import SshEditingMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
 from quill.ui.palette import CommandPaletteDialog
-from quill.ui.publishing_tools import PublishingConnectionsDialog
+from quill.ui.publishing_tools import BrowsePublishingContentDialog, PublishingConnectionsDialog
 from quill.ui.rich_text_surface import RichTextSurface
 from quill.ui.session_browser import SessionBrowserDialog
 from quill.ui.share_dialogs import (
@@ -1437,6 +1437,12 @@ class MainFrame(
             "publishing.verify_connection",
             "Verify Current Publishing Connection",
             self._verify_current_publishing_connection,
+            None,
+        )
+        self.commands.register(
+            "publishing.browse_content",
+            "Browse Published Content...",
+            self._browse_publishing_content,
             None,
         )
         self.commands.register(
@@ -7710,6 +7716,35 @@ class MainFrame(
         icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
         self._show_message_box(message, "Publishing Connection Check", icon | self._wx.OK)
         self._set_status(message)
+
+    def _browse_publishing_content(self) -> None:
+        dialog = BrowsePublishingContentDialog(self.frame)
+        remote_document = dialog.show_modal()
+        if remote_document is None:
+            self._set_status("Browse published content cancelled")
+            return
+        metadata = {
+            "publishing_provider_id": remote_document.provider_id,
+            "publishing_site_url": remote_document.site_url,
+            "publishing_remote_id": remote_document.remote_id,
+            "publishing_remote_url": remote_document.remote_url,
+            "publishing_content_kind": remote_document.content_kind,
+            "publishing_status": remote_document.status,
+            "publishing_updated_at": remote_document.updated_at,
+        }
+        document = Document(
+            text=remote_document.body,
+            path=None,
+            modified=False,
+            source_metadata=metadata,
+        )
+        self._clear_empty_workspace_state()
+        self._create_document_tab(document, select=True)
+        self._location_ring = LocationRing()
+        self._location_ring.record(0)
+        self._refresh_title()
+        content_kind = "page" if remote_document.content_kind == "page" else "post"
+        self._set_status(f"Opened {content_kind} from publishing.")
 
     def _set_ai_menu_status_badge(
         self, ready: bool | None, detail: str, badge: str | None = None
