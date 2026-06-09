@@ -262,22 +262,21 @@ class PublishingConnectionsDialog:
 
         root = wx.BoxSizer(wx.VERTICAL)
         root.Add(
-            wx.StaticText(
-                self.dialog,
-                label=(
-                    "Manage your saved publishing connections here. You can keep multiple sites, "
-                    "choose the current one, and verify the selected connection before publishing."
-                ),
-            ),
+            wx.StaticText(self.dialog, label="Saved publishing connections"),
             0,
-            wx.EXPAND | wx.ALL,
+            wx.LEFT | wx.RIGHT | wx.TOP,
             8,
         )
-
         self.connection_list = wx.ListBox(self.dialog)
         self.connection_list.SetName("Saved publishing connections")
         root.Add(self.connection_list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
+        root.Add(
+            wx.StaticText(self.dialog, label="Selected publishing connection details"),
+            0,
+            wx.LEFT | wx.RIGHT,
+            8,
+        )
         self.summary = wx.TextCtrl(
             self.dialog,
             style=wx.TE_MULTILINE | wx.TE_READONLY | wx.BORDER_SIMPLE,

@@ -33,7 +33,9 @@ def test_edit_connection_controls_set_accessible_names() -> None:
 
 def test_manager_dialog_names_the_connections_list() -> None:
     body = _manager_dialog_source()
+    assert 'wx.StaticText(self.dialog, label="Saved publishing connections")' in body
     assert 'self.connection_list.SetName("Saved publishing connections")' in body
+    assert 'wx.StaticText(self.dialog, label="Selected publishing connection details")' in body
     assert 'self.summary.SetName("Selected publishing connection details")' in body
 
 
@@ -58,9 +60,10 @@ def test_publishing_dialogs_keep_a_simple_label_then_control_flow() -> None:
 
 
 def test_publishing_dialogs_keep_plain_language_status_copy() -> None:
-    body = _edit_dialog_source()
-    assert "Create or edit a publishing connection." in body
-    assert "Save and verify this connection before publishing." in body
+    source = _publishing_tools_source()
+    assert "Create or edit a publishing connection." in source
+    assert "Save and verify this connection before publishing." in source
+    assert "Manage your saved publishing connections here." not in source
 
 
 def test_publishing_dialog_labels_are_immediately_paired_with_controls() -> None:

@@ -229,6 +229,7 @@ Additional planning implication from the dialog governance tooling:
 - any custom publishing dialog must use Quill's shared dialog contract helpers (`apply_modal_ids`, `show_modal_dialog`, and the associated focus-routing behavior) instead of raw `ShowModal()` or one-off modal wiring
 - this requirement is not new policy invented for publishing; it is consistent with the existing repo-wide accessibility contract already stated in `docs/QUILL-PRD.md`, especially the label-association and label-in-name expectations and the A11Y-4 dialog-governance work
 - publishing dialog fields should follow the repo's clearer native pattern: one visible label directly paired with one control in the same row or immediately above it, with accessible names that begin with the same visible label text
+- publishing manager dialogs should prefer direct labels for their primary list, details, and action regions instead of long introductory paragraphs when the controls themselves are the main thing a screen-reader user needs to reach
 - publishing helper or reassurance copy should live in intro, status, or verification text, not as free-floating field-adjacent text that can be announced as though it belongs to the next control
 - publishing code and tests should explicitly guard against label-order regressions found in human screen-reader testing, including JAWS and other manual validation called for by the dialog contract
 
