@@ -919,9 +919,11 @@ class MenuBuilderMixin:
         ai_menu.Check(self._id_ai_enabled, load_ai_enabled())
         ai_menu.AppendSeparator()
         ai_menu.Append(self._id_ai_status_badge, "AI Status: Not checked")
-        ai_menu.Append(
-            self._id_ai_status_detail, "AI Detail: Open AI Connection to verify settings"
-        )
+        # AI Status and AI Detail are informational status lines (selecting either
+        # re-checks the backend). Connection setup lives in one place — "AI Model &
+        # Connection..." — so AI Detail no longer doubles as a second launcher for
+        # the connection dialog (#132).
+        ai_menu.Append(self._id_ai_status_detail, "AI Detail: Not checked")
         ai_menu.Append(
             self._id_ai_hub,
             self._menu_label("AI &Hub...", "tools.ai_hub"),
@@ -1492,7 +1494,7 @@ class MenuBuilderMixin:
         )
         self.frame.Bind(
             wx.EVT_MENU,
-            lambda _e: self.open_ai_preferences(),
+            lambda _e: self._refresh_ai_status(),
             id=self._id_ai_status_detail,
         )
         self.frame.Bind(wx.EVT_MENU, self._on_toggle_ai_enabled, id=self._id_ai_enabled)
