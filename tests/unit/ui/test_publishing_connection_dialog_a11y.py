@@ -44,6 +44,7 @@ def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> N
     assert "self.connection_label.SetFocus()" in source
     assert "self.connection_list.SetFocus()" in source
     assert "self.reveal_secret.MoveAfterInTabOrder(self.secret)" in source
+    assert "self.verify_button.MoveAfterInTabOrder(self.reveal_secret)" in source
 
 
 def test_publishing_dialogs_keep_a_simple_label_then_control_flow() -> None:

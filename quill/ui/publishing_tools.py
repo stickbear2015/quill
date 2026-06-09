@@ -128,7 +128,7 @@ class EditPublishingConnectionDialog:
         self.reveal_secret.Bind(wx.EVT_BUTTON, self._on_toggle_secret_reveal)
         self._secret_revealed = False
         self._on_provider_changed(None)
-        self.reveal_secret.MoveAfterInTabOrder(self.secret)
+        self._restore_secret_tab_order()
         self.connection_label.SetFocus()
 
     def _provider_choice_index(self, provider_id: str) -> int:
@@ -205,8 +205,12 @@ class EditPublishingConnectionDialog:
         self.reveal_secret.SetName(
             "Hide application password" if revealed else "Reveal application password"
         )
-        self.reveal_secret.MoveAfterInTabOrder(self.secret)
+        self._restore_secret_tab_order()
         self.dialog.Layout()
+
+    def _restore_secret_tab_order(self) -> None:
+        self.reveal_secret.MoveAfterInTabOrder(self.secret)
+        self.verify_button.MoveAfterInTabOrder(self.reveal_secret)
 
     def _on_verify_connection(self, _event: object) -> None:
         ok, message = verify_publishing_connection(self._current_profile(), self.secret.GetValue())
