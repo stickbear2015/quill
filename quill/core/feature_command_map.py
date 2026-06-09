@@ -221,4 +221,12 @@ COMMAND_FEATURE_MAP: dict[str, str] = {
     "tools.run_python": "future.ai",
     "publishing.connections": "future.publishing",
     "publishing.verify_connection": "future.publishing",
+    "publishing.create_draft": "future.publishing",
+    "publishing.publish_current": "future.publishing",
+    "publishing.create_page_draft": "future.publishing",
+    "publishing.publish_current_page": "future.publishing",
+    "publishing.browse_content": "future.publishing",
+    "publishing.open_remote_item": "future.publishing",
+    "publishing.update_remote_item": "future.publishing",
+    "publishing.schedule_publish": "future.publishing",
 }

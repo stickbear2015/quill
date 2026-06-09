@@ -1392,6 +1392,7 @@ Planned tests and governance for this slice:
 - dialog checklist entries added
 - user-facing text reviewed for plain-language and explicit-consent wording
 - relevant accessibility and usability tests in `tests/` must be run against the publishing dialogs and menu flow before the slice is considered complete
+- publishing-focused unit tests may stay grouped in a small dedicated publishing test module at first; if the command family, provider matrix, or remote-content workflows grow substantially, split those tests into narrower publishing-specific files rather than folding more coverage into unrelated general test modules
 
 ### Slice 3: schedule and refinement after create, browse, and update are stable
 
