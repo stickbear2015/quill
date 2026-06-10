@@ -1409,6 +1409,7 @@ Current implementation progress inside this slice:
 - the browse dialog loads published content through the current connection and can open the selected remote post or page into a normal Quill editor tab
 - loaded remote content currently enters the editor as an untitled local tab with publishing metadata attached in `Document.source_metadata`
 - this keeps the editor flow simple now while leaving room for a later local linkage registry and explicit update flow
+- current remote-open behavior still needs a content-normalization pass for raw HTML coming from provider WYSIWYG editors; named and numeric HTML entities such as `&#8217;` must not remain as broken raw entity text in the Quill editing surface when the rendered remote content clearly intends a normal punctuation character
 
 Next implementation steps for this slice:
 
@@ -1416,6 +1417,8 @@ Next implementation steps for this slice:
 - define and implement the first Quill-local linkage registry for local file path to remote id plus remote URL so saved local documents can reconnect to the correct remote item without relying only on the open tab state
 - add the first publish/create dialogs for current-document post and page creation using the same provider-client seam instead of a WordPress-specific UI path
 - ensure loaded remote posts and pages announce enough plain-language context in the editor and status text that users understand whether they are editing local-only content or content already linked to a remote site
+- add a provider-neutral remote HTML normalization step before content is placed into the editor so rendered punctuation and similar entities from WordPress and later providers are decoded into readable editor text while still preserving a truthful path for later round-trip and update logic
+- define tests for common remote HTML entity cases, especially curly apostrophes, curly quotes, dashes, ellipses, non-breaking spaces, and mixed named versus numeric entities coming from WordPress classic or block-editor HTML
 - expand focused publishing tests to cover update preconditions, linkage-record persistence, and command wiring for the next publish and update actions before broader sync work begins
 
 ### Slice 3: schedule and refinement after create, browse, and update are stable
@@ -1455,6 +1458,8 @@ Recommended planning stance:
 - first implementation should support a simple, explicit content-format choice
 - default to HTML-oriented output for least ambiguity
 - user-facing behavior must be explicit when a document is being transformed rather than round-tripped as-is
+- when remote HTML is opened into the Quill editor, entity decoding and closely related readability normalization should be treated as part of the editor-loading pipeline rather than as a hidden publish-time mutation, because the immediate problem is that rendered WordPress punctuation can appear as broken raw entity text in the editable surface
+- that normalization should be conservative: decode standard HTML entities intended for human-readable text, but avoid a broad cleanup pass that silently strips meaningful markup structure before the later update and round-trip design is settled
 
 ### 2. Title extraction
 
@@ -1540,6 +1545,7 @@ Mitigation:
 
 - start with clearly defined supported formats
 - avoid overpromising sync fidelity in the first release
+- explicitly test how remote HTML from WordPress editors is normalized when opened into Quill, because a remote item that renders correctly on the site but exposes raw entities like `&#8217;` in Quill is both a readability bug and a trust bug for later update flows
 
 ### 5. Scope risk
 
