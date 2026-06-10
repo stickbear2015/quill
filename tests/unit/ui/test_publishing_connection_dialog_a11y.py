@@ -48,6 +48,7 @@ def test_browse_dialog_names_the_content_list() -> None:
     assert 'wx.StaticText(self.dialog, label="Selected published content details")' in source
     assert 'self.summary.SetName("Selected published content details")' in source
     assert 'self.content_scope.SetName("Content to browse")' in source
+    assert 'self.open_as.SetName("Open in Quill as")' in source
 
 
 def test_publishing_dialogs_set_initial_focus_and_stable_secret_tab_order() -> None:

@@ -29,10 +29,10 @@ def test_crash_recovery_loop_does_not_steal_focus() -> None:
     assert crash_call in SOURCE
 
 
-def test_remote_publishing_open_records_explicit_html_surface_metadata() -> None:
-    # Publishing content currently opens as raw HTML in a normal editor tab.
-    # Until the approved representation chooser lands, the metadata should say
-    # that explicitly so later update flows do not have to guess.
+def test_remote_publishing_open_records_explicit_representation_metadata() -> None:
+    # Publishing content now chooses a Quill authoring surface at open time.
+    # Metadata should continue to record that choice explicitly so later update
+    # flows do not have to guess.
     assert '"source_kind": "publishing_remote"' in SOURCE
-    assert '"publishing_authoring_surface": "html"' in SOURCE
-    assert '"publishing_open_representation": "raw_html"' in SOURCE
+    assert '"publishing_authoring_surface": prepared_content.authoring_surface' in SOURCE
+    assert '"publishing_open_representation": prepared_content.open_representation' in SOURCE

@@ -12,20 +12,16 @@ Audit findings:
   - WordPress application-password verification
   - provider-aware browse of posts and pages
   - open-remote-item into a normal Quill tab with source metadata
-- the main implementation gap versus the approved content-representation plan is still the remote-open authoring surface choice:
-  - current code opens remote content as raw HTML in the editor
-  - current code does not yet offer the approved default `Readable Markdown` path
-  - current code does not yet offer the approved per-open `Raw HTML` override because raw HTML is the only current behavior
-  - current code does not yet perform the approved conservative conversion/fallback decision
+- the branch's audit-identified representation gap has now been implemented in code:
+  - remote content opens as `Readable Markdown` by default
+  - the browse/open flow now offers a per-open `Raw HTML` override
+  - Quill now performs a conservative automatic fallback to `Raw HTML`
+  - open metadata now records the chosen Quill authoring surface explicitly
 
 Audit guidance locked in by this addendum:
 
-- treat the current remote-open behavior as an explicitly HTML-authored interim state, not as the final representation design
-- preserve metadata that makes the interim state honest and machine-readable for later update work
-- do not describe the representation-choice work as complete until Quill supports:
-  - `Readable Markdown` by default for clearly text-first remote HTML
-  - a per-open `Raw HTML` override
-  - conservative automatic fallback to `Raw HTML`
+- preserve metadata that makes the chosen open representation honest and machine-readable for later update work
+- treat the next remaining remote-authoring work as update-flow behavior on top of this completed representation choice, not as a fresh representation-design question
 
 Status: Approved and in implementation. Owner: product and engineering. Scope: active implementation guided by this spec.
 
@@ -1443,8 +1439,8 @@ Current implementation progress inside this slice:
 - the browse dialog loads published content through the current connection and can open the selected remote post or page into a normal Quill editor tab
 - loaded remote content currently enters the editor as an untitled local tab with publishing metadata attached in `Document.source_metadata`
 - this keeps the editor flow simple now while leaving room for a later local linkage registry and explicit update flow
-- current remote-open behavior still needs a content-normalization pass for raw HTML coming from provider WYSIWYG editors; named and numeric HTML entities such as `&#8217;` must not remain as broken raw entity text in the Quill editing surface when the rendered remote content clearly intends a normal punctuation character
-- the next approved content-format refinement is not a WordPress-only parser change; it is a Quill authoring-surface decision about whether remote content opens as readable Markdown or as raw HTML, with that choice preserved clearly enough that later update and publish actions remain honest
+- current remote-open behavior already includes remote HTML normalization for common entity readability cases and now supports an explicit Quill authoring-surface decision at open time
+- remote content can now open as readable Markdown or raw HTML, with that choice preserved clearly enough that later update and publish actions can remain honest
 
 Next implementation steps for this slice:
 
@@ -1453,18 +1449,10 @@ Next implementation steps for this slice:
 - add the first publish/create dialogs for current-document post and page creation using the same provider-client seam instead of a WordPress-specific UI path
 - ensure loaded remote posts and pages announce enough plain-language context in the editor and status text that users understand whether they are editing local-only content or content already linked to a remote site
 - add a provider-neutral remote HTML normalization step before content is placed into the editor so rendered punctuation and similar entities from WordPress and later providers are decoded into readable editor text while still preserving a truthful path for later round-trip and update logic
-- define the first configurable remote-open representation rule:
-  - open as readable Markdown when Quill can perform a conservative HTML-to-Markdown conversion that preserves the main authoring meaning
-  - open as raw HTML when the user explicitly prefers HTML or when Quill determines that the content would become misleading or too lossy if flattened into Markdown
-- decide where that representation preference lives first so the behavior stays simple:
-  - either per-open choice in the browse/open flow
-  - or a Quill publishing preference with a per-open override
-- preserve enough source metadata to know whether the current tab is being authored as Markdown or HTML before any later update or publish call is sent
+- extend the new representation-aware open metadata into the first explicit `Update Remote Content...` flow so Quill sends Markdown-authored tabs through Markdown-to-HTML conversion and sends HTML-authored tabs as HTML
 - route publish and update send-time formatting through existing Quill Markdown/HTML conversion capabilities instead of a custom publishing-only formatter
 - define tests for common remote HTML entity cases, especially curly apostrophes, curly quotes, dashes, ellipses, non-breaking spaces, and mixed named versus numeric entities coming from WordPress classic or block-editor HTML
-- define tests for remote-open representation choices and send-time conversion boundaries:
-  - readable WordPress HTML opens as Markdown when that preference is selected
-  - explicitly HTML-oriented remote content can still open as raw HTML
+- expand tests for send-time conversion boundaries:
   - Markdown-authored publishing documents are converted to HTML on create or update
   - HTML-authored publishing documents are sent as HTML without additional Markdown interpretation
 - expand focused publishing tests to cover update preconditions, linkage-record persistence, and command wiring for the next publish and update actions before broader sync work begins

@@ -8,11 +8,11 @@ Status: active implementation and audit follow-up after merge with current `main
 - `features/publishing-providers-framework` has been merged with current `main`
 - the branch is no longer planning-only; it already contains publishing foundation, connection management, and browse/open implementation work
 - publishing now enters through `File > Publish`, not a top-level `Publishing` menu
-- current browse/open behavior still opens remote content as raw HTML in a normal Quill tab
-- the approved next refinement remains the explicit representation choice:
+- browse/open now supports the approved representation choice:
   - default `Readable Markdown`
   - per-open override `Raw HTML`
   - automatic fallback to `Raw HTML` when conversion would be misleading or lossy
+- publishing-open metadata now records the chosen Quill authoring surface explicitly so later update work can stay honest about Markdown-authored versus HTML-authored remote tabs
 
 ## Git state
 

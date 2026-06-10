@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+from quill.core.html_to_markdown import html_to_markdown
 from quill.core.net import verified_ssl_context
 from quill.core.paths import app_data_dir
 from quill.core.publishing_clients import (
@@ -36,6 +37,25 @@ from quill.platform.windows.credential_manager import (
 from quill.platform.windows.dpapi import protect_secret, unprotect_secret
 
 _PUBLISHING_CONNECTIONS_FILE = "publishing-connections.json"
+PUBLISHING_OPEN_REPRESENTATION_READABLE_MARKDOWN = "readable_markdown"
+PUBLISHING_OPEN_REPRESENTATION_RAW_HTML = "raw_html"
+_RAW_HTML_FALLBACK_TAGS = (
+    "<table",
+    "<tr",
+    "<td",
+    "<th",
+    "<figure",
+    "<figcaption",
+    "<iframe",
+    "<svg",
+    "<math",
+    "<form",
+    "<input",
+    "<textarea",
+    "<select",
+    "<video",
+    "<audio",
+)
 
 
 @dataclass(slots=True)
@@ -82,6 +102,13 @@ class PublishingConnectionProfile:
 class PublishingConnectionStore:
     connections: list[PublishingConnectionProfile]
     current_connection_id: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedPublishingRemoteContent:
+    text: str
+    authoring_surface: str
+    open_representation: str
 
 
 def generate_publishing_connection_id() -> str:
@@ -339,6 +366,38 @@ def load_publishing_remote_item(
     )
 
 
+def prepare_publishing_remote_content(
+    body_html: str,
+    *,
+    requested_open_representation: str = PUBLISHING_OPEN_REPRESENTATION_READABLE_MARKDOWN,
+) -> PreparedPublishingRemoteContent:
+    requested = requested_open_representation.strip().lower()
+    if requested == PUBLISHING_OPEN_REPRESENTATION_RAW_HTML:
+        return PreparedPublishingRemoteContent(
+            text=body_html,
+            authoring_surface="html",
+            open_representation=PUBLISHING_OPEN_REPRESENTATION_RAW_HTML,
+        )
+    if _should_fallback_to_raw_html(body_html):
+        return PreparedPublishingRemoteContent(
+            text=body_html,
+            authoring_surface="html",
+            open_representation=PUBLISHING_OPEN_REPRESENTATION_RAW_HTML,
+        )
+    markdown = html_to_markdown(body_html)
+    if markdown.strip():
+        return PreparedPublishingRemoteContent(
+            text=markdown,
+            authoring_surface="markdown",
+            open_representation=PUBLISHING_OPEN_REPRESENTATION_READABLE_MARKDOWN,
+        )
+    return PreparedPublishingRemoteContent(
+        text=body_html,
+        authoring_surface="html",
+        open_representation=PUBLISHING_OPEN_REPRESENTATION_RAW_HTML,
+    )
+
+
 def _verify_wordpress_app_password(
     profile: PublishingConnectionProfile,
     secret: str,
@@ -395,6 +454,11 @@ def wordpress_users_me_endpoint(site_url: str) -> str:
 def _normalized_profile(profile: PublishingConnectionProfile) -> PublishingConnectionProfile:
     normalized = PublishingConnectionProfile.from_dict(asdict(profile))
     return normalized
+
+
+def _should_fallback_to_raw_html(body_html: str) -> bool:
+    lowered = body_html.lower()
+    return any(tag in lowered for tag in _RAW_HTML_FALLBACK_TAGS)
 
 
 def _publishing_secret_path(connection_id: str) -> Path:

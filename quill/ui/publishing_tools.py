@@ -274,6 +274,7 @@ class BrowsePublishingContentDialog:
         self._secret = load_publishing_secret(self._profile.id) if self._profile is not None else ""
         self._items: list[PublishingRemoteItemSummary] = []
         self._selected_document: PublishingRemoteDocument | None = None
+        self.selected_open_representation = "readable_markdown"
 
         self.dialog = wx.Dialog(
             parent,
@@ -306,6 +307,16 @@ class BrowsePublishingContentDialog:
         self.content_scope.SetName("Content to browse")
         self.content_scope.SetSelection(0)
         filters.Add(self.content_scope, 0)
+        filters.AddSpacer(16)
+        self.open_as_caption = wx.StaticText(self.dialog, label="Open in Quill as")
+        filters.Add(self.open_as_caption, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.open_as = wx.Choice(
+            self.dialog,
+            choices=["Readable Markdown", "Raw HTML"],
+        )
+        self.open_as.SetName("Open in Quill as")
+        self.open_as.SetSelection(0)
+        filters.Add(self.open_as, 0)
         root.Add(filters, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.load_button = wx.Button(self.dialog, label="Load Content")
@@ -361,6 +372,11 @@ class BrowsePublishingContentDialog:
         if selection == 2:
             return tuple(kind for kind in available if kind == "page")
         return available
+
+    def _open_representation(self) -> str:
+        if self.open_as.GetSelection() == 1:
+            return "raw_html"
+        return "readable_markdown"
 
     def _selected_item(self) -> PublishingRemoteItemSummary | None:
         selection = self.content_list.GetSelection()
@@ -430,6 +446,7 @@ class BrowsePublishingContentDialog:
             )
             self._update_summary(message)
             return
+        self.selected_open_representation = self._open_representation()
         self._selected_document = document
         self.dialog.EndModal(self._wx.ID_OK)
 

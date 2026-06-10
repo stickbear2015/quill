@@ -216,3 +216,32 @@ def test_load_publishing_remote_item_rejects_unsupported_content_kind() -> None:
     assert ok is False
     assert message == "That publishing content type is not supported for this provider."
     assert document is None
+
+
+def test_prepare_publishing_remote_content_defaults_to_readable_markdown() -> None:
+    prepared = publishing.prepare_publishing_remote_content("<h1>Title</h1><p>Hello world</p>")
+
+    assert prepared.authoring_surface == "markdown"
+    assert prepared.open_representation == "readable_markdown"
+    assert prepared.text == "# Title\n\nHello world\n"
+
+
+def test_prepare_publishing_remote_content_allows_raw_html_override() -> None:
+    prepared = publishing.prepare_publishing_remote_content(
+        "<p>Hello world</p>",
+        requested_open_representation="raw_html",
+    )
+
+    assert prepared.authoring_surface == "html"
+    assert prepared.open_representation == "raw_html"
+    assert prepared.text == "<p>Hello world</p>"
+
+
+def test_prepare_publishing_remote_content_falls_back_to_raw_html_for_tables() -> None:
+    prepared = publishing.prepare_publishing_remote_content(
+        "<table><tr><td>Cell</td></tr></table>"
+    )
+
+    assert prepared.authoring_surface == "html"
+    assert prepared.open_representation == "raw_html"
+    assert prepared.text == "<table><tr><td>Cell</td></tr></table>"

@@ -267,6 +267,7 @@ from quill.core.onboarding import (
 )
 from quill.core.outline import OutlineEntry, extract_outline_entries
 from quill.core.paths import app_data_dir, ensure_app_directories
+from quill.core.publishing import prepare_publishing_remote_content
 from quill.core.quick_nav import (
     NavItem,
     build_nav_index,
@@ -8836,10 +8837,14 @@ class MainFrame(
         if remote_document is None:
             self._set_status("Browse published content cancelled")
             return
+        prepared_content = prepare_publishing_remote_content(
+            remote_document.body,
+            requested_open_representation=dialog.selected_open_representation,
+        )
         metadata = {
             "source_kind": "publishing_remote",
-            "publishing_authoring_surface": "html",
-            "publishing_open_representation": "raw_html",
+            "publishing_authoring_surface": prepared_content.authoring_surface,
+            "publishing_open_representation": prepared_content.open_representation,
             "publishing_provider_id": remote_document.provider_id,
             "publishing_site_url": remote_document.site_url,
             "publishing_remote_id": remote_document.remote_id,
@@ -8849,7 +8854,7 @@ class MainFrame(
             "publishing_updated_at": remote_document.updated_at,
         }
         document = Document(
-            text=remote_document.body,
+            text=prepared_content.text,
             path=None,
             modified=False,
             source_metadata=metadata,
