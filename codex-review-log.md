@@ -1,5 +1,17 @@
 # Codex Review Log
 
+## 2026-06-10 17:40:40 -04:00
+
+Stopping-point checkpoint:
+
+- branch is at a clean stopping point
+- latest implementation work for remote-open publishing representation is already committed and pushed
+- planning notes for possible future publishing/remote-site alignment are also preserved in-repo
+- no outstanding tracked workspace changes remained before this doc-only wrap-up update
+- intended next coding slice when work resumes:
+  - explicit `Update Remote Content...` flow
+  - use stored publishing metadata and authoring-surface truth for send-time conversion decisions
+
 ## 2026-06-10 17:36:42 -04:00
 
 Commit clarification:

@@ -1,5 +1,16 @@
 # Codex Handoff
 
+## 2026-06-10 17:40:40 -04:00 Stopping Point
+
+- branch is in a stable stopping state
+- remote-open publishing representation work is committed and already pushed
+- in-repo planning notes now include:
+  - `main-branch-audit-note-2026-06-10.md`
+  - `publishing-remote-integration-planning-2026-06-10.md`
+- recommended next implementation slice when resuming:
+  - `Update Remote Content...`
+  - use the stored publishing authoring-surface metadata to decide Markdown-to-HTML conversion versus raw-HTML send path
+
 ## 2026-06-10 17:13:23 -04:00 Latest Coding Update
 
 - completed the planned remote-open representation slice for publishing content
