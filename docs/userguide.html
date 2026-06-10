@@ -1568,6 +1568,46 @@ Editor…</strong>, and the related customization commands under
 <h2 id="trust-recovery-sessions-and-safety">Trust, Recovery, Sessions,
 and Safety</h2>
 <p>Quill is serious about recovery and user control.</p>
+<h3 id="notebooks">Notebooks</h3>
+<p>A <strong>Notebook</strong> is a named collection of documents that
+belong together — a novel’s chapters, a research project’s notes, a
+software project’s specs. Notebooks live in a single
+<code>.quillnotebook</code> file and keep track of which files are
+entries, where you left each caret, any goals you have set, and saved
+snapshots of which entries were open.</p>
+<p><strong>Creating a Notebook.</strong> Use <strong>File &gt; Notebook
+&gt; New Notebook</strong> to create an empty notebook and give it a
+name. Use <strong>File &gt; Notebook &gt; New from Folder</strong> to
+import an entire folder at once — Quill walks the folder recursively and
+creates one entry per supported file. You can filter by extension (the
+default set covers Markdown, plain text, HTML, and source code).</p>
+<p><strong>Opening and navigating entries.</strong> Once a Notebook is
+open, <strong>Navigate &gt; Go to Entry in Notebook</strong> opens the
+tree navigator, which groups entries by subdirectory. Select an entry
+and press Enter (or click “Open Entry”) to open that file. For headings,
+<strong>Navigate &gt; Go to Heading in Notebook</strong> scans every
+entry file and presents a two-level tree.</p>
+<p><strong>Entries panel.</strong> Toggle <strong>View &gt; Show Entries
+Panel</strong> to slide a docked panel into the left side of the window.
+The panel shows the notebook name, today’s goal progress, a live filter
+field, and the full entries list. Type in the filter field to narrow by
+title.</p>
+<p><strong>Goals.</strong> Each Notebook can carry a daily word-count
+goal stored in its <code>.quillnotebook</code> file. When the goal is
+enabled, the <strong>Notebook Goal</strong> status-bar cell shows
+progress (for example, “1,234 / 500 words”). Reaching the target changes
+the label to “Goal reached.”</p>
+<p><strong>Snapshots.</strong> A Snapshot is a named point-in-time
+record of which entries were open. Use <strong>File &gt; Notebook &gt;
+Save Snapshot</strong> to save one, and <strong>File &gt; Notebook &gt;
+Manage Snapshots</strong> to rename or delete saved snapshots. Snapshots
+are different from autosave recovery — they are explicit saves you make
+yourself, like commit checkpoints for your writing session.</p>
+<p><strong>Snapshots vs Sessions.</strong> The <strong>File &gt;
+Snapshots</strong> menu (formerly “Workspace Snapshots”) saves and
+restores the set of open documents in the editor — a lightweight
+workspace for any files, not tied to a Notebook. Notebook Snapshots
+store the open-entry state within a single Notebook.</p>
 <h3 id="sessions">Sessions</h3>
 <p>Sessions in Quill are best understood as <strong>workspace
 snapshots</strong>. A session captures your currently open documents and
@@ -1576,7 +1616,7 @@ active tab, then lets you reopen that exact working set later.</p>
 as a simpler, document-focused version of that idea:</p>
 <ul>
 <li>save your current workspace state</li>
-<li>reopen it from Recent Workspace Snapshots</li>
+<li>reopen it from Recent Snapshots</li>
 <li>quickly switch among open documents in the current workspace
 group</li>
 </ul>

@@ -101,12 +101,12 @@ The menu bar is standards-based, predictable, and exhaustive. Every menu item is
 
 Menu structure:
 
-- **File**: New/Open/**New from Clipboard**/Open Recent/Open from URL, **Open from Remote / Save to Remote / Save Copy to Remote / Manage Remote Sites** (FTP, SFTP, HTTPS, WebDAV, S3 — verified TLS, host-allow-listed, explicit consent, screen-reader announcements), **Workspace Snapshots**, Save/Save As/Save All/Save as plain text, Reload/Restore backup, print flows, **Run current file / Open target at cursor / Rename / Delete current file**, close/exit.
+- **File**: New/Open/**New from Clipboard**/Open Recent/Open from URL, **Open from Remote / Save to Remote / Save Copy to Remote / Manage Remote Sites** (FTP, SFTP, HTTPS, WebDAV, S3 — verified TLS, host-allow-listed, explicit consent, screen-reader announcements), **Snapshots** (save/open workspace snapshot), **Notebook** submenu (**New Notebook / New from Folder / Open Notebook / Save Snapshot / Manage Snapshots** — multi-document workspace with entries panel, daily goal, and named snapshots), Save/Save As/Save All/Save as plain text, Reload/Restore backup, print flows, **Run current file / Open target at cursor / Rename / Delete current file**, close/exit.
 - **Edit**: Undo/redo, clipboard (including **Paste HTML as Markdown**), **Find/Replace plus Find Next/Previous/All Matches**, selection helpers, **delete-to-line/document and delete-paragraph**, link insertion/follow, and **Recent Marks (Ring)** with plain-language labels.
 - **View**: shell behavior, theme and visual controls (preference toggles such as persistent undo, spell-check-as-you-type, word prediction, dark mode, tray mode, title-path and dirty-title style now live in **Settings**).
 - **Insert**: table/list/code/footnote/tag insertion helpers plus **special character, date and time, calculated date, and file content**.
 - **Format**: case/comment/indent controls, rich text and heading controls, and a single **Transform Lines** submenu (number/hard-wrap lines plus sort/reverse/dedup/whitespace/indentation conversions).
-- **Navigate**: line/page/bookmark movement, heading/block/structure movement, outline, bracket match, region movement, and **go to percent / first / last non-blank**.
+- **Navigate**: line/page/bookmark movement, heading/block/structure movement, outline, bracket match, region movement, **go to percent / first / last non-blank**, and **Go to Entry / Heading / Bookmark / Sticky Note in Notebook** (cross-entry navigation when a Notebook is open).
 - **Search**: in-files Find and Replace-across-files, plus **regex count/extract matches and block set-operations** (line filtering by block membership).
 - **Tools**: regrouped into discoverable submenus (≤ 2 levels deep):
   - Sticky Notes

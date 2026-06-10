@@ -1070,6 +1070,22 @@ Some of these live in the View menu for quick toggling; the preference-style tog
 
 Quill is serious about recovery and user control.
 
+### Notebooks
+
+A **Notebook** is a named collection of documents that belong together — a novel's chapters, a research project's notes, a software project's specs. Notebooks live in a single `.quillnotebook` file and keep track of which files are entries, where you left each caret, any goals you have set, and saved snapshots of which entries were open.
+
+**Creating a Notebook.** Use **File > Notebook > New Notebook** to create an empty notebook and give it a name. Use **File > Notebook > New from Folder** to import an entire folder at once — Quill walks the folder recursively and creates one entry per supported file. You can filter by extension (the default set covers Markdown, plain text, HTML, and source code).
+
+**Opening and navigating entries.** Once a Notebook is open, **Navigate > Go to Entry in Notebook** opens the tree navigator, which groups entries by subdirectory. Select an entry and press Enter (or click "Open Entry") to open that file. For headings, **Navigate > Go to Heading in Notebook** scans every entry file and presents a two-level tree.
+
+**Entries panel.** Toggle **View > Show Entries Panel** to slide a docked panel into the left side of the window. The panel shows the notebook name, today's goal progress, a live filter field, and the full entries list. Type in the filter field to narrow by title.
+
+**Goals.** Each Notebook can carry a daily word-count goal stored in its `.quillnotebook` file. When the goal is enabled, the **Notebook Goal** status-bar cell shows progress (for example, "1,234 / 500 words"). Reaching the target changes the label to "Goal reached."
+
+**Snapshots.** A Snapshot is a named point-in-time record of which entries were open. Use **File > Notebook > Save Snapshot** to save one, and **File > Notebook > Manage Snapshots** to rename or delete saved snapshots. Snapshots are different from autosave recovery — they are explicit saves you make yourself, like commit checkpoints for your writing session.
+
+**Snapshots vs Sessions.** The **File > Snapshots** menu (formerly "Workspace Snapshots") saves and restores the set of open documents in the editor — a lightweight workspace for any files, not tied to a Notebook. Notebook Snapshots store the open-entry state within a single Notebook.
+
 ### Sessions
 
 Sessions in Quill are best understood as **workspace snapshots**. A session captures your currently open documents and active tab, then lets you reopen that exact working set later.
@@ -1077,7 +1093,7 @@ Sessions in Quill are best understood as **workspace snapshots**. A session capt
 If you are familiar with VS Code workspaces, think of Quill sessions as a simpler, document-focused version of that idea:
 
 - save your current workspace state
-- reopen it from Recent Workspace Snapshots
+- reopen it from Recent Snapshots
 - quickly switch among open documents in the current workspace group
 
 This is useful when one writing task spans notes, references, drafts, and generated reports.

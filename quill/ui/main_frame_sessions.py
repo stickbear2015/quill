@@ -59,15 +59,15 @@ class SessionsMixin:
         self._recent_session_menu_ids.clear()
         self._sessions_menu.Append(
             self._id_save_session,
-            self._menu_label("Save Workspace &Snapshot...", "file.save_session"),
+            self._menu_label("Save &Snapshot...", "file.save_session"),
         )
         self._sessions_menu.Append(
             self._id_open_session,
-            self._menu_label("&Open Workspace Snapshot...", "file.open_session"),
+            self._menu_label("&Open Snapshot...", "file.open_session"),
         )
         self._sessions_menu.AppendSubMenu(
             self._recent_sessions_menu,
-            "Recent Workspace &Snapshots",
+            "Recent &Snapshots",
         )
         self._sessions_menu.AppendSeparator()
         self._sessions_menu.AppendSubMenu(

@@ -45,6 +45,16 @@ class MenuBuilderMixin:
         self._sessions_menu = wx.Menu()
         self._open_documents_menu = wx.Menu()
         self._recent_sessions_menu = wx.Menu()
+        self._id_new_notebook = wx.NewIdRef()
+        self._id_new_notebook_from_folder = wx.NewIdRef()
+        self._id_open_notebook = wx.NewIdRef()
+        self._id_notebook_save_snapshot = wx.NewIdRef()
+        self._id_manage_notebook_snapshots = wx.NewIdRef()
+        self._id_toggle_entries_panel = wx.NewIdRef()
+        self._id_go_to_entry_in_notebook = wx.NewIdRef()
+        self._id_go_to_heading_in_notebook = wx.NewIdRef()
+        self._id_go_to_bookmark_in_notebook = wx.NewIdRef()
+        self._id_go_to_sticky_note_in_notebook = wx.NewIdRef()
 
         file_menu = wx.Menu()
         # --- Create / open ---
@@ -100,6 +110,30 @@ class MenuBuilderMixin:
         self._append_power_tools_file_ops_items(file_menu)
         file_menu.AppendSeparator()
         # --- Close ---
+        notebook_menu = wx.Menu()
+        notebook_menu.Append(
+            self._id_new_notebook,
+            self._menu_label("&New Notebook...", "file.new_notebook"),
+        )
+        notebook_menu.Append(
+            self._id_new_notebook_from_folder,
+            self._menu_label("New from &Folder...", "file.new_notebook_from_folder"),
+        )
+        notebook_menu.Append(
+            self._id_open_notebook,
+            self._menu_label("&Open Notebook...", "file.open_notebook"),
+        )
+        notebook_menu.AppendSeparator()
+        notebook_menu.Append(
+            self._id_notebook_save_snapshot,
+            self._menu_label("&Save Snapshot...", "file.save_snapshot"),
+        )
+        notebook_menu.Append(
+            self._id_manage_notebook_snapshots,
+            self._menu_label("&Manage Snapshots...", "file.manage_snapshots"),
+        )
+        file_menu.AppendSubMenu(notebook_menu, "&Notebook")
+        file_menu.AppendSeparator()
         file_menu.Append(
             self._id_close_document,
             self._menu_label("&Close Document", "file.close_document"),
@@ -412,6 +446,11 @@ class MenuBuilderMixin:
             self._id_browser_preview,
             self._menu_label("&Browser Preview...", "view.browser_preview"),
         )
+        view_menu.AppendSeparator()
+        view_menu.AppendCheckItem(
+            self._id_toggle_entries_panel,
+            self._menu_label("Show &Entries Panel", "view.toggle_entries_panel"),
+        )
         navigate_menu = wx.Menu()
         self._id_go_to_line = wx.NewIdRef()
         self._id_set_bookmark = wx.NewIdRef()
@@ -503,6 +542,27 @@ class MenuBuilderMixin:
         navigate_menu.Append(
             self._id_list_bookmarks,
             self._menu_label("List B&ookmarks...", "navigate.list_bookmarks"),
+        )
+        navigate_menu.AppendSeparator()
+        navigate_menu.Append(
+            self._id_go_to_entry_in_notebook,
+            self._menu_label("Go to &Entry in Notebook...", "navigate.go_to_entry_in_notebook"),
+        )
+        navigate_menu.Append(
+            self._id_go_to_heading_in_notebook,
+            self._menu_label("Go to &Heading in Notebook...", "navigate.go_to_heading_in_notebook"),
+        )
+        navigate_menu.Append(
+            self._id_go_to_bookmark_in_notebook,
+            self._menu_label(
+                "Go to &Bookmark in Notebook...", "navigate.go_to_bookmark_in_notebook"
+            ),
+        )
+        navigate_menu.Append(
+            self._id_go_to_sticky_note_in_notebook,
+            self._menu_label(
+                "Go to Sticky &Note in Notebook...", "navigate.go_to_sticky_note_in_notebook"
+            ),
         )
         self._id_insert_html_tag = wx.NewIdRef()
         self._id_insert_markdown_tag = wx.NewIdRef()
@@ -2525,6 +2585,56 @@ class MenuBuilderMixin:
             wx.EVT_MENU,
             lambda _e: self.show_keyboard_trap_snapshot(),
             id=self._id_keyboard_trap_snapshot,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.new_notebook(),
+            id=self._id_new_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.new_notebook_from_folder(),
+            id=self._id_new_notebook_from_folder,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.open_notebook(),
+            id=self._id_open_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.notebook_save_snapshot(),
+            id=self._id_notebook_save_snapshot,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.manage_notebook_snapshots(),
+            id=self._id_manage_notebook_snapshots,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.toggle_entries_panel(),
+            id=self._id_toggle_entries_panel,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_entry_in_notebook(),
+            id=self._id_go_to_entry_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_heading_in_notebook(),
+            id=self._id_go_to_heading_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_bookmark_in_notebook(),
+            id=self._id_go_to_bookmark_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_sticky_note_in_notebook(),
+            id=self._id_go_to_sticky_note_in_notebook,
         )
         self.frame.Bind(wx.EVT_MENU, self._on_open_recent)
         self.frame.Bind(wx.EVT_MENU, self._on_session_menu)
