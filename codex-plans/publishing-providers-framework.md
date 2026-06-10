@@ -1,5 +1,32 @@
 # Publishing Providers Framework Plan
 
+## 2026-06-10 audit addendum
+
+This addendum reflects a post-merge audit after updating the branch with current `main`.
+
+Audit findings:
+
+- the branch is still aligned with the approved architecture direction: provider-aware core layer, feature gating, `File > Publish` entry points, dialog governance, and explicit network egress review are all present in code
+- the branch's current implementation already covers:
+  - multi-connection storage
+  - WordPress application-password verification
+  - provider-aware browse of posts and pages
+  - open-remote-item into a normal Quill tab with source metadata
+- the main implementation gap versus the approved content-representation plan is still the remote-open authoring surface choice:
+  - current code opens remote content as raw HTML in the editor
+  - current code does not yet offer the approved default `Readable Markdown` path
+  - current code does not yet offer the approved per-open `Raw HTML` override because raw HTML is the only current behavior
+  - current code does not yet perform the approved conservative conversion/fallback decision
+
+Audit guidance locked in by this addendum:
+
+- treat the current remote-open behavior as an explicitly HTML-authored interim state, not as the final representation design
+- preserve metadata that makes the interim state honest and machine-readable for later update work
+- do not describe the representation-choice work as complete until Quill supports:
+  - `Readable Markdown` by default for clearly text-first remote HTML
+  - a per-open `Raw HTML` override
+  - conservative automatic fallback to `Raw HTML`
+
 Status: Approved and in implementation. Owner: product and engineering. Scope: active implementation guided by this spec.
 
 Tracking:

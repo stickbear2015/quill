@@ -27,3 +27,12 @@ def test_crash_recovery_loop_does_not_steal_focus() -> None:
         "                )"
     )
     assert crash_call in SOURCE
+
+
+def test_remote_publishing_open_records_explicit_html_surface_metadata() -> None:
+    # Publishing content currently opens as raw HTML in a normal editor tab.
+    # Until the approved representation chooser lands, the metadata should say
+    # that explicitly so later update flows do not have to guess.
+    assert '"source_kind": "publishing_remote"' in SOURCE
+    assert '"publishing_authoring_surface": "html"' in SOURCE
+    assert '"publishing_open_representation": "raw_html"' in SOURCE

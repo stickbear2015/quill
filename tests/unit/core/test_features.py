@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from quill.core.commands import CommandRegistry
+from quill.core import paths
 from quill.core.features import (
     FEATURE_STATE_OFF,
     FEATURE_STATE_ON,
@@ -21,6 +22,19 @@ from quill.core.features import (
     find_feature,
     import_feature_profile_file,
 )
+
+
+@pytest.fixture(autouse=True)
+def feature_data_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    data_dir = fake_home / "quill-data"
+    monkeypatch.setattr(paths, "_DEV_BUILD", True)
+    monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: fake_home))
+    monkeypatch.setenv("QUILL_DATA_DIR", str(data_dir))
+    monkeypatch.delenv("APPDATA", raising=False)
+    monkeypatch.delenv("QUILL_PORTABLE_ROOT", raising=False)
+    return data_dir
 
 
 def test_feature_mapping_infers_command_groups() -> None:

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import quill.core.publishing as publishing
+from quill.core import paths
 from quill.core.publishing import PublishingConnectionProfile
 from quill.core.publishing_providers import (
     AUTH_METHOD_APP_PASSWORD,
@@ -18,10 +19,22 @@ from quill.core.publishing_providers import (
 )
 
 
+@pytest.fixture
+def publishing_data_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    data_dir = fake_home / "quill-data"
+    monkeypatch.setattr(paths, "_DEV_BUILD", True)
+    monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: fake_home))
+    monkeypatch.setenv("QUILL_DATA_DIR", str(data_dir))
+    monkeypatch.delenv("APPDATA", raising=False)
+    monkeypatch.delenv("QUILL_PORTABLE_ROOT", raising=False)
+    return data_dir
+
+
 def test_publishing_connections_round_trip_multiple_profiles(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    publishing_data_env: Path,
 ) -> None:
-    monkeypatch.setenv("QUILL_DATA_DIR", str(tmp_path))
     first = PublishingConnectionProfile(
         id="pub-one",
         label="Personal site",
@@ -51,9 +64,8 @@ def test_publishing_connections_round_trip_multiple_profiles(
 
 
 def test_upsert_and_remove_publishing_connection(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    publishing_data_env: Path,
 ) -> None:
-    monkeypatch.setenv("QUILL_DATA_DIR", str(tmp_path))
     profile = PublishingConnectionProfile(
         id="pub-one",
         label="Site one",
@@ -84,9 +96,8 @@ def test_upsert_and_remove_publishing_connection(
 
 
 def test_publishing_secret_is_scoped_per_connection(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, publishing_data_env: Path
 ) -> None:
-    monkeypatch.setenv("QUILL_DATA_DIR", str(tmp_path))
     saved: dict[str, str] = {}
 
     def _save(connection_id: str, secret: str) -> bool:
@@ -106,9 +117,8 @@ def test_publishing_secret_is_scoped_per_connection(
 
 
 def test_publishing_secret_is_protected_on_disk(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, publishing_data_env: Path
 ) -> None:
-    monkeypatch.setenv("QUILL_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(publishing, "_save_secret_with_credential_manager", lambda *_a: False)
     monkeypatch.setattr(publishing, "_load_secret_from_credential_manager", lambda *_a: "")
     monkeypatch.setattr(publishing, "protect_secret", lambda secret: f"enc:{secret}")
