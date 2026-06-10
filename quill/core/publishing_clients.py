@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import html
 import json
+import re
 import ssl
 from dataclasses import dataclass
 from typing import Protocol
@@ -11,6 +13,9 @@ from urllib.request import Request, urlopen
 
 from quill.core.net import verified_ssl_context
 from quill.core.publishing_providers import WORDPRESS_PROVIDER_ID
+
+_HTML_ENTITY_PATTERN = re.compile(r"&(?:#\d+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]+);")
+_PRESERVE_HTML_ESCAPES = {"<", ">", "&"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -279,10 +284,29 @@ def _wordpress_document_from_payload(
 def _wordpress_rendered_text(value: object) -> str:
     if isinstance(value, dict):
         rendered = value.get("rendered")
-        return str(rendered).strip() if rendered is not None else ""
+        return _normalize_remote_html_text(str(rendered).strip()) if rendered is not None else ""
     if value is None:
         return ""
-    return str(value).strip()
+    return _normalize_remote_html_text(str(value).strip())
+
+
+def _normalize_remote_html_text(value: str) -> str:
+    if "&" not in value:
+        return value
+
+    def _replace(match: re.Match[str]) -> str:
+        entity = match.group(0)
+        decoded = html.unescape(entity)
+        if decoded == entity:
+            return entity
+        if decoded in _PRESERVE_HTML_ESCAPES:
+            return entity
+        if decoded == "\xa0":
+            return " "
+        return decoded
+
+    normalized = _HTML_ENTITY_PATTERN.sub(_replace, value)
+    return normalized.replace("\xa0", " ")
 
 
 def _normalized_content_kind(value: object, *, fallback: str) -> str:

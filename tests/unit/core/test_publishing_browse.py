@@ -116,6 +116,86 @@ def test_load_publishing_remote_item_returns_remote_document(monkeypatch) -> Non
     assert document.body == "<p>About body</p>"
 
 
+def test_load_publishing_remote_item_decodes_typographic_html_entities(monkeypatch) -> None:
+    def _urlopen(request, **_kwargs):
+        return _FakeResponse(
+            {
+                "id": 22,
+                "link": "https://example.com/about",
+                "title": {"rendered": "Writer&#8217;s notes"},
+                "status": "publish",
+                "modified_gmt": "2026-06-08T05:00:00",
+                "type": "page",
+                "content": {
+                    "rendered": (
+                        "<p>It&#8217;s ready&#8230; &ldquo;Quoted&rdquo; text"
+                        "&nbsp;with spacing.</p>"
+                    )
+                },
+            }
+        )
+
+    monkeypatch.setattr(publishing_clients, "urlopen", _urlopen)
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+
+    ok, _message, document = publishing.load_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="page",
+        remote_id="22",
+    )
+
+    assert ok is True
+    assert document is not None
+    assert document.title == "Writer’s notes"
+    assert document.body == '<p>It’s ready… “Quoted” text with spacing.</p>'
+
+
+def test_load_publishing_remote_item_preserves_markup_significant_escapes(monkeypatch) -> None:
+    def _urlopen(request, **_kwargs):
+        return _FakeResponse(
+            {
+                "id": 22,
+                "link": "https://example.com/about",
+                "title": {"rendered": "Code sample"},
+                "status": "publish",
+                "modified_gmt": "2026-06-08T05:00:00",
+                "type": "page",
+                "content": {
+                    "rendered": "<pre>&lt;em&gt;keep escaped markup&lt;/em&gt; &amp; text</pre>"
+                },
+            }
+        )
+
+    monkeypatch.setattr(publishing_clients, "urlopen", _urlopen)
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+
+    ok, _message, document = publishing.load_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="page",
+        remote_id="22",
+    )
+
+    assert ok is True
+    assert document is not None
+    assert document.body == "<pre>&lt;em&gt;keep escaped markup&lt;/em&gt; &amp; text</pre>"
+
+
 def test_load_publishing_remote_item_rejects_unsupported_content_kind() -> None:
     profile = PublishingConnectionProfile(
         id="pub-one",
