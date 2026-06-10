@@ -340,7 +340,7 @@ class BrowsePublishingContentDialog:
         self.open_button.SetName("Open in Quill")
         buttons.Add(self.open_button, 0, wx.RIGHT, 8)
         buttons.Add(wx.Button(self.dialog, wx.ID_CANCEL, label="Close"), 0)
-        root.Add(buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 8)
+        root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
 
         self.dialog.SetSizerAndFit(root)
         apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)

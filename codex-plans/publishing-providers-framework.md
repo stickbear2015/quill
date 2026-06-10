@@ -56,6 +56,8 @@ These decisions are now the recommended baseline for future implementation unles
 - local-to-remote linkage starts in a Quill-local registry, not inside the source document
 - the first publish path is explicit, review-first, and never silent
 - the first content path should prefer HTML-oriented output, with any source transformation explained plainly to the user
+- remote content opening must support a clear Quill-level representation choice so a user can work either in readable Markdown or in raw HTML when that is the truer editing surface
+- publish and update flows must respect the document's chosen authoring surface: Markdown-authored content is converted to HTML at send time, while explicitly HTML-authored content is sent as HTML without a hidden Markdown pass
 - publishing includes both posts and pages from the first approved product design
 - simplicity is a hard requirement: reuse existing Quill patterns and avoid inventing parallel systems unless the current codebase truly lacks the needed hook
 - every publishing dialog control must have one visible label positioned immediately above or immediately to the left of the control, with no helper text inserted between the label and the field in reading or tab-flow order
@@ -1186,11 +1188,15 @@ Recommendation:
 
 - prefer HTML-oriented output in the first WordPress slice
 - if source text is Markdown or another format, explain the conversion in the confirmation step
+- treat conversion as a Quill authoring-surface rule rather than as a WordPress-only special case
+- when the current document is a Markdown-authored publishing document, convert Markdown to HTML at publish or update time
+- when the current document is explicitly an HTML-authored publishing document, publish the HTML body directly
 
 Rationale:
 
 - WordPress natively expects HTML in the standard REST flow
 - this is the least ambiguous first behavior
+- Quill already understands Markdown and HTML as distinct working surfaces, so publishing should build on that existing model instead of inventing a second parallel content-mode concept
 
 ### First user-visible dialog set
 
@@ -1399,6 +1405,7 @@ Planned tests and governance for this slice:
 - dialog checklist entries added
 - user-facing text reviewed for plain-language and explicit-consent wording
 - relevant accessibility and usability tests in `tests/` must be run against the publishing dialogs and menu flow before the slice is considered complete
+- representation-switching and publish-format tests should be added in a dedicated publishing-focused test module rather than folded into unrelated editor or export tests, while still reusing existing Quill conversion helpers where that keeps the implementation simple
 - publishing-focused unit tests may stay grouped in a small dedicated publishing test module at first; if the command family, provider matrix, or remote-content workflows grow substantially, split those tests into narrower publishing-specific files rather than folding more coverage into unrelated general test modules
 
 Current implementation progress inside this slice:
@@ -1410,6 +1417,7 @@ Current implementation progress inside this slice:
 - loaded remote content currently enters the editor as an untitled local tab with publishing metadata attached in `Document.source_metadata`
 - this keeps the editor flow simple now while leaving room for a later local linkage registry and explicit update flow
 - current remote-open behavior still needs a content-normalization pass for raw HTML coming from provider WYSIWYG editors; named and numeric HTML entities such as `&#8217;` must not remain as broken raw entity text in the Quill editing surface when the rendered remote content clearly intends a normal punctuation character
+- the next approved content-format refinement is not a WordPress-only parser change; it is a Quill authoring-surface decision about whether remote content opens as readable Markdown or as raw HTML, with that choice preserved clearly enough that later update and publish actions remain honest
 
 Next implementation steps for this slice:
 
@@ -1418,7 +1426,20 @@ Next implementation steps for this slice:
 - add the first publish/create dialogs for current-document post and page creation using the same provider-client seam instead of a WordPress-specific UI path
 - ensure loaded remote posts and pages announce enough plain-language context in the editor and status text that users understand whether they are editing local-only content or content already linked to a remote site
 - add a provider-neutral remote HTML normalization step before content is placed into the editor so rendered punctuation and similar entities from WordPress and later providers are decoded into readable editor text while still preserving a truthful path for later round-trip and update logic
+- define the first configurable remote-open representation rule:
+  - open as readable Markdown when Quill can perform a conservative HTML-to-Markdown conversion that preserves the main authoring meaning
+  - open as raw HTML when the user explicitly prefers HTML or when Quill determines that the content would become misleading or too lossy if flattened into Markdown
+- decide where that representation preference lives first so the behavior stays simple:
+  - either per-open choice in the browse/open flow
+  - or a Quill publishing preference with a per-open override
+- preserve enough source metadata to know whether the current tab is being authored as Markdown or HTML before any later update or publish call is sent
+- route publish and update send-time formatting through existing Quill Markdown/HTML conversion capabilities instead of a custom publishing-only formatter
 - define tests for common remote HTML entity cases, especially curly apostrophes, curly quotes, dashes, ellipses, non-breaking spaces, and mixed named versus numeric entities coming from WordPress classic or block-editor HTML
+- define tests for remote-open representation choices and send-time conversion boundaries:
+  - readable WordPress HTML opens as Markdown when that preference is selected
+  - explicitly HTML-oriented remote content can still open as raw HTML
+  - Markdown-authored publishing documents are converted to HTML on create or update
+  - HTML-authored publishing documents are sent as HTML without additional Markdown interpretation
 - expand focused publishing tests to cover update preconditions, linkage-record persistence, and command wiring for the next publish and update actions before broader sync work begins
 
 ### Slice 3: schedule and refinement after create, browse, and update are stable
@@ -1450,16 +1471,43 @@ QUILL documents may be plain text, Markdown, or HTML-oriented content. WordPress
 
 Decision needed:
 
-- should the first WordPress slice publish HTML only
-- or should Markdown be converted on publish
+- what authoring surface should a publishing document be considered to use at any given time
+- when should Quill convert Markdown to HTML for provider send operations
+- when should Quill preserve and expose raw HTML instead of translating it into Markdown
 
 Recommended planning stance:
 
 - first implementation should support a simple, explicit content-format choice
-- default to HTML-oriented output for least ambiguity
 - user-facing behavior must be explicit when a document is being transformed rather than round-tripped as-is
+- the primary decision is no longer "HTML only or Markdown conversion"; the primary decision is which Quill authoring surface the document is using right now
+- if a publishing document is being authored as Markdown, Quill converts that Markdown to HTML at publish or update time because the provider contract expects HTML
+- if a publishing document is being authored as HTML, Quill sends the HTML body as authored
+- this choice must be visible enough in the workflow that users are never surprised about whether Quill is treating the document as Markdown or HTML
 - when remote HTML is opened into the Quill editor, entity decoding and closely related readability normalization should be treated as part of the editor-loading pipeline rather than as a hidden publish-time mutation, because the immediate problem is that rendered WordPress punctuation can appear as broken raw entity text in the editable surface
 - that normalization should be conservative: decode standard HTML entities intended for human-readable text, but avoid a broad cleanup pass that silently strips meaningful markup structure before the later update and round-trip design is settled
+
+### 1a. Remote-open representation
+
+Decision needed:
+
+- should remote content open as Markdown by default
+- should remote content open as raw HTML by default
+- or should Quill ask at open time while the safest default is still being proven
+
+Recommended planning stance:
+
+- keep the representation model simple and honest by supporting two explicit outcomes only:
+  - `Readable Markdown`
+  - `Raw HTML`
+- use Quill terminology, not provider terminology, because this is an editor-surface choice rather than a WordPress-only behavior
+- prefer readable Markdown when Quill can conservatively translate common remote HTML into a faithful editing surface
+- fall back to raw HTML when conversion would be obviously lossy, misleading, or contrary to an explicit user preference
+- preserve the original remote source facts and the chosen Quill authoring surface in metadata so later update logic knows whether it is converting Markdown to HTML or sending HTML as-authored
+- do not silently flip an already opened document from one authoring surface to the other during a later save, update, or publish action
+
+Implementation-guidance note:
+
+- Quill already includes Markdown/HTML-aware authoring behavior and conversion utilities elsewhere in the product, so the publishing architecture should hook into those existing capabilities instead of creating a publishing-only content-transformation stack
 
 ### 2. Title extraction
 
