@@ -1,3 +1,13 @@
+"""Task manager, cancellation tokens, and the ``QuillTask`` dataclass.
+
+Implements: ROADMAP STAB-7 (the wx-free background task surface:
+``TaskManager`` runs a thread pool, ``CancellationToken`` propagates
+cancels, and ``QuillTask`` carries the result back to the UI thread
+through :mod:`quill.stability.wx_dispatch`). The contract is
+intentionally platform-neutral so headless tests and the live UI share
+one scheduler.
+"""
+
 from __future__ import annotations
 
 import concurrent.futures
@@ -7,11 +17,22 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 from quill.stability.wx_dispatch import call_ui_safely
 
 logger = logging.getLogger(__name__)
+
+
+# L-13: a tiny vocabulary of terminal states for ``QuillTask.result_summary``.
+# The dataclass is shown in the diagnostic bundle, so the values stay short
+# and human-readable. Anything that has not yet reached a terminal state
+# remains ``"pending"``.
+TaskResult = Literal["ok", "cancelled", "failed", "pending"]
+RESULT_PENDING: TaskResult = "pending"
+RESULT_OK: TaskResult = "ok"
+RESULT_CANCELLED: TaskResult = "cancelled"
+RESULT_FAILED: TaskResult = "failed"
 
 
 class CancelledError(Exception):
@@ -43,6 +64,11 @@ class QuillTask:
     timeout_seconds: float | None
     safe_to_cancel: bool = True
     safe_to_kill: bool = False
+    # L-13: ``submitted_at`` is the wall-clock moment the task entered the
+    # manager; ``result_summary`` is the latest terminal state observed by
+    # ``wrapped`` and is included in the diagnostic bundle.
+    submitted_at: float = 0.0
+    result_summary: TaskResult = RESULT_PENDING
 
 
 class TaskManager:
@@ -113,6 +139,14 @@ class TaskManager:
                     )
                 if on_failure is not None:
                     call_ui_safely(on_failure, operation_id, exc)
+                # L-13: pre-tag the in-flight task with its terminal state so
+                # the done-callback does not have to re-derive it from the
+                # future (which can race with ``future.cancelled()`` and
+                # surface as ``failed`` for a cooperative cancel).
+                if isinstance(exc, CancelledError):
+                    task.result_summary = RESULT_CANCELLED
+                else:
+                    task.result_summary = RESULT_FAILED
                 raise
 
         future = self._executor.submit(wrapped)
@@ -125,11 +159,31 @@ class TaskManager:
             timeout_seconds=timeout_seconds,
             safe_to_cancel=safe_to_cancel,
             safe_to_kill=safe_to_kill,
+            submitted_at=time.time(),
+            result_summary=RESULT_PENDING,
         )
         with self._lock:
             self._tasks[operation_id] = task
-        future.add_done_callback(lambda _future: self._remove_task(operation_id))
+        future.add_done_callback(self._make_done_callback(task, operation_id))
         return task
+
+    def _make_done_callback(
+        self, task: QuillTask, operation_id: str
+    ) -> Callable[[concurrent.futures.Future[Any]], None]:
+        def _done(future: concurrent.futures.Future[Any]) -> None:
+            # L-13: collapse the future's terminal state into one of the
+            # ``TaskResult`` literals for the bundle / UI snapshot. We only
+            # fall back to the future when the worker never reached its
+            # exception path (e.g. a future.cancel() race after success).
+            if task.result_summary == RESULT_PENDING:
+                if future.cancelled():
+                    task.result_summary = RESULT_CANCELLED
+                else:
+                    exc = future.exception()
+                    task.result_summary = RESULT_OK if exc is None else RESULT_FAILED
+            self._remove_task(operation_id)
+
+        return _done
 
     def cancel(self, operation_id: str) -> bool:
         with self._lock:
@@ -143,8 +197,8 @@ class TaskManager:
         with self._lock:
             return list(self._tasks.values())
 
-    def shutdown(self, wait: bool = True) -> None:
-        self._executor.shutdown(wait=wait, cancel_futures=not wait)
+    def shutdown(self, wait: bool = True, cancel_pending: bool = False) -> None:
+        self._executor.shutdown(wait=wait, cancel_futures=cancel_pending)
 
     def _remove_task(self, operation_id: str) -> None:
         with self._lock:

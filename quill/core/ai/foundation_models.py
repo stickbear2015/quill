@@ -9,6 +9,7 @@ chooses to answer, insert, replace, or run a Quill command.
 from __future__ import annotations
 
 import asyncio
+import threading
 from typing import Any, cast
 
 from quill.core.ai.agent import ACTIONS, AgentDecision
@@ -34,6 +35,24 @@ class FoundationModelsBackend(AIBackend):
     def __init__(self) -> None:
         self._fm = None
         self._decision_types: dict[tuple[str, ...], object] = {}
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._loop_thread: threading.Thread | None = None
+        self._loop_lock = threading.Lock()
+
+    def _get_loop(self) -> asyncio.AbstractEventLoop:
+        with self._loop_lock:
+            if self._loop is not None and self._loop.is_running():
+                return self._loop
+            loop = asyncio.new_event_loop()
+
+            def _run() -> None:
+                loop.run_forever()
+
+            thread = threading.Thread(target=_run, daemon=True, name="fm-event-loop")
+            thread.start()
+            self._loop = loop
+            self._loop_thread = thread
+            return loop
 
     def _sdk(self) -> Any:
         if self._fm is None:
@@ -67,7 +86,8 @@ class FoundationModelsBackend(AIBackend):
             return cast("str", await session.respond(prompt))
 
         try:
-            return asyncio.run(_go())
+            future = asyncio.run_coroutine_threadsafe(_go(), self._get_loop())
+            return future.result()
         except Exception as exc:  # noqa: BLE001
             if self._is_context_error(exc):
                 raise ContextWindowExceeded(str(exc)) from exc
@@ -117,7 +137,7 @@ class FoundationModelsBackend(AIBackend):
                     generating=decision_type,
                 )
 
-            return asyncio.run(_go())
+            return asyncio.run_coroutine_threadsafe(_go(), self._get_loop()).result()
 
         raw = None
         for budget in (6000, 3000, 1200, 0):

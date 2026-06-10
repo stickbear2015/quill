@@ -8,7 +8,17 @@ from .memory_watch import start_memory_tracing, write_memory_snapshot
 from .safe_mode import SafeModeConfig, build_safe_mode_config
 from .safe_regex import RegexTimeoutError, safe_finditer, safe_subn
 from .safe_subprocess import run_subprocess_safely
-from .task_manager import CancellationToken, CancelledError, QuillTask, TaskManager
+from .task_manager import (
+    RESULT_CANCELLED,
+    RESULT_FAILED,
+    RESULT_OK,
+    RESULT_PENDING,
+    CancellationToken,
+    CancelledError,
+    QuillTask,
+    TaskManager,
+    TaskResult,
+)
 from .ui_responsiveness import (
     is_wx_main_thread,
     mark_wx_main_thread,
@@ -37,12 +47,17 @@ __all__ = [
     "FeatureContract",
     "HeartbeatState",
     "QuillTask",
+    "RESULT_CANCELLED",
+    "RESULT_FAILED",
+    "RESULT_OK",
+    "RESULT_PENDING",
     "RegexTimeoutError",
     "SafeModeConfig",
     "TaskCompletedEvent",
     "TaskFailedEvent",
     "TaskManager",
     "TaskProgressEvent",
+    "TaskResult",
     "WxHeartbeatTimer",
     "WxHeartbeatWatchdog",
     "build_diagnostic_bundle",

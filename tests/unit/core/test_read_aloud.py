@@ -264,7 +264,8 @@ def test_synthesize_with_piper_runs_process(monkeypatch, tmp_path: Path) -> None
         "--output_file",
         str(output),
     ]
-    assert called["kwargs"]["input"] == "Hello from piper"
+    # M-15: text is delivered via a temp-file stdin, not the pipe buffer.
+    assert hasattr(called["kwargs"].get("stdin"), "read"), "stdin must be a file-like object"
 
 
 def test_synthesize_with_piper_raises_for_failure(monkeypatch, tmp_path: Path) -> None:
@@ -571,3 +572,91 @@ def test_controller_piper_raises_when_model_missing(tmp_path: Path) -> None:
         assert "model" in str(exc).lower()
     else:
         raise AssertionError("Expected ReadAloudUnavailableError")
+
+
+# ---------------------------------------------------------------------------
+# M-14: wall-clock timeout for DECtalk / eSpeak
+# ---------------------------------------------------------------------------
+
+
+def test_dectalk_killed_after_wall_clock_timeout(monkeypatch, tmp_path: Path) -> None:
+    import threading
+    import time as _time
+
+    import quill.core.read_aloud as _ra
+
+    monkeypatch.setattr(_ra, "_MAX_SYNTHESIS_SECONDS", 0.05)
+
+    exe = tmp_path / "dectalk.exe"
+    exe.write_text("binary", encoding="utf-8")
+    temp_input = tmp_path / "input.txt"
+    temp_input.write_text("payload", encoding="utf-8")
+
+    killed: list[bool] = []
+
+    class _FakeProc:
+        returncode = None
+
+        def poll(self):
+            _time.sleep(0.01)
+            return None
+
+        def kill(self):
+            killed.append(True)
+            self.returncode = -9
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout=None):
+            return self.returncode or 0
+
+    monkeypatch.setattr(_ra.subprocess, "Popen", lambda *_a, **_kw: _FakeProc())
+
+    from quill.core.read_aloud import ReadAloudController, ReadAloudUnavailableError
+
+    session = ReadAloudController.__new__(ReadAloudController)
+    session._stop_event = threading.Event()
+    session._pause_event = threading.Event()
+    session._active_process = None
+
+    try:
+        session._speak_sentence_dectalk(exe, "hello")
+    except ReadAloudUnavailableError:
+        assert killed, "process must be killed on timeout"
+    else:
+        raise AssertionError("Expected ReadAloudUnavailableError")
+
+
+# ---------------------------------------------------------------------------
+# M-15: Piper long text via temp file (not stdin pipe)
+# ---------------------------------------------------------------------------
+
+
+def test_piper_long_text_via_temp_file(monkeypatch, tmp_path: Path) -> None:
+    import quill.core.read_aloud as _ra
+
+    exe = tmp_path / "piper.exe"
+    model = tmp_path / "voice.onnx"
+    output = tmp_path / "out.wav"
+    exe.write_text("x", encoding="utf-8")
+    model.write_text("m", encoding="utf-8")
+
+    stdin_objects: list[object] = []
+
+    class _Done:
+        returncode = 0
+        stdout = b""
+        stderr = b""
+
+    def _fake_run(_cmd, *, stdin, capture_output, check, timeout):
+        stdin_objects.append(stdin)
+        return _Done()
+
+    monkeypatch.setattr(_ra.subprocess, "run", _fake_run)
+
+    long_text = "word " * 20000
+    _ra.synthesize_with_piper(long_text, output, executable_path=exe, model_path=model)
+
+    assert stdin_objects, "subprocess.run must be called"
+    assert hasattr(stdin_objects[0], "read"), "stdin must be a file object, not a pipe"

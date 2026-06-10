@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -127,12 +128,18 @@ def _read_pages_via_iwa(path: Path) -> Document:
         raise ImportError("keynote-parser not available") from e
 
     # Temporarily replace ID_NAME_MAP with a fallback-safe version.
-    _original_map = _codec.ID_NAME_MAP
-    _codec.ID_NAME_MAP = _patched_id_name_map()
-    try:
-        archives_by_id = _parse_iwa_bundle(path, zip_file_reader)
-    finally:
-        _codec.ID_NAME_MAP = _original_map
+    # The lock serializes concurrent openers so they don't corrupt each other's map.
+    _ID_NAME_MAP_LOCK = getattr(_codec, "_quill_id_name_map_lock", None)
+    if _ID_NAME_MAP_LOCK is None:
+        _ID_NAME_MAP_LOCK = threading.Lock()
+        _codec._quill_id_name_map_lock = _ID_NAME_MAP_LOCK  # type: ignore[attr-defined]
+    with _ID_NAME_MAP_LOCK:
+        _original_map = _codec.ID_NAME_MAP
+        _codec.ID_NAME_MAP = _patched_id_name_map()
+        try:
+            archives_by_id = _parse_iwa_bundle(path, zip_file_reader)
+        finally:
+            _codec.ID_NAME_MAP = _original_map
 
     if not archives_by_id:
         raise ValueError("No IWA archives found in Pages file")

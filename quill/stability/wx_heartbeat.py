@@ -1,3 +1,12 @@
+"""wx main-thread heartbeat watchdog.
+
+Implements: ROADMAP STAB-5 (a ``wx.Timer``-driven heartbeat the main
+thread publishes on a tick; if the tick stops, the watchdog logs the
+last known state and dumps thread stacks via
+:func:`quill.stability.diagnostics.dump_all_thread_stacks` so a
+frozen UI leaves a forensic trail in the log).
+"""
+
 from __future__ import annotations
 
 import logging
@@ -75,18 +84,20 @@ class WxHeartbeatWatchdog:
     def start(self) -> None:
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 5.0) -> None:
         self._stop.set()
+        self._thread.join(timeout=timeout)
 
     def _run(self) -> None:
-        already_dumped = False
+        last_dump_time = 0.0
         while not self._stop.wait(self.poll_seconds):
             age = self.state.age_seconds()
+            now = time.monotonic()
             if age >= self.warn_after_seconds:
                 logger.warning("wx UI heartbeat stale for %.1f seconds", age)
-            if age >= self.dump_after_seconds and not already_dumped:
+            # Dump at most once per dump_after_seconds-length recovery window so
+            # a brief UI unblock followed by a second block triggers a second dump.
+            if age >= self.dump_after_seconds and (now - last_dump_time) >= self.dump_after_seconds:
                 logger.error("wx UI appears blocked for %.1f seconds", age)
                 self.dump_callback(f"wx UI heartbeat stale for {age:.1f} seconds")
-                already_dumped = True
-            if age < self.warn_after_seconds:
-                already_dumped = False
+                last_dump_time = now

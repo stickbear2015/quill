@@ -29,10 +29,12 @@ def test_no_dialog_escape_button_traps_in_source() -> None:
 
 def _violations(source: str) -> list[str]:
     tree = ast.parse(source)
-    return [f"{v.scope}:{v.wx_id}" for v in _audit_module("synthetic.py", tree)]
+    return [f"{v.scope}:{v.wx_id}" for v in _audit_module("synthetic.py", source, tree)]
 
 
 def test_audit_flags_escape_id_without_button() -> None:
+    # Both affirmative_id and escape_id are now audited (M-24). This dialog has
+    # neither a backing button for ID_OK nor for ID_CANCEL, so both are flagged.
     source = """
 class TrapDialog:
     def __init__(self):
@@ -40,14 +42,16 @@ class TrapDialog:
         self.use = wx.Button(self.dialog, label="Use")
         apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
 """
-    assert _violations(source) == ["TrapDialog:ID_CANCEL"]
+    assert sorted(_violations(source)) == sorted(["TrapDialog:ID_OK", "TrapDialog:ID_CANCEL"])
 
 
 def test_audit_accepts_matching_cancel_button() -> None:
+    # Both affirmative and escape ids must be backed; provide both buttons.
     source = """
 class OkDialog:
     def __init__(self):
         self.dialog = wx.Dialog(parent, title="Ok")
+        self.ok = wx.Button(self.dialog, id=wx.ID_OK, label="Ok")
         self.close = wx.Button(self.dialog, id=wx.ID_CANCEL, label="Close")
         apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
 """
@@ -77,12 +81,15 @@ class SizerDialog:
 
 
 def test_audit_accepts_manual_escape_handler() -> None:
+    # WXK_ESCAPE handler exempts escape_id; WXK_RETURN exempts affirmative_id.
+    # Dialogs with only an escape handler are exempt only for escape_id.
+    # Use escape_id only (no affirmative_id) to keep the test focused.
     source = """
 class PaletteDialog:
     def __init__(self):
         self.dialog = wx.Dialog(parent, title="Palette")
         self.dialog.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
-        apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+        apply_modal_ids(self.dialog, escape_id=wx.ID_CANCEL)
 
     def _on_char_hook(self, event):
         if event.GetKeyCode() == wx.WXK_ESCAPE:
@@ -91,15 +98,33 @@ class PaletteDialog:
     assert _violations(source) == []
 
 
-def test_audit_ignores_affirmative_id_without_button() -> None:
-    # An unbacked affirmative (Enter) id is benign -- dialogs routinely accept
-    # Enter via a char hook -- so only escape_id is a trap.
+def test_unbacked_affirmative_id_flagged() -> None:
+    # An unbacked affirmative_id with no WXK_RETURN handler means Enter is
+    # silently ignored for blind and keyboard users (M-24).
     source = """
 class EnterDialog:
     def __init__(self):
         self.dialog = wx.Dialog(parent, title="Enter")
         self.close = wx.Button(self.dialog, id=wx.ID_CANCEL, label="Close")
         apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+"""
+    assert _violations(source) == ["EnterDialog:ID_OK"]
+
+
+def test_audit_accepts_enter_handler_for_affirmative_id() -> None:
+    # A WXK_RETURN handler exempts the affirmative_id from the backing-button
+    # requirement, just as WXK_ESCAPE exempts escape_id.
+    source = """
+class EnterDialog:
+    def __init__(self):
+        self.dialog = wx.Dialog(parent, title="Enter")
+        self.close = wx.Button(self.dialog, id=wx.ID_CANCEL, label="Close")
+        apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+        self.dialog.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
+
+    def _on_char_hook(self, event):
+        if event.GetKeyCode() == wx.WXK_RETURN:
+            self.dialog.EndModal(wx.ID_OK)
 """
     assert _violations(source) == []
 
@@ -114,3 +139,33 @@ class CustomIdDialog:
         apply_modal_ids(self.dialog, affirmative_id=self.ID_INSERT, escape_id=self.ID_DISCARD)
 """
     assert _violations(source) == []
+
+
+def test_audit_respects_noqa_dialog_button_contract_pragma() -> None:
+    # A trailing ``# noqa: dialog_button_contract`` opt-out exempts a single
+    # ``apply_modal_ids`` call from the static audit. This is the documented
+    # escape hatch for stock wx dialogs whose YES/NO buttons are synthesised
+    # at runtime (the static walk cannot see them); the pragma forces a
+    # conscious reviewer decision and keeps the no-pragma path strict.
+    source = """
+class StockDialog:
+    def __init__(self):
+        self.dialog = wx.MessageDialog(parent, "msg", "title", wx.YES_NO | wx.NO_DEFAULT)
+        apply_modal_ids(  # noqa: dialog_button_contract
+            self.dialog, affirmative_id=wx.ID_YES, escape_id=wx.ID_NO)
+"""
+    assert _violations(source) == []
+
+
+def test_audit_still_flags_pragma_omitted_stock_dialog() -> None:
+    # A raw ``wx.Dialog`` with no real buttons for either declared id and no
+    # pragma must be flagged for both -- this is the original WCAG 2.1.2 (#124)
+    # keyboard trap pattern plus the M-24 affirmative_id extension.
+    source = """
+class RawDialog:
+    def __init__(self):
+        self.dialog = wx.Dialog(parent, title="Raw")
+        self.use = wx.Button(self.dialog, label="Use")
+        apply_modal_ids(self.dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_NO)
+"""
+    assert sorted(_violations(source)) == sorted(["RawDialog:ID_OK", "RawDialog:ID_NO"])

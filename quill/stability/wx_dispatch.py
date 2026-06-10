@@ -1,3 +1,13 @@
+"""Thread-safe event dispatch from worker threads back to the wx main thread.
+
+Implements: ROADMAP STAB-4 (the ``call_ui_safely`` / event
+``EVT_QUILL_TASK_*`` / ``CoalescedUiReporter`` surface that marshals
+worker results back to the UI thread without a race) and H-4-core-2
+(M-2) from the pre-release review (cross-thread UI updates use
+``wx.CallAfter`` / ``call_ui_safely`` rather than touching widgets
+directly).
+"""
+
 from __future__ import annotations
 
 import logging
@@ -46,6 +56,10 @@ def call_ui_safely(func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
     if callable(call_after):
         call_after(wrapped)
         return
+    logger.warning(
+        "call_ui_safely: wx.CallAfter unavailable; running %s synchronously on caller thread",
+        getattr(func, "__qualname__", repr(func)),
+    )
     wrapped()
 
 

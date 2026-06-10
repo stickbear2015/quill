@@ -31,6 +31,8 @@ class VoiceOption:
     name: str
 
 
+_MAX_SYNTHESIS_SECONDS: float = 120.0
+
 DECTALK_VOICE_COMMANDS: dict[str, str] = {
     "paul": "[:np]",
     "harry": "[:nh]",
@@ -169,20 +171,39 @@ def synthesize_with_piper(
     if not model_path.exists():
         raise ReadAloudUnavailableError("Piper model file was not found")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    command = [
-        str(executable_path),
-        "--model",
-        str(model_path),
-        "--output_file",
-        str(output_path),
-    ]
-    completed = subprocess.run(
-        command,
-        input=text,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        delete=False,
+        suffix=".txt",
+        encoding="utf-8",
+        errors="replace",
+    ) as handle:
+        handle.write(text)
+        input_path = Path(handle.name)
+    try:
+        with input_path.open("rb") as stdin_fh:
+            completed = subprocess.run(
+                [
+                    str(executable_path),
+                    "--model",
+                    str(model_path),
+                    "--output_file",
+                    str(output_path),
+                ],
+                stdin=stdin_fh,
+                capture_output=True,
+                check=False,
+                timeout=_MAX_SYNTHESIS_SECONDS,
+            )
+    except subprocess.TimeoutExpired as exc:
+        raise ReadAloudUnavailableError(
+            f"Piper did not complete within {_MAX_SYNTHESIS_SECONDS:.0f} seconds."
+        ) from exc
+    finally:
+        try:
+            input_path.unlink(missing_ok=True)
+        except OSError:
+            pass
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout or "").strip()
         if detail:
@@ -950,10 +971,16 @@ class ReadAloudController:
                 creationflags=create_no_window,
             )
             self._active_process = process
+            start = time.monotonic()
             while process.poll() is None:
                 if self._stop_event.is_set() or self._pause_event.is_set():
                     process.terminate()
                     break
+                if time.monotonic() - start >= _MAX_SYNTHESIS_SECONDS:
+                    process.kill()
+                    raise ReadAloudUnavailableError(
+                        f"DECtalk did not complete within {_MAX_SYNTHESIS_SECONDS:.0f} seconds."
+                    )
                 time.sleep(0.05)
             exit_code = process.wait(timeout=2)
             if exit_code != 0 and not (self._stop_event.is_set() or self._pause_event.is_set()):
@@ -1106,10 +1133,16 @@ class ReadAloudController:
                 creationflags=create_no_window,
             )
             self._active_process = process
+            start = time.monotonic()
             while process.poll() is None:
                 if self._stop_event.is_set() or self._pause_event.is_set():
                     process.terminate()
                     break
+                if time.monotonic() - start >= _MAX_SYNTHESIS_SECONDS:
+                    process.kill()
+                    raise ReadAloudUnavailableError(
+                        f"eSpeak-NG did not complete within {_MAX_SYNTHESIS_SECONDS:.0f} seconds."
+                    )
                 time.sleep(0.05)
             self._active_process = None
             exit_code = process.wait(timeout=2)

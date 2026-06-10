@@ -215,6 +215,11 @@ def parse_update_manifest(payload: str) -> UpdateManifest:
 
 
 def verify_manifest_signature(manifest: UpdateManifest) -> bool:
+    env_key = os.getenv(_MANIFEST_KEY_ENV, "").strip()
+    if not env_key:
+        # No deployment key configured — salt-only signatures are not trusted.
+        # Operators must set QUILL_UPDATE_MANIFEST_KEY at install time.
+        return False
     canonical = json.dumps(
         {
             "download_url": manifest.download_url,
@@ -225,7 +230,7 @@ def verify_manifest_signature(manifest: UpdateManifest) -> bool:
         separators=(",", ":"),
         sort_keys=True,
     )
-    key = os.getenv(_MANIFEST_KEY_ENV, _SIGNATURE_SALT).encode("utf-8")
+    key = env_key.encode("utf-8")
     expected = hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
     return hmac.compare_digest(manifest.signature, expected)
 
@@ -289,7 +294,7 @@ def download_release_asset(
     request = Request(url, headers={"User-Agent": "Quill-Updater"})
     chunk_size = 64 * 1024
     with urlopen(request, timeout=timeout, context=_ssl_context()) as response:
-        total = int(getattr(response, "headers", {}).get("Content-Length", 0) or 0)
+        total = int(response.headers.get("Content-Length") or 0)
         done = 0
         if progress is not None:
             progress(0, total)

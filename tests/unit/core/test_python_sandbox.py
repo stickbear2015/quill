@@ -96,3 +96,19 @@ def test_python_sandbox_enforces_memory_limit_on_windows() -> None:
 
     assert result.succeeded is False
     assert "memoryerror" in result.error.lower() or result.returncode != 0
+
+
+def test_builtins_rebinding_blocked() -> None:
+    # M-7: user code that tries to rebind __builtins__ in globals() must not
+    # succeed. The _ProtectedGlobals wrapper silently ignores the write.
+    code = (
+        "import builtins as _b; globals()['__builtins__'] = _b; "
+        "set_result(type(globals().get('__builtins__')).__name__)"
+    )
+    result = run_python_sandbox(code, timeout_seconds=5.0)
+    # Even if the assignment runs, __builtins__ must remain a restricted dict.
+    # result.result is the type name of what's in __builtins__.
+    builtins_type = result.result or ""
+    assert builtins_type != "module", (
+        f"__builtins__ was replaced with the real module; got type={builtins_type!r}"
+    )

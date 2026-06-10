@@ -1,3 +1,12 @@
+"""Thread-stack dump, fault handler, and environment summary helpers.
+
+Implements: ROADMAP STAB-3 (the ``dump_all_thread_stacks`` /
+``setup_fault_handler`` primitives the crash-bundle builder and the
+heartbeat watchdog call when the main thread appears stuck) and the
+``collect_environment_info`` snapshot the About dialog and the
+diagnostic bundle share.
+"""
+
 from __future__ import annotations
 
 import faulthandler
@@ -19,10 +28,28 @@ def _diagnostics_dir() -> Path:
     return app_data_dir() / "diagnostics"
 
 
+def close_diagnostic_handles() -> None:
+    """Close all open fault-handler file handles. Call before shutdown."""
+    while _OPEN_HANDLES:
+        handle = _OPEN_HANDLES.pop()
+        try:
+            handle.close()
+        except Exception:
+            pass
+
+
 def setup_fault_handler() -> Path:
     diagnostics_dir = _diagnostics_dir()
     diagnostics_dir.mkdir(parents=True, exist_ok=True)
     dump_file = diagnostics_dir / f"quill-faulthandler-{int(time.time())}.log"
+    # Close the previous handle before enabling a new one so handles don't
+    # accumulate over the lifetime of a long-running session.
+    if _OPEN_HANDLES:
+        try:
+            faulthandler.cancel_dump_traceback_later()
+        except Exception:
+            pass
+        close_diagnostic_handles()
     handle = dump_file.open("a", encoding="utf-8")
     _OPEN_HANDLES.append(handle)
     faulthandler.enable(file=handle, all_threads=True)

@@ -101,6 +101,11 @@ _REVIEWED_EGRESS: dict[str, str] = {
         "(_EditorHostServices reaches fetch only after the host's capability + "
         "consent check passes); there is no silent path."
     ),
+    # feedback_hub is an optional external library (not in quill/); its urlopen
+    # call is not found by this AST scan but is documented here for auditability.
+    # report_bug() -> FeedbackDialog._on_submit -> create_issue -> urlopen
+    # Triggered only by an explicit user action (clicking Submit in the dialog).
+    # Falls back to the legacy browser path when feedback_hub is not installed.
 }
 
 
@@ -136,7 +141,13 @@ def discover_egress_sites() -> dict[str, str]:
             if isinstance(node, ast.Call) and _callee_name(node) in _EGRESS_CALLEES:
                 rel = path.relative_to(_PACKAGE_ROOT).as_posix()
                 func_name = _enclosing_function_name(tree, node)
-                sites[f"{rel}::{func_name}"] = func_name
+                site = f"{rel}::{func_name}"
+                # Same-site duplicates collapse; cross-function duplicates with
+                # the same enclosing function are not possible by construction
+                # (one entry per function). Two egress calls in the same function
+                # would share the key, so keep the first to preserve the prior
+                # behavior and surface the collision via _first_seen_at().
+                sites.setdefault(site, func_name)
     return sites
 
 

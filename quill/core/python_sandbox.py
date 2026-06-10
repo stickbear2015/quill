@@ -161,6 +161,13 @@ _SANDBOX_BOOTSTRAP = textwrap.dedent(
             raise ImportError(f"Import of {root_name} is not allowed in the sandbox")
         return original_import(name, globals, locals, fromlist, level)
 
+    class _ProtectedGlobals(dict):
+        # Silently ignores __builtins__ rewrites from user code.
+        def __setitem__(self, key, value):
+            if key == "__builtins__":
+                return
+            super().__setitem__(key, value)
+
     safe_builtins = {
         "abs": builtins.abs,
         "all": builtins.all,
@@ -211,14 +218,14 @@ _SANDBOX_BOOTSTRAP = textwrap.dedent(
         "quit": _blocked,
     }
 
-    globals_ns = {
+    globals_ns = _ProtectedGlobals({
         "__builtins__": safe_builtins,
         "document_text": document_text,
         "selection_text": selection_text,
         "outline": outline,
         "result": None,
         "set_result": lambda value: globals_ns.__setitem__("result", value),
-    }
+    })
     sys.stdin = io.StringIO(input_text)
     sys.stdout = io.StringIO()
     sys.stderr = io.StringIO()

@@ -4,12 +4,15 @@ import hmac
 import json
 
 from quill.core.updates import (
+    _MANIFEST_KEY_ENV,
     DEFAULT_UPDATE_MANIFEST_URL,
     GitHubRelease,
     is_newer_version,
     parse_update_manifest,
     select_latest,
 )
+
+_TEST_DEPLOY_KEY = "quill-test-deploy-key-for-unit-tests"
 
 
 def _signed_payload(version: str, download_url: str, published_at: str, notes: str) -> str:
@@ -24,7 +27,7 @@ def _signed_payload(version: str, download_url: str, published_at: str, notes: s
         sort_keys=True,
     )
     signature = hmac.new(
-        b"quill-manifest-signature-v1",
+        _TEST_DEPLOY_KEY.encode("utf-8"),
         canonical.encode("utf-8"),
         "sha256",
     ).hexdigest()
@@ -37,7 +40,8 @@ def _signed_payload(version: str, download_url: str, published_at: str, notes: s
     })
 
 
-def test_parse_update_manifest_accepts_valid_signature() -> None:
+def test_parse_update_manifest_accepts_valid_signature(monkeypatch) -> None:
+    monkeypatch.setenv(_MANIFEST_KEY_ENV, _TEST_DEPLOY_KEY)
     payload = _signed_payload(
         "1.2.3",
         "https://community-access.github.io/quill/releases/download/v1.2.3/Quill-Setup.exe",
@@ -161,3 +165,32 @@ def test_download_release_asset_reports_streaming_progress(tmp_path, monkeypatch
     assert seen[0] == (0, len(body))
     assert seen[-1] == (len(body), len(body))
     assert len(seen) > 2  # streamed in multiple chunks, not one read
+
+
+def test_salt_only_signature_rejected(monkeypatch) -> None:
+    # M-6: verify_manifest_signature must return False when no deployment key
+    # is configured (QUILL_UPDATE_MANIFEST_KEY absent). Salt-only HMAC is a
+    # placeholder and must never be treated as trusted.
+    import hashlib
+
+    monkeypatch.delenv("QUILL_UPDATE_MANIFEST_KEY", raising=False)
+
+    from quill.core.updates import _SIGNATURE_SALT, UpdateManifest, verify_manifest_signature
+
+    manifest_data = {
+        "download_url": "https://example.com/quill.exe",
+        "notes": "patch",
+        "published_at": "2026-06-09",
+        "version": "1.0.1",
+    }
+    canonical = json.dumps(manifest_data, separators=(",", ":"), sort_keys=True)
+    salt_sig = hmac.new(_SIGNATURE_SALT.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+
+    m = UpdateManifest(
+        version="1.0.1",
+        download_url="https://example.com/quill.exe",
+        notes="patch",
+        published_at="2026-06-09",
+        signature=salt_sig,
+    )
+    assert not verify_manifest_signature(m), "salt-only signature must be rejected"

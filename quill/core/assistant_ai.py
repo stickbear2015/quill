@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import ssl
 import time
 from collections.abc import Callable, Iterable, Iterator
@@ -141,6 +142,20 @@ def verify_assistant_connection(
     if provider == "off":
         return True, "AI provider is Off."
 
+    # L-5: surface the portable-install symptom before the network call so
+    # the user does not see a misleading "unauthorized" error from the
+    # provider. A saved key that cannot be unlocked on this Windows
+    # account means the network will never succeed.
+    if assistant_secret_unlock_failed():
+        return False, ASSISTANT_KEY_UNLOCK_FAILED_MESSAGE
+
+    # H-SAFE-1: refuse to even probe the network in safe mode. The user
+    # explicitly asked for offline operation; the verify surface is a
+    # network call and would lie about its outcome if it answered
+    # "verified" without actually checking.
+    if _safe_mode_active():
+        return False, _safe_mode_blocked_message("Connection verification")
+
     # A provider that requires a key cannot be verified without one. Some
     # listing endpoints (for example ollama.com/api/tags) answer 200 without
     # authentication, so without this guard verify would falsely report success
@@ -253,6 +268,28 @@ def _most_significant_error(errors: list[_FetchError]) -> _FetchError | None:
     return ranked[0]
 
 
+def _safe_mode_active() -> bool:
+    """H-SAFE-1: short-circuit network calls when safe mode is on.
+
+    The check is process-level: the ``QUILL_SAFE_MODE`` env var or
+    ``--safe-mode`` CLI flag flip the same boolean in the bootstrap.
+    Returning True here means every public call that uses
+    ``urllib.request`` refuses to talk to the network and reports a
+    safe-mode status, even if a caller somehow bypassed the
+    ``assistant_enabled=False`` guard in settings.
+    """
+    if os.environ.get("QUILL_SAFE_MODE") == "1":
+        return True
+    return False
+
+
+def _safe_mode_blocked_message(operation: str) -> str:
+    return (
+        f"{operation} is disabled in Safe Mode. "
+        "Restart QUILL without --safe-mode (or unset QUILL_SAFE_MODE) to use network features."
+    )
+
+
 def list_assistant_models(
     settings: AssistantConnectionSettings,
     api_key: str,
@@ -264,6 +301,15 @@ def list_assistant_models(
     provider = settings.provider.strip().lower()
     if provider == "off":
         return [], None
+
+    if _safe_mode_active():
+        return [], _safe_mode_blocked_message("Model discovery")
+
+    # L-5: portable-install "key cannot be unlocked" symptom: short-circuit
+    # the network call with the same sentence used by verify so the user
+    # gets one consistent message regardless of which surface they hit.
+    if assistant_secret_unlock_failed() and api_key == "":
+        return [], ASSISTANT_KEY_UNLOCK_FAILED_MESSAGE
 
     host = (settings.host or "").strip().rstrip("/")
     if not host:
@@ -504,12 +550,22 @@ def _build_auth_headers(provider: str, host: str, api_key: str) -> dict[str, str
     return headers
 
 
+def assistant_secret_path() -> Path:
+    return app_data_dir() / _ASSISTANT_SECRET_FILE
+
+
 def assistant_connection_path() -> Path:
     return app_data_dir() / _ASSISTANT_CONNECTION_FILE
 
 
-def assistant_secret_path() -> Path:
-    return app_data_dir() / _ASSISTANT_SECRET_FILE
+# L-5: short, screen-reader-friendly message to use when a saved key cannot
+# be unlocked on this device. Keeping the wording centralized means the AI
+# Hub verify/list flow, the AI Status badge, and the image describe flow
+# all speak the same sentence.
+ASSISTANT_KEY_UNLOCK_FAILED_MESSAGE = (
+    "The saved API key is encrypted for a different Windows user. "
+    "Open AI Connection and enter the key again."
+)
 
 
 def load_assistant_connection_settings() -> AssistantConnectionSettings:
@@ -543,7 +599,16 @@ def load_assistant_api_key() -> str:
     encrypted = str(raw.get("protected_secret", "")).strip()
     if not encrypted:
         return ""
-    decrypted = unprotect_secret(encrypted)
+    try:
+        decrypted = unprotect_secret(encrypted)
+    except Exception:  # noqa: BLE001 - any decrypt failure means "cannot unlock"
+        # L-5: surface the portable-install symptom at the source so the
+        # "unauthorized" error from the provider is no longer the only
+        # signal. Callers should branch on
+        # ``assistant_secret_unlock_failed()`` and show the user a
+        # "key is encrypted for a different Windows user" message
+        # before they try the network call.
+        return ""
     if not decrypted:
         return ""
     if _save_api_key_with_credential_manager(decrypted):
@@ -840,6 +905,8 @@ def generate_assistant_response(
     provider = settings.provider.strip().lower()
     if provider == "off":
         return None, "The AI provider is set to Off."
+    if _safe_mode_active():
+        return None, _safe_mode_blocked_message("AI generation")
     host = (settings.host or "").strip().rstrip("/") or default_host_for_provider(provider)
     policy_error = _validate_endpoint_security(provider, host)
     if policy_error:
@@ -1073,6 +1140,8 @@ def generate_assistant_response_stream(
     provider = settings.provider.strip().lower()
     if provider == "off":
         return None, "The AI provider is set to Off."
+    if _safe_mode_active():
+        return None, _safe_mode_blocked_message("AI streaming")
     host = (settings.host or "").strip().rstrip("/") or default_host_for_provider(provider)
     policy_error = _validate_endpoint_security(provider, host)
     if policy_error:

@@ -1,5 +1,14 @@
+"""Bounded-time regex helpers built on the third-party ``regex`` package.
+
+Implements: ROADMAP STAB-9 (ReDoS-safe regex: ``safe_finditer`` and
+``safe_subn`` wrap user-supplied patterns with a per-call wall-clock
+budget via :class:`RegexTimeoutError`; callers catch the timeout and
+surface a clear error rather than hanging the worker).
+"""
+
 from __future__ import annotations
 
+import functools
 import logging
 import time
 
@@ -12,6 +21,11 @@ class RegexTimeoutError(Exception):
     pass
 
 
+@functools.lru_cache(maxsize=128)
+def _compile_cached(pattern: str, flags: int) -> regex.Pattern[str]:
+    return regex.compile(pattern, flags)
+
+
 def safe_finditer(
     pattern: str,
     text: str,
@@ -21,7 +35,7 @@ def safe_finditer(
 ) -> list[regex.Match[str]]:
     started = time.monotonic()
     try:
-        compiled = regex.compile(pattern, flags)
+        compiled = _compile_cached(pattern, flags)
         matches = list(compiled.finditer(text, timeout=timeout_seconds))
         duration_ms = (time.monotonic() - started) * 1000
         logger.info(
@@ -56,7 +70,7 @@ def safe_subn(
 ) -> tuple[str, int]:
     started = time.monotonic()
     try:
-        compiled = regex.compile(pattern, flags)
+        compiled = _compile_cached(pattern, flags)
         updated, count = compiled.subn(replacement, text, timeout=timeout_seconds)
         duration_ms = (time.monotonic() - started) * 1000
         logger.info(

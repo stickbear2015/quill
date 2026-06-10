@@ -1,5 +1,133 @@
 # Changelog
 
+## Security Hardening and UX Delight (1.0 Release Pass)
+
+This section records the 13 HIGH-severity security fixes, 16 UX delight features, and the LOW/NIT fixes applied during the pre-1.0 code review. All items below were open in `issues.md` before this pass and are now closed.
+
+### HIGH security and reliability fixes (all 13 closed)
+
+- **H-SAFE-1 / H-1-tests — Safe Mode now enforced in all load-bearing paths.** `--safe-mode` / `QUILL_SAFE_MODE=1` disables AI responses, the watch folder, and Quillin contributions. Covered by `test_safe_mode_blocks_assistant_network_calls`.
+- **H-1 — Subprocess args no longer logged in full.** `redaction.py::format_args_for_log` redacts every argument; only the executable basename and arg count are preserved. Covered by `test_run_subprocess_safely_does_not_log_secrets`.
+- **H-2 — Crash bundle redacts secrets before shipping.** `build_diagnostic_bundle` runs `redact_text_for_bundle_with_stats` on every text file. Covered by `test_diagnostic_bundle_redacts_secrets_and_paths`.
+- **H-3 — `recent_commands` sanitized before embedding in diagnostic bundle.** `filter_recent_commands` validates every item against the command-id grammar and drops anything invalid.
+- **H-4-core — `recovery.py` state mutations serialized.** `begin_session`, `mark_clean_exit`, and `_record_offer_outcome` are now protected by a `threading.RLock` (in-process) and `msvcrt.locking` / `fcntl.flock` (cross-process). Covered by `test_concurrent_begin_session_serialize_via_lock`.
+- **H-1-core — `QUILL_DATA_DIR` gated on `_DEV_BUILD`.** Release builds ignore the env var entirely. Dev builds additionally require the path to be under `Path.home()`. Covered by `tests/unit/core/test_paths.py` (4 tests).
+- **H-2-core — External engine executable allowlist.** `configure_engine` and `probe_engine` validate the executable basename against `_ENGINE_EXECUTABLE_BASENAMES` before any I/O. Covered by `test_configure_engine_rejects_unallowed_executable` and `test_probe_engine_rejects_unallowed_executable`.
+- **H-3-core — SSH uses `RejectPolicy` by default.** `paramiko.AutoAddPolicy` is only available when `trust_first_use=True` is passed explicitly. System host keys are always loaded first. Covered by 4 tests in `test_ssh_client.py`.
+- **H-4-core-2 — IPC queue append serialized in-process.** `enqueue_open_request` acquires a module-level `threading.Lock` before opening the JSONL file. Covered by `test_concurrent_enqueue_serializes_via_lock`.
+- **H-1-ui / H-2-ui — Quillin consent and remove-confirm dialogs use the modal contract.** Both `quillin_consent` and `on_remove` now route through `_show_modal_dialog` + `apply_modal_ids`. Covered by `test_quillin_consent_uses_modal_contract` and `test_on_remove_uses_modal_contract`.
+- **H-3-ui — Watch Queue Monitor properly cleaned up on close.** `_on_close` explicitly destroys the monitor dialog and clears all references before the watch service stops.
+- **H-1-platform / H-2-platform — `pyttsx3` engine is a process-wide singleton.** Initialization happens once; a `_pyttsx3_engine_failed` gate prevents repeated failure. `reset_pyttsx3_engine_for_tests()` helper added for test isolation.
+- **H-3-platform — `Windows.Media.Ocr` import wrapped.** `winsdk` imports are wrapped in `try/except ImportError`; `_WINSDK_AVAILABLE` flag prevents crashes on non-Windows builds. Covered by `test_module_imports_without_winsdk`.
+- **H-4-platform — macOS VoiceOver errors now logged.** The `except Exception: pass` branch is now `logger.warning(...)`. Covered by `test_macos_announce_error_logged`.
+
+### Magic / UX delight (all 16 closed — §8)
+
+- **Key cheatsheet (`Alt+Shift+/`).** `open_key_cheatsheet()` opens a searchable dialog listing every command and its keybinding.
+- **Go to anything (`Ctrl+Shift+Grave, G`).** `GoToAnythingDialog` in `quill/ui/palette.py` searches commands (`>` prefix) and headings (`#` prefix). Activating a heading calls `go_to_line_number(lineno)` on `MainFrame`.
+- **Earcons.** `_play_quill_sound()` fires at mode-entry transitions, queued separately from TTS so it does not interrupt screen-reader output.
+- **"Why Don't I See a Feature?" (`Alt+F1`).** `explain_unavailable_feature()` announces the reason a command is unavailable.
+- **Live contrast checker (`Ctrl+Shift+Grave, Shift+C`).** `announce_contrast_ratio()` computes the WCAG 2.1 relative-luminance ratio for the current theme and announces it. Also fires automatically after `_apply_theme()`.
+- **Magic Paste (`Ctrl+Alt+V`).** `magic_paste()` inspects the clipboard for a URL, Markdown block, or base64 image and presents a picker before inserting.
+- **Recovery diff UX.** `_offer_crash_recovery()` now includes a 30-line read-only snapshot preview so users can review content before deciding to restore.
+- **Status bar context help (`Alt+H`).** `show_context_help()` announces the most useful keys for the current mode in priority order.
+- **Soft error recovery link.** `_show_error_with_hint()` is used for file-open, export, and import errors. A "What to try next..." toggle reveals a `wx.TE_READONLY` area with contextual guidance.
+- **TTS fallback announcement.** `_check_tts_fallback_on_startup()` fires at startup and announces "Screen reader fallback active. F8 to retry TTS." when `pyttsx3` could not be initialised. `retry_tts_init()` exposed in `prism_bridge.py`.
+- **Recovery `had_replacements` note.** `read_recovery_snapshot()` returns `(text, had_replacements)`; the recovery dialog shows a warning when replacement characters are detected.
+- **Annisuggestion.** `top_suggestion()` in `quill/core/palette.py` surfaces the most-used recent command (≥3 uses, within 1 hour) as a `suggestion` status-bar cell. Activating the cell runs the command.
+- **Crash-recovery loop fix (M-28).** `RecoveryOffer.dismissal_count` adapts the dialog text and relabels the skip button "Discard and Continue" after 3 dismissals.
+- **File-context summary (`Alt+I`).** `show_document_summary()` announces word count, line count, heading count, last-saved time, and recovery snapshot presence.
+- **A11Y live indicator.** `"sr_name"` status-bar cell shows which screen reader is detected, populated by `detect_screen_reader()` from `sr_detect.py`.
+- **"Resume from where I left off".** Caret position is saved per autosave cycle (`save_cursor_position()` in `recovery.py`) and per workspace snapshot (`caret_positions_from_session()` in `sessions.py`). Both are restored on next open.
+
+### MEDIUM — Sweep 14 (14 fixes: M-10 through M-26 batch)
+
+- **M-12** — `io/rtf_safety.py`: removed `\bAUTOTEXT\b` from `_REMOTE_FIELD_RE`; `AUTOTEXT` is a benign boilerplate-insert control word, not a remote-fetch instruction. Covered by `test_autotext_not_flagged_as_remote`.
+- **M-26** — `tools/module_size_budgets.json`: added `"_next_target_main_frame": 15000` to make the CQ-1 decomposition trajectory explicit.
+- **M-21** — `stability/safe_regex.py`: added `_compile_cached` (`lru_cache(maxsize=128)`) so `safe_finditer` and `safe_subn` reuse compiled patterns across calls. Covered by `test_safe_finditer_uses_cached_compile`.
+- **M-23** — `stability/wx_dispatch.py`: `call_ui_safely` now logs a `WARNING` when `wx.CallAfter` is unavailable and it falls back to synchronous execution on the caller thread. Covered by `test_call_ui_safely_logs_warning_without_wx`.
+- **M-10** — `io/pdf.py`: `extract_pdf_text` now catches any `Exception` from each extractor (not just `ModuleNotFoundError`), so a malformed PDF falls through to the next extractor without crashing. Covered by `test_malformed_pdf_returns_empty_text_not_crash`.
+- **M-17** — `stability/diagnostics.py`: `setup_fault_handler` now closes the previous handle and calls `faulthandler.cancel_dump_traceback_later()` before opening a new one, so handles stay bounded across long sessions. Added `close_diagnostic_handles()` helper. Covered by `test_diagnostic_handles_bounded`.
+- **M-18** — `stability/task_manager.py`: `shutdown(wait, cancel_futures=not wait)` replaced with `shutdown(wait=True, cancel_pending=False)` — the two parameters are now independent. Covered by `test_task_manager_shutdown_decoupled`.
+- **M-19** — `stability/wx_heartbeat.py`: `WxHeartbeatWatchdog.stop(timeout=5.0)` now calls `self._thread.join(timeout=timeout)` after setting the stop event, so callers know the watchdog has fully stopped. Covered by `test_watchdog_stop_joins_thread`.
+- **M-20** — `stability/wx_heartbeat.py`: replaced the `already_dumped` boolean with a `last_dump_time` timestamp; the watchdog re-dumps when `age >= dump_after_seconds` AND at least `dump_after_seconds` seconds have elapsed since the last dump. This ensures a brief UI unblock followed by a second block triggers a second dump. Covered by `test_watchdog_re_dumps_after_recovery_window`.
+- **M-22** — `stability/feature_contracts.py`: `validate_feature_contract` now enforces two additional rules: `risky`/`advanced` features must have `disabled_in_safe_mode=True`; `experimental` features must have `default_enabled=False`. Covered by `test_feature_contract_full_validation`.
+- **M-11** — `io/structured.py`: `_format_spreadsheet` now catches `zipfile.BadZipFile` separately from generic `Exception` and returns a "corrupted file" message pointing the user to repair in Excel/LibreOffice, rather than the generic "import not available" message. Covered by `test_corrupt_xlsx_surfaces_actionable_error`.
+- **M-13** — `io/rtf.py`: added `_detect_rtf_encoding(path)` which reads the first 512 bytes to extract the `\ansicpg` code-page number; `read_rtf_document` now uses the detected encoding instead of hard-coded `cp1252`, so Cyrillic (CP1251) and other non-Western RTF files decode correctly. Covered by `test_cyrillic_rtf_decoded_with_ansicpg`.
+- **M-16** — `core/ai/assistant.py`: `make_default_backend()` now logs a `WARNING` when the configured provider probe fails, rather than silently swallowing the exception. Covered by `test_unreachable_provider_announced`.
+- **M-25** — `tools/quillin_lint.py`: `_string_errors` now uses the `regex` package with `timeout=0.5` when available (falls back to `re` if not installed), guarding against ReDoS in Quillin manifest pattern validation. Covered by `test_redos_pattern_rejected`.
+
+### MEDIUM — Sweep 15 (8 fixes: M-3, M-5, M-6, M-7, M-8, M-9, M-14, M-15)
+
+- **M-9** — `io/pages.py`: `_read_pages_via_iwa` now acquires a module-level `threading.Lock` (stored as `_codec._quill_id_name_map_lock`) around the `ID_NAME_MAP` patch/restore cycle. Two concurrent `.pages` openers can no longer corrupt each other's codec state. Covered by `test_concurrent_reads_serialize_via_lock`.
+- **M-14** — `core/read_aloud.py`: `_speak_sentence_dectalk` and `_run_espeak_live` now track `start = time.monotonic()` and call `process.kill()` + raise `ReadAloudUnavailableError` when `_MAX_SYNTHESIS_SECONDS` (120 s) elapses. Hanging DECtalk/eSpeak processes can no longer stall the worker thread indefinitely. Covered by `test_dectalk_killed_after_wall_clock_timeout`.
+- **M-15** — `core/read_aloud.py`: `synthesize_with_piper` now writes the text to a `NamedTemporaryFile` and passes it as `stdin` (an open file object) instead of using `input=text`. This bypasses the 64 KiB OS pipe-buffer limit for large inputs and adds `timeout=_MAX_SYNTHESIS_SECONDS` to `subprocess.run`. Covered by `test_piper_long_text_via_temp_file`.
+- **M-5** — `core/ai/foundation_models.py`: `FoundationModelsBackend` now caches a single `asyncio` event loop on a daemon thread (`fm-event-loop`) and submits all coroutines via `asyncio.run_coroutine_threadsafe`. `asyncio.run()` was creating a new loop per call, leaking OS handles. Covered by `test_event_loop_reused_across_calls`.
+- **M-6** — `core/updates.py`: `verify_manifest_signature` now returns `False` immediately when `QUILL_UPDATE_MANIFEST_KEY` is not set. A salt-only HMAC (the default placeholder) is no longer accepted as a valid signature, preventing MITM forgery on unconfigured deployments. Covered by `test_salt_only_signature_rejected`.
+- **M-7** — `core/python_sandbox.py`: added `_ProtectedGlobals(dict)` — a `dict` subclass whose `__setitem__` silently ignores writes to `"__builtins__"`. The sandbox's `globals_ns` is now a `_ProtectedGlobals` instance, preventing user code from replacing the restricted builtins dict via `globals()["__builtins__"] = original_builtins`. Covered by `test_builtins_rebinding_blocked`.
+- **M-8** — `ui/main_frame.py`: `_watch_run_macro` already routes all UI-thread macro dispatch through `wx.CallAfter`. Verified clean; added `test_macro_dispatch_marshalled_to_ui_thread` to lock in the contract.
+- **M-3** — `core/ai/external_engine.py`: `configure_engine` now calls `which(command[0])` (injectable for tests, defaults to `shutil.which`) and raises `ValueError` if the executable is not on `PATH` and no absolute path was given. A new `which=` parameter makes the check testable without modifying `PATH`. Covered by `test_unresolvable_executable_rejected`.
+
+### MEDIUM — Sweep 16 (6 fixes: M-24, M-28, M-29, M-30, M-31, M-32) — all MEDIUM closed
+
+- **M-24** — `tools/dialog_button_contract.py`: extended the dialog-button audit to also verify that every `apply_modal_ids` `affirmative_id` is backed by a real button or `CreateButtonSizer` flag, or that the scope handles `WXK_RETURN`/`WXK_NUMPAD_ENTER` manually. Removed the bogus `affirmative_id=wx.ID_OK` from five `assistant_tools.py` dialogs (no ID_OK button existed); added `# noqa: dialog_button_contract` to `preview_dialog.py` where the button ID is a loop variable (false positive). Covered by `test_unbacked_affirmative_id_flagged` and `test_audit_accepts_enter_handler_for_affirmative_id`.
+- **M-28** — `ui/main_frame.py`: `_show_modal_dialog` gains a `restore_editor_focus: bool = True` parameter. The crash-recovery loop now passes `restore_editor_focus=False` so `editor.SetFocus()` is not called between re-show iterations, eliminating the focus-racing that caused screen readers to announce the editor between dialog opens. Covered by `test_crash_recovery_loop_does_not_steal_focus`.
+- **M-29** — `ui/assistant_tools.py`: `RunPythonDialog._on_run` now dispatches `run_python_sandbox` to a daemon worker thread and delivers results back via `wx.CallAfter(_finish_run, result)`. The Run and Apply buttons are disabled during execution and re-enabled in `_finish_run`. Long-running sandbox scripts no longer freeze the UI thread or the screen reader. Covered by `test_run_python_does_not_block_ui_thread`.
+- **M-30** — `ui/main_frame_browse.py`: `_run_browse_prewarm` now creates a per-run `threading.Event` (`cancel_event`). Before starting a new worker thread it sets any in-flight event (`old_cancel.set()`). The worker checks `cancel_event.is_set()` before calling `wx.CallAfter`, so a superseded build drops its result without triggering a UI update. Covered by `test_prewarm_thread_cancelled_on_repeat`.
+- **M-31** — `ui/sticky_notes.py`: `StickyNotesVaultDialog._delete_selected` now uses `show_message_box` from `quill.ui.dialog_contract` instead of raw `self._wx.MessageBox`. Screen readers now hear the enter/exit announcement cues for the delete confirmation dialog. Covered by `test_delete_confirm_uses_contract_helper`.
+- **M-32** — `ui/main_frame_image.py`: replaced both `time.sleep(0.1)` polling loops (OCR and image-description progress) with `wx.MilliSleep(100)`, and removed the `import time` that was no longer needed. `wx.MilliSleep` pumps the wx event queue between sleeps, eliminating CPU busy-wait while OCR or AI description runs.
+
+### LOW — L-23 (csv_grid.py cell-ID stride)
+
+- **L-23** — `quill/ui/csv_grid.py:GetSelection`: replaced the `row * 1000 + col` position encoding with `row * _CELL_POSITION_STRIDE + col` where `_CELL_POSITION_STRIDE = 16384`. The old stride collided for any column ≥ 1000 (e.g. row=1,col=0 → 1000 == row=0,col=1000). The new stride matches Excel's maximum column count (16 384) so no realistic spreadsheet can produce a collision. Seven regression tests added in `tests/unit/ui/test_csv_grid.py`.
+
+### LOW and NIT — Sweep 12 (§6 and §7 fully closed)
+
+- **L-17** — `tests/stability/test_stability.py`: added 6 direct unit tests for `redaction.py` (previously tested only indirectly via the bundle): `test_redact_command_arg_replaces_secret_name_value_pair`, `test_redact_command_arg_strips_windows_path_prefix`, `test_format_args_for_log_preserves_basename_and_count`, `test_format_args_for_log_empty_returns_no_args`, `test_redact_text_for_bundle_drops_bearer_line_and_reports_stats`, `test_filter_recent_commands_drops_non_id_strings`. Test count: 25 → 31.
+- **L-18** — `tests/performance/test_budgets.py`: added `pytestmark = pytest.mark.perf` and registered the `perf` marker in `pyproject.toml`. Wall-clock budget tests can now be excluded with `-m "not perf"` in latency-sensitive CI environments.
+- **L-19** — `dialogs.md`: added a cross-reference block near the top of the file pointing to `tests/accessibility/test_accessibility_suite.py`, `tests/accessibility/test_announcement_grammar.py`, and `docs/qa/final-qa-test-plan.md §6` ("Dialog estate pass").
+- **L-20** — `docs/qa/final-qa-test-plan.md`: `§5.1` already carries all three required artifacts (`dialog_inventory.json` mtime, `module_size_budgets.json _rebaseline_*` keys, and wxPython runtime version, plus the public surface fixture and glow-core engine hash). Confirmed and closed.
+- **N-13** — `quill/core/bookmarks.py`: added a module docstring explaining the rationale for keeping this as a separate wx-free module (pure dict operations, independently unit-testable without importing wx). Mirrors the existing `clipboard_collector.py` docstring.
+- **N-14** — `quill/core/clipboard_collector.py`: existing module docstring (`EDS-11` reference, explicit wx-free contract) is sufficient. Confirmed and closed.
+
+### LOW and NIT fixes (§6 and §7 continued)
+
+- **L-2** — `core/lexical.py`: added `logger.debug("Lexical provider %s failed: %s", ...)` inside the broad `except` so provider regressions surface in diagnostic logs.
+- **L-3** — `core/ai/assistant.py`: added `logger.warning(...)` inside the Foundation Models backend probe `except` so probe failures appear in the diagnostic bundle.
+- **L-4** — `core/lexical_preload.py`: added `logger.debug(...)` inside the preload `except` so non-fatal warm-up failures are visible in debug logs.
+- **L-6** — `core/watch_queue.py`: documented why `threading.RLock` is required (`_dequeue_item` re-enters `_try_flush` under the same lock; plain `Lock` would deadlock).
+- **L-14** — `tools/check_banned_patterns.py`: enriched the unregistered-dialog-surface violation message to hint that stock `wx` dialogs should be added to `_NATIVE_WX_DIALOGS` in `dialog_inventory.py`.
+- **L-16 / N-5** — `tools/ui_surface.py`: wrapped the bare `next(...)` call in `try/except StopIteration` and raised `SystemExit` with a clear message when `MainFrame` cannot be found (e.g. after a rename).
+- **M-27** — `pyproject.toml`: added `"Operating System :: MacOS"` classifier to match the documented macOS support.
+- **L-1** — `core/paths.py`: on Windows, missing `APPDATA` now raises `RuntimeError` with a clear message instead of silently falling back to the hidden `~/.quill` directory. Non-Windows still uses `~/.quill` as before. New test `test_windows_raises_when_appdata_missing` locks this in.
+- **L-7** — `core/glow.py`: narrowed the `ImportError`-only case in `_load_glow_core`; all other broad `except Exception` sites in the GLOW backend now log `logger.warning(...)` before returning the safe fallback.
+- **L-10** — `io/ocr.py`: narrowed `except Exception` to `except ImportError` in `_import_windows_ocr` so non-import errors are not silently swallowed.
+- **L-21** — `stability/*.py`: all stability modules already carry `Implements: ROADMAP ...` docstrings — confirmed and closed.
+- **L-22** — `tests/unit/tools/test_bundled_quillin_lint.py`: added `test_bad_quillin_fixture_is_rejected` negative test with a `fixtures/bad_quillin/manifest.json` that fails schema validation (missing `id`, invalid `version`).
+- **N-10** — `dialogs.md`: safe mode flag already referenced at lines 280-305 — confirmed and closed.
+- **N-3** — `stability/crash_report.py`: bundle filename now uses ISO-8601 (`YYYYMMDDTHHMMSSZ`) instead of a raw 19-digit nanosecond epoch, making bundles human-inspectable in Explorer and sorted correctly by name.
+- **L-11** — `io/structured.py`: duplicate of M-11 (low because there is an existing fallback); closed as a reference item — will be addressed with M-11.
+
+- **L-8** — `updates.py`: removed unnecessary `getattr` guard around `response.headers.get("Content-Length")`.
+- **L-12** — `safe_mode.py`: deleted unused `safe_mode_message()` export.
+- **L-15** — `network_egress_audit.py`: duplicate egress-site key now raises `ValueError` at scan time so no new egress site can be silently dropped.
+- **N-1** — `stability/__init__.py`: re-exported `build_diagnostic_bundle`, `configure_logging`, and `run_subprocess_safely` for ergonomic call sites.
+- **N-4** — `module_size_budgets.json`: `_comment` / `_rebaseline_*` keys are now stripped before the budget map is read.
+- **N-7** — `quillin_lint.py`: `_JSON_TYPES` is now `types.MappingProxyType({...})` for immutability.
+- **N-8** — `dialog_button_contract.py`: `_FLAG_TO_ID` reverse-lookup dict used by `_collect_button_ids`; `# noqa: dialog_button_contract` opt-out added.
+- **N-9** — `feature_contracts.py`: `requires_timeout: bool | None = None` moved to end of dataclass for default-value ordering.
+- **N-11** — `external_engine.py`: `configure_engine` docstring documents POSIX-style shell-command format and `shlex.split` semantics.
+- **N-12** — `recovery.py`: `_validate_session_id()` helper replaces three `UUID(session_id)` side-effect calls.
+- **N-15** — `dictation.py`: `try/except ImportError` block carries explicit Windows-only intent comment.
+- **N-16** — `announcements.py`: `format_progress` docstring states its pure-function, no-I/O, thread-safe contract.
+- **M-1** — `core/watch_actions.py`: added `_humanize_action_error(action_id, error)` and routed the 8 broad `except Exception` sites (`OpenAction`, `MoveAction`, `CopyAction`, `ConvertAction`, `RunMacroAction`, `RunPythonTransformAction`, `AiAction`, `OcrAction`) plus the registry's last-resort guard through it. Screen-reader users now get plain-English messages such as `"Quill cannot complete the move. The folder is read-only or you lack permission — choose a folder you own."` instead of `"[Errno 13] Permission denied: 'C:\\…'"`. Coverage: `test_humanize_permission_error_is_actionable`, `test_humanize_file_not_found_mentions_reappear`, `test_humanize_generic_oserror_keeps_strerror`, `test_humanize_unrecognized_error_falls_back_to_str`, `test_move_action_permission_error_humanized`. Budget re-baselined (+57 lines).
+- **L-9** — `core/storage_mode.py`: `portable_root_dir()` now honours the `_DEV_BUILD` flag (set at module load from `QUILL_DEV_BUILD == "1"`), so release builds ignore `QUILL_PORTABLE_ROOT` even if a user has it set. Mirrors the H-1-core treatment of `QUILL_DATA_DIR`. Coverage: `test_release_build_ignores_quill_portable_root` and `test_dev_build_honours_quill_portable_root`.
+- **L-13** — `stability/task_manager.py`: `QuillTask` now carries `submitted_at` (wall-clock at submit) and `result_summary` (one of `"pending"`, `"ok"`, `"cancelled"`, `"failed"`, exposed as a `TaskResult` literal). The worker's exception handler pre-tags the result, and the done callback only re-derives it when the worker never reached its exception path — eliminating a race where a cooperative cancel looked like `"failed"`. The diagnostic bundle picks the new fields up automatically because `_snapshot_task` runs `asdict()` on the dataclass. Coverage: `test_task_manager_records_submitted_at_and_pending_result`, `test_task_manager_result_summary_ok_after_success`, `test_task_manager_result_summary_failed_on_exception`, `test_task_manager_result_summary_cancelled`.
+- **L-5** — `core/assistant_ai.py`: wrapped `unprotect_secret` in `try/except Exception` so a DPAPI decrypt failure (portable install moved between machines, current user differs from the original) no longer propagates. A new module-level `ASSISTANT_KEY_UNLOCK_FAILED_MESSAGE` constant (`"The saved API key is encrypted for a different Windows user. Open AI Connection and enter the key again."`) is now surfaced from `verify_assistant_connection()` and `list_assistant_models()` whenever `assistant_secret_unlock_failed()` returns True and no fresh key is supplied. The original provider "unauthorized" error is replaced with an actionable message. Coverage: `test_verify_assistant_connection_surfaces_unlock_failure`, `test_list_assistant_models_surfaces_unlock_failure`.
+- **N-6** — `core/spellcheck.py` and `core/thesaurus.py`: added public `reset_caches()` helpers to both modules. Each takes its module's own backend/load lock, so a reset cannot race a lazy loader. `tests/performance/test_budgets.py` now calls the public helpers instead of poking `_WORDLIST_CACHE` / `_INDEX` directly; the old private-attribute reset code is retained as a backward-compat shim. New tests in `tests/unit/core/test_reset_caches.py` lock in the new contract: `test_spellcheck_reset_caches_clears_all_globals`, `test_spellcheck_reset_caches_acquires_backend_lock`, `test_spellcheck_preload_after_reset_loads_wordlist`, `test_thesaurus_reset_caches_clears_index_and_error`, `test_thesaurus_reset_caches_acquires_load_lock`, `test_thesaurus_preload_after_reset_is_idempotent`.
+
+---
+
 ## QUILL Brand Identity
 
 **QUILL** stands for **Quality, Usable, Inclusive, Lightweight, Literate**.

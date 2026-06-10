@@ -7,10 +7,22 @@ from quill.core.storage import read_json, write_json_atomic
 
 _VALID_MODES = {"appdata", "portable"}
 
+# L-9: ``QUILL_PORTABLE_ROOT`` is documented as a *dev-only* override. In
+# release builds we ignore it entirely, matching the H-1-core treatment of
+# ``QUILL_DATA_DIR``: a tampered environment cannot redirect the user's
+# portable installation to an attacker-controlled directory. Development
+# builds (CI, local testing) opt in by exporting ``QUILL_DEV_BUILD=1`` in
+# the environment, or by setting the module-private ``_DEV_BUILD`` flag
+# below to ``True``.
+_DEV_BUILD = os.environ.get("QUILL_DEV_BUILD") == "1" or False  # dev override opt-in
+
 
 def portable_root_dir() -> Path | None:
     override = os.environ.get("QUILL_PORTABLE_ROOT")
     if not override:
+        return None
+    if not _DEV_BUILD:
+        # Release build: ignore the env var entirely.
         return None
     return Path(override).expanduser().resolve()
 

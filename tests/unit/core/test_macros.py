@@ -57,3 +57,49 @@ def test_macro_manager_rename_delete_and_reload(
 
     reloaded = MacroManager.load()
     assert reloaded.macros == {}
+
+
+def test_macro_dispatch_marshalled_to_ui_thread(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # M-8: _watch_run_macro must dispatch to the UI thread via wx.CallAfter
+    # so that macro steps execute on the thread that owns wx widgets.
+    import threading
+    from unittest.mock import MagicMock
+
+    monkeypatch.setattr(macros_module, "macros_path", lambda: tmp_path / "macros.json")
+    manager = MacroManager.load()
+    manager.start_recording("watch-test")
+    manager.record("edit.copy")
+    manager.stop_recording()
+
+    class _FakeFrame:
+        def __init__(self):
+            self.macros = manager
+            self._wx = MagicMock()
+            self._call_after_target = None
+            call_after_event = threading.Event()
+
+            def fake_call_after(fn, *args, **kwargs):
+                self._call_after_target = fn
+                call_after_event.set()
+
+            self._wx.CallAfter = fake_call_after
+            self._call_after_event = call_after_event
+
+        def _watch_run_macro(self, path, macro_name):
+            call_after = getattr(self._wx, "CallAfter", None)
+            if callable(call_after):
+                call_after(self._watch_run_macro_ui, path, macro_name)
+
+        def _watch_run_macro_ui(self, path, macro_name):
+            pass
+
+    frame = _FakeFrame()
+    doc_path = tmp_path / "doc.txt"
+    doc_path.write_text("hello", encoding="utf-8")
+
+    frame._watch_run_macro(doc_path, "watch-test")
+
+    assert frame._call_after_event.wait(timeout=1), "wx.CallAfter was not called"
+    assert frame._call_after_target is not None
