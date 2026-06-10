@@ -1,5 +1,15 @@
 # Codex Review Log
 
+## 2026-06-10 17:36:42 -04:00
+
+Commit clarification:
+
+- user asked to proceed with the detailed commit
+- that commit had already been created immediately before this message
+- current detailed checkpoint commit is:
+  - `00d0683` `feat(publishing): default remote opens to readable markdown`
+- next actionable git step, if wanted, is push
+
 ## 2026-06-10 17:31:23 -04:00
 
 Repo-portability checkpoint:
