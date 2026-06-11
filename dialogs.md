@@ -299,7 +299,25 @@ power-tool commands act directly on the document and announce their result.
 - [ ] Rename Current File (name prompt): File > Rename Current File
 - [ ] Delete Current File (delete confirm): File > Delete Current File
 
-## X. Startup-only dialogs
+## X. Notebook (Workspace) dialogs
+
+Multi-document workspace commands (§10.4 Milestone 2). All custom surfaces are
+`hardened_custom` per the dialog contract.
+
+- [ ] New Notebook (name prompt + file-save picker): File > Notebook > New Notebook
+- [ ] New Notebook from Folder (folder picker + name prompt + file-save picker):
+  File > Notebook > New from Folder
+- [ ] Open Notebook (file-open picker filtered to `.quillnotebook`):
+  File > Notebook > Open Notebook
+- [ ] Save Snapshot (name prompt): File > Notebook > Save Snapshot
+- [ ] Manage Snapshots (list with Rename / Delete buttons): `hardened_custom`
+  (wires `apply_modal_ids`): File > Notebook > Manage Snapshots
+- [ ] Go to Entry in Notebook (tree navigator — `_show_tree_navigator`):
+  Navigate > Go to Entry in Notebook
+- [ ] Go to Heading in Notebook (tree navigator — `_show_tree_navigator`):
+  Navigate > Go to Heading in Notebook
+
+## Y. Startup-only dialogs
 
 These appear only during a specific startup condition. Test by reproducing the
 trigger.

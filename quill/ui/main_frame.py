@@ -482,6 +482,7 @@ from quill.ui.main_frame_image import ImageCaptureMixin
 from quill.ui.main_frame_intellisense import IntellisensePopupMixin
 from quill.ui.main_frame_line_commands import LineCommandsMixin
 from quill.ui.main_frame_menu import MenuBuilderMixin
+from quill.ui.main_frame_notebook import NotebookUIMixin
 from quill.ui.main_frame_power_tools import PowerToolsActionsMixin
 from quill.ui.main_frame_power_tools_menu import PowerToolsMenuMixin
 from quill.ui.main_frame_profile_picker import ProfilePickerMixin
@@ -491,6 +492,7 @@ from quill.ui.main_frame_selection import SelectionMarksMixin
 from quill.ui.main_frame_sessions import SessionsMixin
 from quill.ui.main_frame_ssh import SshEditingMixin
 from quill.ui.main_frame_statusbar import StatusBarMixin, _StatusBarCell
+from quill.ui.notebook_panel import NotebookEntriesPanel
 from quill.ui.palette import CommandPaletteDialog
 from quill.ui.publishing_tools import BrowsePublishingContentDialog, PublishingConnectionsDialog
 from quill.ui.rich_text_surface import RichTextSurface
@@ -769,6 +771,7 @@ class MainFrame(
     ImageCaptureMixin,
     BrowseModeMixin,
     MenuBuilderMixin,
+    NotebookUIMixin,
     QuillKeyMixin,
     SelectionMarksMixin,
     SessionsMixin,
@@ -805,6 +808,7 @@ class MainFrame(
         "extend_mode": "Extend Mode",
         "sr_name": "Screen Reader",
         "suggestion": "Suggested Action",
+        "notebook_goal": "Notebook Goal",
     }
     _STATUS_BAR_WIDTHS: dict[str, int] = {
         "message": -1,
@@ -825,6 +829,7 @@ class MainFrame(
         "extend_mode": 110,
         "sr_name": 160,
         "suggestion": 220,
+        "notebook_goal": 200,
     }
     _STATUS_BAR_FEATURES: dict[str, str] = {
         "message": "core.app",
@@ -845,6 +850,7 @@ class MainFrame(
         "extend_mode": "core.edit",
         "sr_name": "core.app",
         "suggestion": "core.app",
+        "notebook_goal": "core.notebook",
     }
     _MACRO_CONTROL_COMMANDS: frozenset[str] = frozenset({
         "tools.start_macro_recording",
@@ -1042,7 +1048,10 @@ class MainFrame(
         self._intellisense_popup.set_accept_callback(self._apply_intellisense_selection)
         self._intellisense_popup.set_dismiss_callback(self._dismiss_intellisense_popup)
         self._tab_control_visible = bool(self.settings.show_tab_control)
-        self._documents_panel = wx.Panel(self.frame)
+        self._active_notebook = None  # type: ignore[assignment]  # Notebook | None
+        self._entries_panel_visible = False
+        self._main_splitter = wx.SplitterWindow(self.frame, style=wx.SP_LIVE_UPDATE | wx.SP_3D)
+        self._documents_panel = wx.Panel(self._main_splitter)
         self._documents_sizer = wx.BoxSizer(wx.VERTICAL)
         self._documents_panel.SetSizer(self._documents_sizer)
         self.notebook = self._create_tab_host(self._tab_control_visible)
@@ -1050,9 +1059,11 @@ class MainFrame(
         self._active_tab_index = -1
         self._statusbar_cells: list[_StatusBarCell] = []
         self._active_statusbar_cell_index = 0
-        layout = wx.BoxSizer(wx.VERTICAL)
         self._documents_sizer.Add(self.notebook, 1, wx.EXPAND)
-        layout.Add(self._documents_panel, 1, wx.EXPAND)
+        self._entries_panel = NotebookEntriesPanel(self._main_splitter, wx)
+        self._main_splitter.Initialize(self._documents_panel)
+        layout = wx.BoxSizer(wx.VERTICAL)
+        layout.Add(self._main_splitter, 1, wx.EXPAND)
         self.statusbar = wx.Panel(self.frame)
         self._statusbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.statusbar.SetSizer(self._statusbar_sizer)

@@ -212,6 +212,14 @@ FEATURE_DEFINITIONS: dict[str, FeatureDefinition] = {
         category="safety",
         locked_on=True,
     ),
+    "core.notebook": FeatureDefinition(
+        "core.notebook",
+        "Notebook (Workspace)",
+        aliases=("notebook", "workspace", "entries"),
+        description="Multi-document workspace with entries, goals, and snapshots (§10.4).",
+        dependencies=("core.file",),
+        category="core",
+    ),
     "core.ocr": FeatureDefinition(
         "core.ocr", "OCR", category="accessibility", dependencies=("core.file",)
     ),

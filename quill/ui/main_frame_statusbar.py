@@ -74,6 +74,11 @@ class StatusBarMixin:
         # the user's status bar order.
         if "suggestion" not in visible and self._get_action_suggestion() is not None:
             visible.append("suggestion")
+        if getattr(self, "_active_notebook", None) is not None and "notebook_goal" not in visible:
+            nb = self._active_notebook
+            goal = getattr(nb, "goal", None)
+            if goal is not None and getattr(goal, "enabled", False):
+                visible.append("notebook_goal")
         if not visible:
             return ["message"]
         if "message" not in visible:
@@ -203,6 +208,19 @@ class StatusBarMixin:
             if binding:
                 return f"{suggestion.title} ({binding})"
             return suggestion.title
+        if item == "notebook_goal":
+            nb = getattr(self, "_active_notebook", None)
+            if nb is None:
+                return ""
+            goal = getattr(nb, "goal", None)
+            if goal is None or not getattr(goal, "enabled", False):
+                return ""
+            count = getattr(goal, "today_count", 0)
+            target = getattr(goal, "daily_target", 500)
+            unit = getattr(goal, "unit", "words")
+            if count >= target:
+                return f"Goal reached: {count:,} {unit}"
+            return f"{count:,} / {target:,} {unit}"
         return ""
 
     def _get_action_suggestion(self) -> object | None:

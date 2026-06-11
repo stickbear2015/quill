@@ -2559,45 +2559,15 @@ All eight EdSharp-parity selection commands shipped (commit 46032bd).
 `tests/unit/ui/test_edsharp_selection_parity.py` passes (22 tests).
 
 **Milestone 2: Notebook (Workspace) JSON + Entries
-panel + Document Navigator upgrades (this is the
-organization milestone).**
-
-- New `quill/core/notebook_store.py` and
-  `quill/core/schemas/notebook.json`.
-- New `quill/ui/notebook_panel.py` for the docked
-  Entries panel.
-- New `quill/ui/notebook_navigator_page.py` for
-  the Notebook tab in the Document Navigator.
-- New status-bar cells: "Navigator: §3.2," "Goal:
-  1,234 / 500 today," "Selection session: anchored
-  at line 12."
-- Five new commands in File and Tools menus
-  (`file.new_notebook`, `file.new_notebook_from_folder`,
-  `file.open_notebook`, `file.save_snapshot`,
-  `file.manage_snapshots`).
-- Four new commands in Navigate menu (cross-Notebook
-  verbs).
-- Saved Searches manager and the in-Notebook filter
-  on Find in Files.
-- The snapshot rename in `main_frame_menu.py` and
-  `keymap.py`.
-- `dialogs.md` updated for `new_notebook`,
-  `open_notebook`, `manage_snapshots`,
-  `saved_searches`. All four are
-  `hardened_custom` per the dialog contract.
-- The dialog-inventory snapshot is regenerated
-  via `python -m quill.tools.dialog_inventory
-  --write` and committed.
-- `dialog_inventory.json` snapshot regenerated
-  and staged.
-- **Acceptance:** a screen-reader user can create a
-  Notebook from a folder of 30 Markdown files, group
-  the entries by directory, open one entry, jump to
-  another via Navigate > Go to Entry, set a Goal of
-  500 words, type until the status bar announces
-  "Goal reached," save a Snapshot, close the Notebook,
-  reopen it, and find the caret exactly where it
-  was.
+panel + Document Navigator upgrades. COMPLETE.**
+Shipped in the session following commit 106ef2c.
+`notebook_store.py`, `notebook_panel.py`,
+`notebook_navigator_page.py`, `NotebookUIMixin`,
+`notebook_goal` status-bar cell, File > Notebook
+submenu (5 commands), Navigate notebook commands
+(4 commands), View > Show Entries Panel, snapshot
+rename, `core.notebook` feature, `dialogs.md`
+section X, `dialog_inventory.json` regenerated.
 
 **Milestone 3: Format and Transform completeness
 (this is the "Text Monkey PRO subset" milestone —

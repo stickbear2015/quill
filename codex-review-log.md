@@ -1,5 +1,45 @@
 # Codex Review Log
 
+## 2026-06-10 22:27:23 -04:00
+
+Merge-and-audit checkpoint:
+
+- reviewed `codex-handoff.md` and `codex-review-log.md` first, then merged current `origin/main` into `features/publishing-providers-framework`
+- preserved branch publishing work while integrating newer upstream notebook/menu/dialog-budget changes
+- resolved merge conflicts in:
+  - `quill/ui/main_frame_menu.py`
+  - `quill/tools/module_size_budgets.json`
+  - `tests/unit/ui/fixtures/dialog_inventory.json`
+- updated `tests/unit/ui/fixtures/main_frame_public_surface.json` to include notebook public methods introduced by merged `main`
+- corrected the first local test attempt after it hit sandbox temp-directory permission failures; reran the same branch-owned slice with workspace-local `TEMP`/`TMP` and cache paths
+
+Validation result:
+
+- maintained branch-owned publishing plus merge-sensitive verification slice is green again
+- exact slice rerun:
+  - `tests/unit/core/test_publishing.py`
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/core/test_features.py`
+  - `tests/unit/core/test_remote_sites.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+  - `tests/unit/ui/test_remote_sites_dialog.py`
+  - `tests/unit/ui/test_main_frame_characterization.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_dialog_inventory.py`
+  - `tests/performance/test_budgets.py`
+- result: `87 passed in 9.85s`
+
+Current recommendation:
+
+- branch is ready for new coding work again
+- next implementation slice still looks like `Update Remote Content...`
+- shape that slice around the now-merged authoring-surface truth:
+  - keep `Readable Markdown` as the default open path
+  - preserve explicit `Raw HTML` overrides
+  - use stored remote metadata to decide whether update/publish should convert Markdown to HTML or send raw HTML unchanged
+
 ## 2026-06-10 17:40:40 -04:00
 
 Stopping-point checkpoint:

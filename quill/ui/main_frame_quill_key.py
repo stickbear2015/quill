@@ -98,7 +98,19 @@ class QuillKeyMixin:
                     self._refresh_statusbar()
                     self.open_quick_nav()
                     return True
-                # EDS: the QUILL key then M pastes clipboard HTML as Markdown.
+                # §10.8: QUILL key, V = magic paste (was Ctrl+Alt+V).
+                if (
+                    not event.ControlDown()
+                    and not event.AltDown()
+                    and not event.ShiftDown()
+                    and key_code in (ord("V"), ord("v"))
+                ):
+                    self._quill_key_prefix_pending = False
+                    self._quill_key_prefix_started_at = 0.0
+                    self._refresh_statusbar()
+                    self.paste_html_as_markdown()
+                    return True
+                # §10.8: QUILL key, M = insert Markdown tag (was Ctrl+Shift+Grave, M).
                 if (
                     not event.ControlDown()
                     and not event.AltDown()
@@ -108,7 +120,7 @@ class QuillKeyMixin:
                     self._quill_key_prefix_pending = False
                     self._quill_key_prefix_started_at = 0.0
                     self._refresh_statusbar()
-                    self.paste_html_as_markdown()
+                    self._run_command("format.insert_markdown_tag")
                     return True
                 self._quill_key_prefix_pending = False
                 self._quill_key_prefix_started_at = 0.0
@@ -119,13 +131,14 @@ class QuillKeyMixin:
                 self._quill_key_prefix_started_at = time.monotonic()
                 message = (
                     "QUILL key prefix active. N for browse mode, press QUILL key again for "
-                    "sticky mode, G for quick nav, M to paste HTML, ? for help"
+                    "sticky mode, G for quick nav, V to paste HTML as Markdown, "
+                    "M to insert Markdown tag, ? for help"
                 )
                 if self._has_active_selection():
                     message = (
                         "QUILL key prefix active. N for browse mode, press QUILL key again for "
-                        "sticky mode, G for quick nav, M to paste HTML, A for selection actions, "
-                        "? for help"
+                        "sticky mode, G for quick nav, V to paste HTML as Markdown, "
+                        "M to insert Markdown tag, A for selection actions, ? for help"
                     )
                 self._set_status_quiet(message)
                 self._refresh_statusbar()

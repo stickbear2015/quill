@@ -42,8 +42,8 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "tools.previous_misspelling": "Shift+Alt+F7",
     "tools.misspelling_list": "Alt+Shift+L",
     "tools.thesaurus": "Shift+F7",
-    "tools.read_aloud_start_pause": "Ctrl+Shift+Grave, P",
-    "tools.read_aloud_stop": "Ctrl+Shift+Grave, Shift+P",
+    "tools.read_aloud_start_pause": "Ctrl+Shift+Grave, R",  # §10.8.2: P→R
+    "tools.read_aloud_stop": "Ctrl+Shift+Grave, Shift+R",  # §10.8.2: Shift+P→Shift+R
     "tools.dictation_toggle": "Ctrl+Shift+Grave, D",
     "tools.describe_image": "Ctrl+Shift+Grave, I",
     "tools.document_intake_report": "Ctrl+Shift+I",
@@ -74,7 +74,7 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "edit.follow_link": "Ctrl+Enter",
     "edit.word_prediction": "Ctrl+Space",
     "view.preview": "Ctrl+Shift+V",
-    "view.browser_preview": "Ctrl+Shift+Grave, V",
+    "view.browser_preview": "Ctrl+Shift+Grave, B",  # §10.8.2: V→B (V freed for magic paste)
     "view.split_preview": "Ctrl+Shift+Backslash",
     "view.focus_preview": "Ctrl+F6",
     "view.switch_editing_lens": "Ctrl+Shift+Grave, K",
@@ -82,7 +82,7 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "edit.pop_mark": "Ctrl+M",
     "edit.exchange_point_mark": "Ctrl+Shift+X",
     "edit.list_marks": "Alt+M",
-    "edit.select_paragraph": "Ctrl+Alt+P",
+    "edit.select_paragraph": "",  # Ctrl+Alt+P removed (§10.8 screen-reader-hostile)
     "edit.select_block": "Ctrl+Shift+B",
     "edit.expand_selection": "Alt+Shift+Up",
     "edit.shrink_selection": "Alt+Shift+Down",
@@ -137,10 +137,11 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "view.announce_contrast": "Ctrl+Shift+Grave, Shift+C",
     # §8.2 — explain why the focused item is unavailable ("Why don't I see…?").
     "help.why_unavailable": "Alt+F1",
-    # §8.2 — magic paste with clipboard-type picker (explicit invoke; auto
-    # intercept on Ctrl+V when clipboard has URL/image/rich content).
-    "edit.magic_paste": "Ctrl+Alt+V",
+    # §10.8 — magic paste moves to QUILL key, V (handled in QuillKeyMixin prefix
+    # state machine).  Ctrl+Alt+V removed — screen readers eat Ctrl+Alt+ chords.
+    "edit.magic_paste": "",
 }
+
 
 KEYBOARD_PACK_DEFAULT = "Quill Default"
 KEYBOARD_PACK_CUSTOM = "Custom"

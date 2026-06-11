@@ -108,10 +108,10 @@ def test_every_command_is_menu_wired() -> None:
     # Every group is actually wired to a menu (the helpers / Power Tools submenu
     # delegate to the single data-driven primitive).
     assert "self._append_power_tools_group(" in _MENU_SOURCE
-    # The cohesive remainder ships as Tools > Power Tools; the recirculated
-    # groups are appended to conventional
-    # menus from the menu build.
-    assert 'AppendSubMenu(self._build_power_tools_menu(), "&Power Tools")' in _SOURCE
+    # The cohesive remainder ships as Tools > Power Tools (expanded inline build
+    # per §10.3; the power_tools group is still appended via the data-driven helper).
+    assert '_append_power_tools_group(power_tools_menu, "power_tools")' in _SOURCE
+    assert 'tools_menu.AppendSubMenu(power_tools_menu, "&Power Tools")' in _SOURCE
     for helper in (
         "_append_power_tools_insert_items",
         "_append_power_tools_edit_items",

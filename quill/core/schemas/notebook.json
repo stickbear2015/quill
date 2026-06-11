@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quill.app/schemas/notebook/1.json",
+  "title": "QUILL Notebook",
+  "description": "Persisted state for a QUILL Notebook: entries, snapshots, goal, vocabulary, and saved searches.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "entries"],
+  "properties": {
+    "schema": {
+      "const": "quill.notebook/1",
+      "description": "Schema discriminator — must be 'quill.notebook/1'."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Display name for the Notebook."
+    },
+    "root_dir": {
+      "type": ["string", "null"],
+      "description": "Absolute path of the folder this Notebook was created from, or null for a manual collection.",
+      "default": null
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the Notebook was created."
+    },
+    "last_opened": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp of the last time the Notebook was opened.",
+      "default": null
+    },
+    "entries": {
+      "type": "array",
+      "description": "Ordered list of document entries in the Notebook.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable UUID for this entry.",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the document file.  Relative paths are resolved against root_dir; absolute paths are stored as-is.",
+            "minLength": 1
+          },
+          "title": {
+            "type": ["string", "null"],
+            "description": "User-visible display title.  Null means derive from the filename.",
+            "maxLength": 400,
+            "default": null
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "uniqueItems": true,
+            "default": []
+          },
+          "last_caret_pos": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Character offset of the caret the last time this entry was closed.",
+            "default": 0
+          },
+          "last_opened": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "ISO-8601 UTC timestamp of the last time this entry was opened.",
+            "default": null
+          },
+          "word_count": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "description": "Cached word count from the last save.  Null means not yet counted.",
+            "default": null
+          }
+        }
+      }
+    },
+    "snapshots": {
+      "type": "array",
+      "description": "Named workspace snapshots (formerly 'Workspace Snapshots').",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "created", "open_entry_ids"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "open_entry_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "Entry IDs that were open when this snapshot was saved."
+          },
+          "active_entry_id": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "description": "Entry ID of the focused tab when this snapshot was saved.",
+            "default": null
+          }
+        }
+      }
+    },
+    "goal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Daily word-count goal state.",
+      "default": {},
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "daily_target": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Words to write today.",
+          "default": 500
+        },
+        "unit": {
+          "enum": ["words", "characters"],
+          "default": "words"
+        },
+        "today_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Words written today (reset at midnight local time).",
+          "default": 0
+        },
+        "today_date": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "ISO-8601 date (YYYY-MM-DD) for which today_count is valid.",
+          "default": null
+        }
+      }
+    },
+    "vocabulary": {
+      "type": "array",
+      "description": "Project-specific words added to the spell-checker for this Notebook.",
+      "default": [],
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "uniqueItems": true
+    },
+    "saved_searches": {
+      "type": "array",
+      "description": "Named saved search queries scoped to this Notebook.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "query"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "is_regex": {
+            "type": "boolean",
+            "default": false
+          },
+          "case_sensitive": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    }
+  }
+}

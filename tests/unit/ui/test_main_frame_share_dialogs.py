@@ -42,5 +42,7 @@ def test_share_dialogs_registered_and_wired_in_menu() -> None:
     assert '"tools.share_import"' in source
     assert "self._id_share_export = wx.NewIdRef()" in source
     assert "self._id_share_import = wx.NewIdRef()" in source
-    assert 'customize_menu.Append(self._id_share_export, "&Export and Back Up...")' in source
-    assert 'customize_menu.Append(self._id_share_import, "&Import or Restore...")' in source
+    assert (
+        'customize_support_menu.Append(self._id_share_export, "&Export and Back Up...")' in source
+    )
+    assert 'customize_support_menu.Append(self._id_share_import, "&Import or Restore...")' in source

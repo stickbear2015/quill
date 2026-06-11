@@ -45,6 +45,16 @@ class MenuBuilderMixin:
         self._sessions_menu = wx.Menu()
         self._open_documents_menu = wx.Menu()
         self._recent_sessions_menu = wx.Menu()
+        self._id_new_notebook = wx.NewIdRef()
+        self._id_new_notebook_from_folder = wx.NewIdRef()
+        self._id_open_notebook = wx.NewIdRef()
+        self._id_notebook_save_snapshot = wx.NewIdRef()
+        self._id_manage_notebook_snapshots = wx.NewIdRef()
+        self._id_toggle_entries_panel = wx.NewIdRef()
+        self._id_go_to_entry_in_notebook = wx.NewIdRef()
+        self._id_go_to_heading_in_notebook = wx.NewIdRef()
+        self._id_go_to_bookmark_in_notebook = wx.NewIdRef()
+        self._id_go_to_sticky_note_in_notebook = wx.NewIdRef()
 
         file_menu = wx.Menu()
         # --- Create / open ---
@@ -77,7 +87,7 @@ class MenuBuilderMixin:
             self._menu_label("&Manage Remote Sites...", "file.manage_remote_sites"),
         )
         file_menu.AppendSubMenu(remote_menu, "Open from &Remote")
-        file_menu.AppendSubMenu(self._sessions_menu, "&Workspace Snapshots")
+        file_menu.AppendSubMenu(self._sessions_menu, "&Snapshots")
         self._id_publishing_connections = wx.NewIdRef()
         self._id_publishing_verify_connection = wx.NewIdRef()
         self._id_publishing_browse_content = wx.NewIdRef()
@@ -121,6 +131,30 @@ class MenuBuilderMixin:
         self._append_power_tools_file_ops_items(file_menu)
         file_menu.AppendSeparator()
         # --- Close ---
+        notebook_menu = wx.Menu()
+        notebook_menu.Append(
+            self._id_new_notebook,
+            self._menu_label("&New Notebook...", "file.new_notebook"),
+        )
+        notebook_menu.Append(
+            self._id_new_notebook_from_folder,
+            self._menu_label("New from &Folder...", "file.new_notebook_from_folder"),
+        )
+        notebook_menu.Append(
+            self._id_open_notebook,
+            self._menu_label("&Open Notebook...", "file.open_notebook"),
+        )
+        notebook_menu.AppendSeparator()
+        notebook_menu.Append(
+            self._id_notebook_save_snapshot,
+            self._menu_label("&Save Snapshot...", "file.save_snapshot"),
+        )
+        notebook_menu.Append(
+            self._id_manage_notebook_snapshots,
+            self._menu_label("&Manage Snapshots...", "file.manage_snapshots"),
+        )
+        file_menu.AppendSubMenu(notebook_menu, "&Notebook")
+        file_menu.AppendSeparator()
         file_menu.Append(
             self._id_close_document,
             self._menu_label("&Close Document", "file.close_document"),
@@ -433,6 +467,11 @@ class MenuBuilderMixin:
             self._id_browser_preview,
             self._menu_label("&Browser Preview...", "view.browser_preview"),
         )
+        view_menu.AppendSeparator()
+        view_menu.AppendCheckItem(
+            self._id_toggle_entries_panel,
+            self._menu_label("Show &Entries Panel", "view.toggle_entries_panel"),
+        )
         navigate_menu = wx.Menu()
         self._id_go_to_line = wx.NewIdRef()
         self._id_set_bookmark = wx.NewIdRef()
@@ -524,6 +563,27 @@ class MenuBuilderMixin:
         navigate_menu.Append(
             self._id_list_bookmarks,
             self._menu_label("List B&ookmarks...", "navigate.list_bookmarks"),
+        )
+        navigate_menu.AppendSeparator()
+        navigate_menu.Append(
+            self._id_go_to_entry_in_notebook,
+            self._menu_label("Go to &Entry in Notebook...", "navigate.go_to_entry_in_notebook"),
+        )
+        navigate_menu.Append(
+            self._id_go_to_heading_in_notebook,
+            self._menu_label("Go to &Heading in Notebook...", "navigate.go_to_heading_in_notebook"),
+        )
+        navigate_menu.Append(
+            self._id_go_to_bookmark_in_notebook,
+            self._menu_label(
+                "Go to &Bookmark in Notebook...", "navigate.go_to_bookmark_in_notebook"
+            ),
+        )
+        navigate_menu.Append(
+            self._id_go_to_sticky_note_in_notebook,
+            self._menu_label(
+                "Go to Sticky &Note in Notebook...", "navigate.go_to_sticky_note_in_notebook"
+            ),
         )
         self._id_insert_html_tag = wx.NewIdRef()
         self._id_insert_markdown_tag = wx.NewIdRef()
@@ -739,6 +799,15 @@ class MenuBuilderMixin:
         self._id_word_count = wx.NewIdRef()
         self._id_sticky_notes = wx.NewIdRef()
         self._id_new_sticky_note = wx.NewIdRef()
+        insert_menu.AppendSeparator()
+        insert_menu.Append(
+            self._id_sticky_notes,
+            self._menu_label("Sticky &Notes...", "tools.sticky_notes"),
+        )
+        insert_menu.Append(
+            self._id_new_sticky_note,
+            self._menu_label("New Sticky &Note...", "tools.sticky_note_capture"),
+        )
         self._id_spell_check = wx.NewIdRef()
         self._id_previous_misspelling = wx.NewIdRef()
         self._id_next_misspelling = wx.NewIdRef()
@@ -865,18 +934,8 @@ class MenuBuilderMixin:
             self._menu_label("&Command Palette...", "app.command_palette"),
         )
         tools_menu.AppendSeparator()
-        sticky_notes_menu = wx.Menu()
-        sticky_notes_menu.Append(
-            self._id_sticky_notes,
-            self._menu_label("&Sticky Notes...", "tools.sticky_notes"),
-        )
-        sticky_notes_menu.Append(
-            self._id_new_sticky_note,
-            self._menu_label("&New Sticky Note...", "tools.sticky_note_capture"),
-        )
-        tools_menu.AppendSubMenu(sticky_notes_menu, "&Sticky Notes")
-        tools_menu.AppendSeparator()
 
+        # Writing & Language -----------------------------------------------
         writing_menu = wx.Menu()
         writing_menu.Append(
             self._id_word_count,
@@ -907,16 +966,13 @@ class MenuBuilderMixin:
             self._id_dictionary_status,
             self._menu_label("Dictionary &Status...", "tools.dictionary_status"),
         )
-        tools_menu.AppendSubMenu(writing_menu, "&Writing and Language")
+        tools_menu.AppendSubMenu(writing_menu, "&Writing && Language")
 
+        # Reading & Dictation (merges Read Aloud, Dictation, OCR) ------------
         read_aloud_menu = wx.Menu()
         read_aloud_menu.Append(
             self._id_read_aloud,
             self._menu_label("&Start / Pause", "tools.read_aloud_start_pause"),
-        )
-        read_aloud_menu.Append(
-            self._id_read_aloud_stop,
-            self._menu_label("S&top", "tools.read_aloud_stop"),
         )
         read_aloud_menu.Append(
             self._id_read_aloud_voice,
@@ -934,103 +990,110 @@ class MenuBuilderMixin:
             self._id_announcement_backend,
             self._menu_label("Announcement &Backend...", "tools.announcement_backend"),
         )
-        # The Announcement Backend picker is a preference, not an action; its
-        # auto/Prism/status-only choice now lives in the registry-driven Settings
-        # dialog (menus.md Phase 4 / §3.5), flattening this 3-level chain.
         read_aloud_menu.Append(
             self._id_toggle_announcement_trace,
             "Announcement &Trace (in Settings)...",
         )
-        tools_menu.AppendSubMenu(read_aloud_menu, "Read &Aloud")
-
-        dictation_menu = wx.Menu()
-        dictation_menu.Append(
+        reading_menu = wx.Menu()
+        reading_menu.AppendSubMenu(read_aloud_menu, "Read &Aloud")
+        reading_menu.Append(
+            self._id_read_aloud_stop,
+            self._menu_label("&Stop Reading", "tools.read_aloud_stop"),
+        )
+        reading_menu.Append(
+            self._id_say_selected,
+            self._menu_label("&Say Selected", "edit.say_selected"),
+        )
+        reading_menu.Append(
+            self._id_read_all,
+            self._menu_label("&Read All", "edit.read_all"),
+        )
+        reading_menu.AppendSeparator()
+        dictation_submenu = wx.Menu()
+        dictation_submenu.Append(
             self._id_dictation,
             self._menu_label("&Dictation", "tools.dictation_toggle"),
             "Press to start dictation, press again to stop and insert",
         )
-        dictation_menu.Append(
+        dictation_submenu.Append(
             self._id_dictation_voice_commands,
             "Hey QUILL &Commands (in Settings)...",
         )
-        dictation_menu.AppendSeparator()
-        dictation_menu.Append(
-            self._id_watch_folder_toggle,
-            "Watch Folder &Monitoring (in Settings)...",
-        )
-        dictation_menu.Append(
-            self._id_watch_folder_settings,
-            self._menu_label("Watch Folder &Profiles...", "tools.watch_folder_settings"),
-        )
-        dictation_menu.Append(
-            self._id_watch_folder_status,
-            self._menu_label("Watch Folder &Queue...", "tools.watch_folder_status"),
-        )
-        integrations_menu = wx.Menu()
-        integrations_menu.Append(
+        reading_menu.AppendSubMenu(dictation_submenu, "&Dictation")
+        reading_menu.AppendSeparator()
+        reading_menu.Append(
             self._id_ocr_image,
             self._menu_label("OCR &Image...", "tools.ocr_image"),
         )
-        integrations_menu.Append(
+        reading_menu.Append(
             self._id_ocr_clipboard,
             self._menu_label("OCR &Clipboard Image", "tools.ocr_clipboard"),
         )
-        integrations_menu.Append(
+        reading_menu.Append(
             self._id_ocr_screen,
             self._menu_label("OCR &Screen Capture...", "tools.ocr_screen"),
         )
-        integrations_menu.Append(
+        reading_menu.Append(
             self._id_describe_image,
             self._menu_label("&Describe Image...", "tools.describe_image"),
         )
-        # Shell-integration verbs are promoted to direct Integrations entries
-        # (no third level — menus.md Phase 4 / §3.5).
-        integrations_menu.AppendSeparator()
-        integrations_menu.Append(
-            self._id_shell_install,
-            self._menu_label("&Install Shell Integration...", "tools.shell_install"),
-        )
-        integrations_menu.Append(
-            self._id_shell_remove,
-            self._menu_label("&Remove Shell Integration", "tools.shell_remove"),
-        )
-        tools_menu.AppendSubMenu(integrations_menu, "&Integrations")
+        tools_menu.AppendSubMenu(reading_menu, "R&eading && Dictation")
 
-        intake_menu = wx.Menu()
-        intake_menu.Append(
-            self._id_document_intake_report,
-            self._menu_label("&Document Intake Report...", "tools.document_intake_report"),
+        # GLOW ---------------------------------------------------------------
+        glow_menu = wx.Menu()
+        glow_menu.Append(
+            self._id_glow_audit_document,
+            self._menu_label("Audit Current &Document", "tools.glow_audit_document"),
         )
-        intake_menu.Append(
-            self._id_review_extraction_quality,
-            self._menu_label("&Review Extraction Quality...", "tools.review_extraction_quality"),
+        glow_menu.Append(
+            self._id_glow_audit_selection,
+            self._menu_label("Audit &Selection", "tools.glow_audit_selection"),
         )
-        intake_menu.Append(
-            self._id_report_bad_extraction,
-            self._menu_label("R&eport Bad Extraction...", "tools.report_bad_extraction"),
+        glow_menu.AppendSeparator()
+        glow_menu.Append(
+            self._id_glow_fix_document,
+            self._menu_label("&Fix Current Document", "tools.glow_fix_document"),
         )
-        tools_menu.AppendSubMenu(intake_menu, "Document &Intake")
+        glow_menu.Append(
+            self._id_glow_fix_selection,
+            self._menu_label("Fix S&election", "tools.glow_fix_selection"),
+        )
+        tools_menu.AppendSubMenu(glow_menu, "&GLOW")
 
-        authoring_menu = wx.Menu()
-        authoring_menu.Append(
-            self._id_regex_helper,
-            self._menu_label("Regex &Helper...", "tools.regex_helper"),
+        # Comparison (was Compare Documents) ----------------------------------
+        compare_menu = wx.Menu()
+        compare_menu.Append(self._id_compare_with_file, "Compare with &File...")
+        compare_menu.Append(self._id_compare_open_documents, "Compare &Open Documents...")
+        compare_menu.AppendSeparator()
+        compare_menu.Append(self._id_compare_next_difference, "&Next Difference")
+        compare_menu.Append(self._id_compare_previous_difference, "&Previous Difference")
+        compare_menu.Append(self._id_compare_announce_difference, "&Announce Current Difference")
+        compare_menu.Append(self._id_compare_difference_list, "Difference &List...")
+        compare_menu.Append(self._id_compare_toggle_sync, "Toggle &Synchronized Navigation")
+        compare_menu.Append(self._id_compare_options, "Compare O&ptions...")
+        compare_menu.AppendSeparator()
+        compare_menu.Append(self._id_compare_create_summary, "Create Difference &Summary")
+        compare_menu.Append(self._id_compare_copy_current, "Copy &Current Difference")
+        compare_menu.Append(self._id_compare_copy_all, "Copy A&ll Differences")
+        tools_menu.AppendSubMenu(compare_menu, "C&omparison")
+
+        # Watch Folder (extracted from former Dictation submenu) --------------
+        watch_folder_menu = wx.Menu()
+        watch_folder_menu.Append(
+            self._id_watch_folder_toggle,
+            "Watch Folder &Monitoring (in Settings)...",
         )
-        authoring_menu.Append(
-            self._id_pandoc_wizard,
-            self._menu_label("Pandoc Conversion &Wizard...", "tools.pandoc_wizard"),
+        watch_folder_menu.Append(
+            self._id_watch_folder_settings,
+            self._menu_label("Watch Folder &Profiles...", "tools.watch_folder_settings"),
         )
-        authoring_menu.Append(
-            self._id_external_tools,
-            self._menu_label(
-                "External Tools and Format &Support...",
-                "tools.external_tools",
-            ),
+        watch_folder_menu.Append(
+            self._id_watch_folder_status,
+            self._menu_label("Watch Folder &Queue...", "tools.watch_folder_status"),
         )
-        authoring_menu.Append(
-            self._id_yaml_structure_editor,
-            self._menu_label("&YAML Structure Editor...", "tools.yaml_structure_editor"),
-        )
+        tools_menu.AppendSubMenu(watch_folder_menu, "&Watch Folder")
+
+        # AI Assistant (Speech submenu removed; read aloud is in Reading & Dictation)
         ai_menu = wx.Menu()
         from quill.core.ai.model_manager import load_ai_enabled
 
@@ -1038,10 +1101,6 @@ class MenuBuilderMixin:
         ai_menu.Check(self._id_ai_enabled, load_ai_enabled())
         ai_menu.AppendSeparator()
         ai_menu.Append(self._id_ai_status_badge, "AI Status: Not checked")
-        # AI Status and AI Detail are informational status lines (selecting either
-        # re-checks the backend). Connection setup lives in one place — "AI Model &
-        # Connection..." — so AI Detail no longer doubles as a second launcher for
-        # the connection dialog (#132).
         ai_menu.Append(self._id_ai_status_detail, "AI Detail: Not checked")
         ai_menu.Append(
             self._id_ai_hub,
@@ -1063,6 +1122,7 @@ class MenuBuilderMixin:
             self._id_ai_session_browser,
             self._menu_label("Session &Branches...", "tools.ai_session_browser"),
         )
+        ai_menu.AppendSeparator()
         ai_menu.Append(
             self._id_ai_assistant,
             self._menu_label("&Writing Assistant...", "tools.ai_assistant"),
@@ -1079,6 +1139,7 @@ class MenuBuilderMixin:
             self._id_ai_accessibility_agent,
             self._menu_label("Accessibility &Tune-Up...", "tools.ai_accessibility_agent"),
         )
+        ai_menu.AppendSeparator()
         ai_menu.Append(
             self._id_ai_rewrite_selection,
             self._menu_label("&Rewrite Selection", "tools.ai_rewrite_selection"),
@@ -1103,29 +1164,9 @@ class MenuBuilderMixin:
             self._id_writing_instructions,
             self._menu_label("&Writing Instructions...", "tools.writing_instructions"),
         )
-        speech_menu = wx.Menu()
-        speech_menu.Append(
-            self._id_ai_speech_start_pause,
-            self._menu_label("Start / &Pause", "tools.read_aloud_start_pause"),
-        )
-        speech_menu.Append(
-            self._id_ai_speech_stop,
-            self._menu_label("S&top", "tools.read_aloud_stop"),
-        )
-        speech_menu.Append(
-            self._id_ai_speech_voice,
-            self._menu_label("&Voice...", "tools.read_aloud_voice"),
-        )
-        speech_menu.Append(
-            self._id_ai_speech_settings,
-            self._menu_label("Se&ttings...", "tools.read_aloud_settings"),
-        )
-        speech_menu.Append(
-            self._id_ai_speech_generate_audio,
-            self._menu_label("Generate &Audio...", "tools.read_aloud_generate_audio"),
-        )
-        ai_menu.AppendSubMenu(speech_menu, "&Speech")
         tools_menu.AppendSubMenu(ai_menu, "AI &Assistant")
+
+        # BITS Whisperer (conditional, deferred to QUILL 2.0) ----------------
         whisperer_menu = wx.Menu()
         whisperer_menu.Append(
             self._id_whisperer_about,
@@ -1159,7 +1200,6 @@ class MenuBuilderMixin:
             self._menu_label("Watch Folder &Queue...", "tools.watch_folder_status"),
         )
         whisperer_menu.AppendSubMenu(bw_dictation_menu, "&Dictation and Watch Folder")
-
         bw_models_menu = wx.Menu()
         self._append_bw_safe_mode_badge(bw_models_menu)
         bw_models_menu.Append(
@@ -1192,7 +1232,6 @@ class MenuBuilderMixin:
             self._menu_label("Download &Queue...", "whisperer.download_queue"),
         )
         whisperer_menu.AppendSubMenu(bw_models_menu, "Speech &Models")
-
         bw_providers_menu = wx.Menu()
         self._append_bw_safe_mode_badge(bw_providers_menu)
         bw_providers_menu.Append(
@@ -1212,7 +1251,6 @@ class MenuBuilderMixin:
             self._menu_label("&Select Provider...", "whisperer.provider_select"),
         )
         whisperer_menu.AppendSubMenu(bw_providers_menu, "&Providers")
-
         bw_rollout_menu = wx.Menu()
         self._append_bw_safe_mode_badge(bw_rollout_menu)
         bw_rollout_menu.Append(
@@ -1224,29 +1262,14 @@ class MenuBuilderMixin:
             self._menu_label("&Capability Matrix", "whisperer.capability_matrix"),
         )
         whisperer_menu.AppendSubMenu(bw_rollout_menu, "&Rollout")
-        # BITS Whisperer (deferred to QUILL 2.0) is demoted from a top-level menu
-        # to a Tools submenu (menus.md Phase 2); it only appears when the master
-        # core.bw_whisperer flag is enabled, which it is not for 1.0.
         if self._feature_enabled("core.bw_whisperer"):
             tools_menu.AppendSubMenu(whisperer_menu, "&BITS Whisperer")
-        glow_menu = wx.Menu()
-        glow_menu.Append(
-            self._id_glow_audit_document,
-            self._menu_label("GLOW Audit Current &Document", "tools.glow_audit_document"),
-        )
-        glow_menu.Append(
-            self._id_glow_audit_selection,
-            self._menu_label("GLOW Audit &Selection", "tools.glow_audit_selection"),
-        )
-        glow_menu.AppendSeparator()
-        glow_menu.Append(
-            self._id_glow_fix_document,
-            self._menu_label("&GLOW Fix Current Document", "tools.glow_fix_document"),
-        )
-        glow_menu.Append(
-            self._id_glow_fix_selection,
-            self._menu_label("GLOW Fix S&election", "tools.glow_fix_selection"),
-        )
+
+        # Power Tools (expanded: power-tool utilities + Macros + Authoring +
+        # Document Intake + Shell Integration, per menus.md §10.3) ----------
+        power_tools_menu = wx.Menu()
+        self._append_power_tools_group(power_tools_menu, "power_tools")
+        power_tools_menu.AppendSeparator()
         macro_menu = wx.Menu()
         macro_menu.Append(
             self._id_start_macro_recording,
@@ -1264,9 +1287,108 @@ class MenuBuilderMixin:
             self._id_manage_macros,
             self._menu_label("&Manage Macros...", "tools.manage_macros"),
         )
+        power_tools_menu.AppendSubMenu(macro_menu, "&Macros")
+        power_tools_menu.AppendSeparator()
+        power_tools_menu.Append(
+            self._id_regex_helper,
+            self._menu_label("Regex &Helper...", "tools.regex_helper"),
+        )
+        power_tools_menu.Append(
+            self._id_pandoc_wizard,
+            self._menu_label("Pandoc Conversion &Wizard...", "tools.pandoc_wizard"),
+        )
+        power_tools_menu.Append(
+            self._id_external_tools,
+            self._menu_label(
+                "External Tools and Format &Support...",
+                "tools.external_tools",
+            ),
+        )
+        power_tools_menu.Append(
+            self._id_yaml_structure_editor,
+            self._menu_label("&YAML Structure Editor...", "tools.yaml_structure_editor"),
+        )
+        power_tools_menu.AppendSeparator()
+        intake_menu = wx.Menu()
+        intake_menu.Append(
+            self._id_document_intake_report,
+            self._menu_label("&Document Intake Report...", "tools.document_intake_report"),
+        )
+        intake_menu.Append(
+            self._id_review_extraction_quality,
+            self._menu_label("&Review Extraction Quality...", "tools.review_extraction_quality"),
+        )
+        intake_menu.Append(
+            self._id_report_bad_extraction,
+            self._menu_label("R&eport Bad Extraction...", "tools.report_bad_extraction"),
+        )
+        power_tools_menu.AppendSubMenu(intake_menu, "Document &Intake")
+        power_tools_menu.AppendSeparator()
+        power_tools_menu.Append(
+            self._id_shell_install,
+            self._menu_label("&Install Shell Integration...", "tools.shell_install"),
+        )
+        power_tools_menu.Append(
+            self._id_shell_remove,
+            self._menu_label("&Remove Shell Integration", "tools.shell_remove"),
+        )
+        tools_menu.AppendSubMenu(power_tools_menu, "&Power Tools")
+
+        # Quillins ------------------------------------------------------------
+        tools_menu.AppendSubMenu(self._build_quillins_menu(), "&Quillins")
+
+        # Accessibility -------------------------------------------------------
+        accessibility_menu = wx.Menu()
+        accessibility_menu.Append(self._id_accessibility_audit, "Accessibility A&udit...")
+        accessibility_menu.Append(
+            self._id_keyboard_trap_snapshot,
+            "&Keyboard Trap && Tab-Order Snapshot...",
+        )
+        accessibility_menu.Append(self._id_validate_contrast, "&Validate Contrast...")
+        accessibility_menu.Append(self._id_link_inventory, "Link Inventory && Alt-Text Catalo&g...")
+        self._append_power_tools_accessibility_items(accessibility_menu)
+        tools_menu.AppendSubMenu(accessibility_menu, "A&ccessibility")
+
+        # Customize & Support (Support + Customize merged per §10.3) ----------
+        customize_support_menu = wx.Menu()
+        customize_support_menu.Append(
+            self._id_preferences,
+            self._menu_label("Pre&ferences...", "app.preferences"),
+        )
+        customize_support_menu.Append(
+            self._id_menu_editor,
+            self._menu_label("Customize &Menus...", "app.menu_editor"),
+        )
+        customize_support_menu.AppendSeparator()
+        customize_support_menu.Append(
+            self._id_profiles_and_features,
+            self._menu_label("&Profiles and Features...", "tools.profiles_and_features_settings"),
+        )
+        customize_support_menu.Append(self._id_status_bar_settings, "&Status Bar Layout...")
+        customize_support_menu.AppendSeparator()
+        customize_support_menu.Append(self._id_share_export, "&Export and Back Up...")
+        customize_support_menu.Append(self._id_share_import, "&Import or Restore...")
+        customize_support_menu.AppendSeparator()
+        customize_support_menu.Append(self._id_keymap_editor, "&Keymap Editor...")
+        customize_support_menu.Append(self._id_export_keymap, "&Export Keymap...")
+        customize_support_menu.Append(self._id_import_keymap, "&Import Keymap...")
+        customize_support_menu.Append(self._id_reset_keymap, "&Reset Keymap")
+        customize_support_menu.AppendSeparator()
+        customize_support_menu.Append(self._id_notifications, "Show &Notifications")
+        customize_support_menu.Append(self._id_report_bug, "&Report a Bug...")
+        customize_support_menu.Append(self._id_save_diagnostics, "Save &Diagnostics...")
+        customize_support_menu.Append(self._id_open_logs_folder, "Open &Logs Folder")
+        customize_support_menu.Append(
+            self._id_open_diagnostics_folder,
+            "Open &Diagnostics Folder",
+        )
+        customize_support_menu.Append(self._id_check_updates, "Check for &Updates")
+        tools_menu.AppendSubMenu(customize_support_menu, "&Customize && Support")
+
+        # Format > Transform Lines (appended here; format_menu built above) ---
         # Transform Lines is the single home for line/text transforms (menus.md
-        # §3.7.2): the former Tools > Authoring > Convert group plus the Power Tools
-        # line transforms, surfaced under Format where text-shaping lives.
+        # §3.7.2): the Power Tools line transforms surfaced under Format where
+        # text-shaping lives.
         transform_menu = wx.Menu()
         self._append_power_tools_transform_line_items(transform_menu)
         self._append_quillin_menu_items(transform_menu, "Format")
@@ -1315,80 +1437,6 @@ class MenuBuilderMixin:
             ),
         )
         format_menu.AppendSubMenu(transform_menu, "Transform &Lines")
-        tools_menu.AppendSubMenu(authoring_menu, "Authoring && &Automation")
-        # GLOW and Macros are promoted to direct Tools submenus so no Tools chain
-        # exceeds two levels (menus.md Phase 4 / §3.5).
-        tools_menu.AppendSubMenu(glow_menu, "&GLOW")
-        tools_menu.AppendSubMenu(macro_menu, "&Macros")
-
-        compare_menu = wx.Menu()
-        compare_menu.Append(self._id_compare_with_file, "Compare with &File...")
-        compare_menu.Append(self._id_compare_open_documents, "Compare &Open Documents...")
-        compare_menu.AppendSeparator()
-        compare_menu.Append(self._id_compare_next_difference, "&Next Difference")
-        compare_menu.Append(self._id_compare_previous_difference, "&Previous Difference")
-        compare_menu.Append(self._id_compare_announce_difference, "&Announce Current Difference")
-        compare_menu.Append(self._id_compare_difference_list, "Difference &List...")
-        compare_menu.Append(self._id_compare_toggle_sync, "Toggle &Synchronized Navigation")
-        compare_menu.Append(self._id_compare_options, "Compare O&ptions...")
-        compare_menu.AppendSeparator()
-        compare_menu.Append(self._id_compare_create_summary, "Create Difference &Summary")
-        compare_menu.Append(self._id_compare_copy_current, "Copy &Current Difference")
-        compare_menu.Append(self._id_compare_copy_all, "Copy A&ll Differences")
-        tools_menu.AppendSubMenu(compare_menu, "&Compare Documents")
-
-        accessibility_menu = wx.Menu()
-        accessibility_menu.Append(self._id_accessibility_audit, "Accessibility A&udit...")
-        accessibility_menu.Append(
-            self._id_keyboard_trap_snapshot,
-            "&Keyboard Trap && Tab-Order Snapshot...",
-        )
-        accessibility_menu.Append(self._id_validate_contrast, "&Validate Contrast...")
-        accessibility_menu.Append(self._id_link_inventory, "Link Inventory && Alt-Text Catalo&g...")
-        # Speak cursor address / document status / selection length are screen-
-        # reader status queries (Power Tools recirculation, menus.md Phase 4).
-        self._append_power_tools_accessibility_items(accessibility_menu)
-        tools_menu.AppendSubMenu(accessibility_menu, "A&ccessibility")
-
-        support_menu = wx.Menu()
-        support_menu.Append(self._id_notifications, "Show &Notifications")
-        support_menu.Append(self._id_report_bug, "&Report a Bug...")
-        support_menu.Append(self._id_save_diagnostics, "Save &Diagnostics...")
-        support_menu.Append(self._id_open_logs_folder, "Open &Logs Folder")
-        support_menu.Append(
-            self._id_open_diagnostics_folder,
-            "Open &Diagnostics Folder",
-        )
-        support_menu.Append(self._id_check_updates, "Check for &Updates")
-        tools_menu.AppendSubMenu(support_menu, "&Support")
-
-        customize_menu = wx.Menu()
-        customize_menu.Append(
-            self._id_preferences,
-            self._menu_label("Pre&ferences...", "app.preferences"),
-        )
-        customize_menu.Append(
-            self._id_menu_editor,
-            self._menu_label("Customize &Menus...", "app.menu_editor"),
-        )
-        customize_menu.AppendSeparator()
-        customize_menu.Append(
-            self._id_profiles_and_features,
-            self._menu_label("&Profiles and Features...", "tools.profiles_and_features_settings"),
-        )
-        customize_menu.Append(self._id_status_bar_settings, "&Status Bar Layout...")
-        customize_menu.AppendSeparator()
-        customize_menu.Append(self._id_share_export, "&Export and Back Up...")
-        customize_menu.Append(self._id_share_import, "&Import or Restore...")
-        customize_menu.AppendSeparator()
-        customize_menu.Append(self._id_keymap_editor, "&Keymap Editor...")
-        customize_menu.Append(self._id_export_keymap, "&Export Keymap...")
-        customize_menu.Append(self._id_import_keymap, "&Import Keymap...")
-        customize_menu.Append(self._id_reset_keymap, "&Reset Keymap")
-        tools_menu.AppendSubMenu(customize_menu, "&Customize")
-        tools_menu.AppendSeparator()
-        tools_menu.AppendSubMenu(self._build_power_tools_menu(), "&Power Tools")
-        tools_menu.AppendSubMenu(self._build_quillins_menu(), "&Quillins")
 
         # The former top-level "Settings" menu is gone. All configuration now
         # lives together under Tools > Customize (Preferences, Customize Menus,
@@ -2573,6 +2621,56 @@ class MenuBuilderMixin:
             wx.EVT_MENU,
             lambda _e: self.show_keyboard_trap_snapshot(),
             id=self._id_keyboard_trap_snapshot,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.new_notebook(),
+            id=self._id_new_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.new_notebook_from_folder(),
+            id=self._id_new_notebook_from_folder,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.open_notebook(),
+            id=self._id_open_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.notebook_save_snapshot(),
+            id=self._id_notebook_save_snapshot,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.manage_notebook_snapshots(),
+            id=self._id_manage_notebook_snapshots,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.toggle_entries_panel(),
+            id=self._id_toggle_entries_panel,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_entry_in_notebook(),
+            id=self._id_go_to_entry_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_heading_in_notebook(),
+            id=self._id_go_to_heading_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_bookmark_in_notebook(),
+            id=self._id_go_to_bookmark_in_notebook,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self.go_to_sticky_note_in_notebook(),
+            id=self._id_go_to_sticky_note_in_notebook,
         )
         self.frame.Bind(wx.EVT_MENU, self._on_open_recent)
         self.frame.Bind(wx.EVT_MENU, self._on_session_menu)

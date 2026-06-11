@@ -26,6 +26,8 @@ STATUS_BAR_ITEMS: tuple[str, ...] = (
     "extend_mode",
     # A11Y live indicator (§8.3): shows the detected screen reader by name.
     "sr_name",
+    # §10.4 Notebook goal progress cell.
+    "notebook_goal",
 )
 
 

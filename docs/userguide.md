@@ -181,7 +181,7 @@ Use `F6` to move into it. Once there, you can move between cells and activate th
 - current search term
 - file path or unsaved state
 
-You can reorder or hide status items through **Tools → Customize → Status Bar Settings...**.
+You can reorder or hide status items through **Tools → Customize & Support → Status Bar Layout...**.
 Right-click a focused status cell to **Activate**, **Hide this item**, or open **Status bar settings...**.
 Use **Restore Defaults** in status bar settings to reset visibility and order.
 When title mode is set to full path, Quill automatically hides the duplicate file-path status cell.
@@ -203,7 +203,7 @@ The **File** menu is the full document lifecycle.
 - **Open Recent** returns quickly to recently used files.
 - **Open from URL...** downloads a document or text resource through an explicit safety flow that confirms host and expected size.
 - **Open from Remote**, **Save to Remote**, **Save Copy to Remote**, and **Manage Remote Sites...** (in the *Open from Remote* submenu) open, save, and administer saved sites over **FTP, SFTP, HTTPS, WebDAV, and Amazon S3 (or any S3-compatible service)**. Each remote operation is explicit, runs over a verified TLS context, announces host and expected size, and never writes to disk before you confirm.
-- **Workspace Snapshots** lets you save and reopen groups of documents as a single workspace snapshot, similar to lightweight workspaces in Visual Studio Code.
+- **Snapshots** lets you save and reopen groups of documents as a single workspace snapshot, similar to lightweight workspaces in Visual Studio Code.
 - **New from Clipboard** opens a new document seeded with the current clipboard text.
 - **Save** writes the current document.
 - **Save As...** writes to a new path, converting the document to the file type you choose in the dialog. Quill keeps your text as portable Markdown-style markup, so picking **Rich Text Format (\*.rtf)** writes real RTF, **HTML (\*.html)** writes a standalone web page, and **Text (\*.txt)** writes clean prose with the markup removed. Choosing **Markdown (\*.md)** keeps the markup verbatim. The file's extension always decides the format; if you type a name without an extension, the selected type supplies one. When Save As changes the format, Quill can reload the file so the editing surface matches it — for example, opening a freshly saved `.rtf` in the Rich text editor. By default it asks first with a Yes/No prompt (reloading replaces the editor contents with the saved file); set **Settings → Editing → Reload after Save As to match the format** to *Reload automatically* or *Keep current surface* to skip the prompt.
@@ -243,7 +243,7 @@ Quill then goes further with selection- and navigation-aware editing:
 - **Paste HTML as Markdown** converts rich clipboard HTML to Markdown as it pastes.
 - The deletion group — **Delete to Line Start**, **Delete to Line End**, **Delete to Document Top**, **Delete to Document Bottom**, and **Delete Paragraph** — removes text relative to the cursor.
 
-**Preferences...** and **Customize Menus...** live with the rest of Quill's configuration under **Tools -> Customize**.
+**Preferences...** and **Customize Menus...** live with the rest of Quill's configuration under **Tools -> Customize & Support**.
 
 ### View
 
@@ -256,7 +256,7 @@ The **View** menu controls how Quill presents your document on screen without ch
 - **Start With No Document Open** makes Quill open into an empty workspace instead of a starter document.
 - **Preview...**, **Preview Side by Side**, **Focus Preview**, and **Browser Preview...** open rendered views of the current document.
 
-Preference-style toggles that used to live here — theme/dark mode, system-tray mode, title-bar path style, dirty-title style, persistent undo, spell-check-as-you-type, and word-prediction-as-you-type — now live in the registry-driven **Settings** dialog (**Tools -> Customize -> Preferences...**), where they are persisted in one place.
+Preference-style toggles that used to live here — theme/dark mode, system-tray mode, title-bar path style, dirty-title style, persistent undo, spell-check-as-you-type, and word-prediction-as-you-type — now live in the registry-driven **Settings** dialog (**Tools -> Customize & Support -> Preferences...**), where they are persisted in one place.
 
 ### Insert
 
@@ -494,18 +494,22 @@ Ollama Cloud onboarding remains available here as well. Users with API keys can 
 
 After save, Quill announces plain-language verification feedback (for example, ready, auth failure, timeout, or endpoint unreachable).
 
-#### Read aloud and integrations
+#### Reading & Dictation
 
 - **Read Aloud** submenu for start or pause, stop, and voice selection
-- **BITS Whisperer -> Dictation and Watch Folder** submenu for Windows dictation, plus an opt-in **Hey QUILL Commands** toggle that lets dictation phrases trigger Quill commands instead of inserting text.
-- **BITS Whisperer -> Dictation and Watch Folder -> Watch Folder Monitoring** to automatically open new supported files dropped into a configured folder.
-- **BITS Whisperer -> Dictation and Watch Folder -> Watch Folder Settings...** for folder path, subfolders, startup behavior, and polling behavior.
-- **BITS Whisperer -> Dictation and Watch Folder -> Watch Folder Status...** for current runtime state and active configuration.
-- **BITS Whisperer -> Speech Models** for model manager, model status, recommended model selection, and faster-whisper engine checks.
-- **BITS Whisperer -> Providers** for provider center, provider status, recommended provider selection, and manual provider staging.
-- **BITS Whisperer -> Rollout** for readiness checks and capability matrix preview.
-- **BITS Whisperer -> Speech Models -> Download Queue...** for retry/cleanup/status actions on staged model downloads.
-- **Integrations** submenu with **OCR Image...** and shell integration commands.
+- **Stop Reading** stops current read-aloud immediately
+- **Say Selected** reads the current selection aloud
+- **Read All** reads from the cursor to the end of the document
+- **Dictation** submenu for Windows dictation, plus an opt-in **Hey QUILL Commands** toggle that lets dictation phrases trigger Quill commands instead of inserting text.
+- **OCR Image...** converts an image to text via optical character recognition.
+
+#### Watch Folder
+
+- **Watch Folder Monitoring (in Settings)...** toggles automatic opening of supported files dropped into a configured folder.
+- **Watch Folder Profiles...** configures folder path, subfolders, startup behavior, and polling behavior.
+- **Watch Folder Queue...** shows current runtime state and active configuration.
+
+When BITS Whisperer is enabled (QUILL 2.0), Watch Folder also appears in the BITS Whisperer submenu alongside Dictation.
 
 Speech model selection intentionally follows a two-mode flow:
 
@@ -543,31 +547,12 @@ BITS Whisperer phased rollout note:
 - Additional BITS Whisperer transcription runtime features, including expanded model execution paths,
   will be delivered incrementally in future phases.
 
-#### Document intake and extraction review
-
-- **Document Intake Report...**
-- **Review Extraction Quality...**
-- **Report Bad Extraction...**
-
-These commands matter when Quill is acting as a trusted reader for imported formats rather than a plain writer. They help answer questions like:
-
-- How good was the extraction?
-- Did the source likely contain structure that did not survive?
-- Is this document safe to quote from directly?
-- Do I need to escalate this source for manual cleanup?
-
-Release-safety note for current beta validation:
-
-- Word files (`.doc`, `.docx`) open into the normal plain-text editing surface.
-- CSV/TSV files open into the normal plain-text editing surface.
-- Structured Word and CSV grid surfaces remain in the codebase behind an internal verification gate.
-
 #### GLOW
 
-- **GLOW Audit Current Document**
-- **GLOW Audit Selection**
-- **GLOW Fix Current Document**
-- **GLOW Fix Selection**
+- **Audit Current Document**
+- **Audit Selection**
+- **Fix Current Document**
+- **Fix Selection**
 
 GLOW inside Quill is a guided layout and output workflow for deterministic text review. Today it focuses on plain text, Markdown, and HTML. It looks for issues such as:
 
@@ -581,60 +566,58 @@ GLOW inside Quill is a guided layout and output workflow for deterministic text 
 
 The key design choice is how GLOW feels inside Quill. Audit results open as readable Quill tabs. Fixing the current document opens a named preview tab and immediately starts a compare session against the original. Selection fixes apply in place to the current selection, paragraph, or line. That keeps GLOW close to the writing experience instead of making it feel like a detached compliance tool.
 
-#### Authoring and automation
-
-- **Regex Helper...**
-- **Pandoc Conversion Wizard...**
-- **External Tools and Format Support...**
-- **YAML Structure Editor...**
-
-GLOW and Macros are now their own **Tools** submenus (described below), and the old line/text **Convert** group moved to **Format -> Transform Lines**, so Authoring and Automation holds just these four authoring utilities.
-
-Regex Helper now opens as a full accessible dialog rather than a short informational prompt. It includes:
-
-- recipe presets for common patterns
-- plain-language explanation for the selected pattern
-- editable sample text for safe try-before-use checks
-- preview results with match offsets and snippets
-- one-step copy pattern action for Find and Replace workflows
-
-This keeps regex learning and validation in a keyboard-first, screen-reader-friendly surface.
-
-The new external-tools surface deserves a special note. Quill does not treat optional tools as hidden technical chores. **External Tools and Format Support...** explains what each supported helper unlocks, whether Quill can already see it, and what the best first touch point is. If Pandoc is installed or bundled, **Pandoc Conversion Wizard...** can turn supported source files into Markdown, HTML, or plain text tabs that open directly in Quill. That makes Quill feel less like a dead-end editor and more like a calm bridge into real-world document cleanup and GLOW-oriented handoff work.
-
-#### Macros
-
-- **Start Recording**
-- **Stop Recording**
-- **Play Last Macro**
-- **Manage Macros...**
-
-Macros record a sequence of editing commands and replay them, which is ideal for repetitive cleanup. Manage Macros lets you name, edit, and organize saved macros.
-
-#### Power Tools
-
-- **Toggle Read-Only Guard**
-- **Toggle Clipboard Collector**
-- **Collect Clipboard Now**
-- **Toggle Key Describer**
-- **Toggle Indentation Announcements**
-- **Infer Indentation...**
-
-Power Tools collects the editor-behavior power toggles that have no other conventional home. (These were previously grouped under a single power-tools submenu; the rest of those commands now live in their natural menus — see File, Edit, Insert, Format -> Transform Lines, Navigate, Search, and Accessibility.)
-
-#### Compare documents
+#### Comparison
 
 - **Compare with File...**
 - **Compare Open Documents**
-- **Compare Next Difference**
-- **Compare Previous Difference**
-- **Difference List**
-- **Compare Options**
-- **Compare Summary**
-- **Copy Current Difference**
-- **Copy All Differences**
+- **Next Difference** / **Previous Difference**
+- **Announce Current Difference**
+- **Difference List...**
+- **Toggle Synchronized Navigation**
+- **Compare Options...**
+- **Create Difference Summary**
+- **Copy Current Difference** / **Copy All Differences**
 
 Quill's compare model is practical and local. It supports file-to-file review, multi-document review, summary generation, and synchronized movement through differences.
+
+#### Power Tools
+
+Power Tools is the expanded home for automation utilities, developer tools, and editor-behavior power toggles.
+
+**Editor utilities:**
+
+- **Toggle Read-Only Guard** — prevents accidental edits to a document you are reviewing.
+- **Toggle Clipboard Collector** / **Collect Clipboard Now** — accumulates clipboard entries into a running log.
+- **Toggle Key Describer** — announces key names instead of performing actions; useful for documenting keystrokes.
+- **Toggle Indentation Announcements** / **Infer Indentation...** — announces indentation level changes as you navigate.
+
+**Macros:**
+
+- **Start Recording** / **Stop Recording** — capture a sequence of editing commands.
+- **Play Last Macro** — replay the last recorded sequence.
+- **Manage Macros...** — name, edit, and organize saved macros.
+
+Macros are ideal for repetitive cleanup: record once, replay as many times as needed.
+
+**Authoring utilities:**
+
+- **Regex Helper...** — full accessible dialog with recipe presets, plain-language pattern explanations, editable sample text, match previews with offsets, and one-step copy-to-Find-Replace.
+- **Pandoc Conversion Wizard...** — converts supported source files into Markdown, HTML, or plain text that opens directly as a Quill tab.
+- **External Tools and Format Support...** — explains what each supported helper unlocks, whether Quill can already see it, and the best first-touch setup path.
+- **YAML Structure Editor...** — inspects and edits YAML front matter and structure files.
+
+**Document Intake:**
+
+- **Document Intake Report...** — answers how good an extraction was and whether the source likely contained structure that did not survive.
+- **Review Extraction Quality...** — walks through extraction quality signals interactively.
+- **Report Bad Extraction...** — escalates a source for manual cleanup or re-extraction.
+
+These commands matter when Quill is acting as a trusted reader for imported formats. They help answer questions like: Is this document safe to quote from directly? Do I need to escalate for manual cleanup?
+
+**Shell Integration:**
+
+- **Install Shell Integration...** — registers Quill as a shell context-menu handler and protocol handler.
+- **Remove Shell Integration** — unregisters shell extensions.
 
 #### Accessibility
 
@@ -646,20 +629,21 @@ Quill's compare model is practical and local. It supports file-to-file review, m
 
 These tools help review the editor experience itself, the current document's link surface, and low-vision presentation issues.
 
-#### Support and customization
+#### Customize & Support
 
-- **Show Notifications**
-- **Report a Bug...**
-- **Save Diagnostics...**
-- **Check for Updates...**
 - **Preferences...**
 - **Customize Menus...**
 - **Profiles and Features...**
-- **Status Bar Settings...**
-- **Keymap Editor...**
-- **Export Keymap...**
-- **Import Keymap...**
-- **Reset Keymap**
+- **Status Bar Layout...**
+- **Export and Back Up...** / **Import or Restore...**
+- **Keymap Editor...** / **Export Keymap...** / **Import Keymap...** / **Reset Keymap**
+- **Show Notifications**
+- **Report a Bug...**
+- **Save Diagnostics...**
+- **Open Logs Folder** / **Open Diagnostics Folder**
+- **Check for Updates**
+
+Customize & Support merges the former separate Support and Customize submenus. All configuration and support paths live in one place, which is where both users and support staff expect to find them.
 
 ### Window
 
@@ -1047,7 +1031,7 @@ QUILL Quick Nav actions appear in Keymap Editor as dedicated entries:
 
 Exact rebinding examples:
 
-1. Open `Tools -> Customize -> Keymap Editor...`.
+1. Open `Tools -> Customize & Support -> Keymap Editor...`.
 2. Choose `QUILL Quick Nav: Link`.
 3. Enter `K` if you want link jumps on `K` instead of `A`.
 4. Choose `QUILL Quick Nav: Code Block`.
@@ -1080,11 +1064,27 @@ Quill's current settings and customization surface covers the things you are mos
 - custom keybindings through the keymap editor
 - status-bar order and status-bar visibility
 
-Some of these live in the View menu for quick toggling; the preference-style toggles now live in the **Settings** dialog (**Tools -> Customize -> Preferences...**). Others live in **Profiles and Features...**, **Status Bar Settings...**, **Keymap Editor...**, and the related customization commands under **Tools**.
+Some of these live in the View menu for quick toggling; the preference-style toggles now live in the **Settings** dialog (**Tools -> Customize & Support -> Preferences...**). Others live in **Profiles and Features...**, **Status Bar Layout...**, **Keymap Editor...**, and the related customization commands under **Tools -> Customize & Support**.
 
 ## Trust, Recovery, Sessions, and Safety
 
 Quill is serious about recovery and user control.
+
+### Notebooks
+
+A **Notebook** is a named collection of documents that belong together — a novel's chapters, a research project's notes, a software project's specs. Notebooks live in a single `.quillnotebook` file and keep track of which files are entries, where you left each caret, any goals you have set, and saved snapshots of which entries were open.
+
+**Creating a Notebook.** Use **File > Notebook > New Notebook** to create an empty notebook and give it a name. Use **File > Notebook > New from Folder** to import an entire folder at once — Quill walks the folder recursively and creates one entry per supported file. You can filter by extension (the default set covers Markdown, plain text, HTML, and source code).
+
+**Opening and navigating entries.** Once a Notebook is open, **Navigate > Go to Entry in Notebook** opens the tree navigator, which groups entries by subdirectory. Select an entry and press Enter (or click "Open Entry") to open that file. For headings, **Navigate > Go to Heading in Notebook** scans every entry file and presents a two-level tree.
+
+**Entries panel.** Toggle **View > Show Entries Panel** to slide a docked panel into the left side of the window. The panel shows the notebook name, today's goal progress, a live filter field, and the full entries list. Type in the filter field to narrow by title.
+
+**Goals.** Each Notebook can carry a daily word-count goal stored in its `.quillnotebook` file. When the goal is enabled, the **Notebook Goal** status-bar cell shows progress (for example, "1,234 / 500 words"). Reaching the target changes the label to "Goal reached."
+
+**Snapshots.** A Snapshot is a named point-in-time record of which entries were open. Use **File > Notebook > Save Snapshot** to save one, and **File > Notebook > Manage Snapshots** to rename or delete saved snapshots. Snapshots are different from autosave recovery — they are explicit saves you make yourself, like commit checkpoints for your writing session.
+
+**Snapshots vs Sessions.** The **File > Snapshots** menu (formerly "Workspace Snapshots") saves and restores the set of open documents in the editor — a lightweight workspace for any files, not tied to a Notebook. Notebook Snapshots store the open-entry state within a single Notebook.
 
 ### Sessions
 
@@ -1093,7 +1093,7 @@ Sessions in Quill are best understood as **workspace snapshots**. A session capt
 If you are familiar with VS Code workspaces, think of Quill sessions as a simpler, document-focused version of that idea:
 
 - save your current workspace state
-- reopen it from Recent Workspace Snapshots
+- reopen it from Recent Snapshots
 - quickly switch among open documents in the current workspace group
 
 This is useful when one writing task spans notes, references, drafts, and generated reports.

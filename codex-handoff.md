@@ -1,5 +1,44 @@
 # Codex Handoff
 
+## 2026-06-10 22:27:23 -04:00 Merge + Audit
+
+- merged current `origin/main` into `features/publishing-providers-framework`
+- resolved integration conflicts in:
+  - `quill/ui/main_frame_menu.py`
+  - `quill/tools/module_size_budgets.json`
+  - `tests/unit/ui/fixtures/dialog_inventory.json`
+- refreshed `tests/unit/ui/fixtures/main_frame_public_surface.json` for notebook public methods now present from merged `main`
+- publishing branch behavior remains intact after merge:
+  - remote publishing browse/open still defaults to `Readable Markdown`
+  - per-open `Raw HTML` override still exists
+  - explicit representation metadata still flows into the opened document state
+
+## 2026-06-10 22:27:23 -04:00 Latest Verification
+
+- reran the maintained branch-owned publishing plus merge-sensitive slice:
+  - `tests/unit/core/test_publishing.py`
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/core/test_features.py`
+  - `tests/unit/core/test_remote_sites.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+  - `tests/unit/ui/test_remote_sites_dialog.py`
+  - `tests/unit/ui/test_main_frame_characterization.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_dialog_inventory.py`
+  - `tests/performance/test_budgets.py`
+- result: `87 passed in 9.85s`
+
+## 2026-06-10 22:27:23 -04:00 Recommended Next Slice
+
+- branch is in a safe place to resume implementation
+- next coding target remains `Update Remote Content...`
+- suggested scope:
+  - reuse stored publishing metadata from the current document
+  - decide Markdown-to-HTML conversion versus raw-HTML send based on the saved authoring surface / representation
+  - keep the flow aligned with merged remote-site and notebook-era menu/state conventions
+
 ## 2026-06-10 17:40:40 -04:00 Stopping Point
 
 - branch is in a stable stopping state
