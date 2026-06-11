@@ -1,5 +1,30 @@
 # Codex Review Log
 
+## 2026-06-10 23:09:01 -04:00
+
+Final documentation sync:
+
+- user requested one last pass so nothing is left to do after push
+- reviewed the moved log, handoff, and memory files together
+- refreshed final branch-state documentation in:
+  - `codex-notes/logs/codex-review-log.md`
+  - `codex-notes/handoff/codex-handoff.md`
+  - `codex-notes/memory/publishing-providers-framework-readiness.md`
+
+Current branch state:
+
+- latest pushed branch tip before this doc sync was `1b65db4`
+- branch already contained:
+  - merge of current `origin/main`
+  - green maintained publishing/merge-sensitive test slice (`87 passed`)
+  - centralized `codex-notes/` layout
+- purpose of this checkpoint is to leave the remote with fully aligned support docs, not to change product behavior
+
+Next action from this checkpoint:
+
+- commit these final documentation updates
+- push so remote branch tip and local documentation state match exactly
+
 ## 2026-06-10 23:06:36 -04:00
 
 Clean-and-push checkpoint:

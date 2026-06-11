@@ -1,5 +1,21 @@
 # Codex Handoff
 
+## 2026-06-10 23:09:01 -04:00 Final Stop State
+
+- this branch is being left in a documentation-synced stopping state
+- handoff, review log, and memory note have all been refreshed together
+- no product-code changes were made in this final pass
+- expected final action after this handoff update:
+  - commit doc updates
+  - push branch so nothing remains pending afterward
+
+Current practical state:
+
+- branch: `features/publishing-providers-framework`
+- publishing foundation remains merged with current `origin/main`
+- maintained publishing/merge-sensitive validation remains last known green at `87 passed in 9.85s`
+- Codex support artifacts now live under `codex-notes/`
+
 ## 2026-06-10 23:03:19 -04:00 Codex Notes Home
 
 - Codex support artifacts have now been centralized under `codex-notes/`

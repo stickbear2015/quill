@@ -1,6 +1,30 @@
 # Publishing Providers Framework Readiness
 
-Status: active implementation and audit follow-up after merge with current `main`.
+Status: stable implementation checkpoint with current `origin/main` merged, focused validation green, and next work identified.
+
+## 2026-06-10 final state update
+
+- current branch is `features/publishing-providers-framework`
+- current branch history now includes merge of the latest observed `origin/main` work as of 2026-06-10:
+  - `54cef8c` Node.js runtime / QDC tutorial / installer component work
+  - `106ef2c` editor menu consolidation / notebook store groundwork
+  - `d394863` notebook workspace UI layer
+- branch-owned publishing and merge-sensitive verification slice last passed at:
+  - `87 passed in 9.85s`
+- Codex support documents have been centralized under `codex-notes/`
+- branch is in a good reviewable state, but direct merge to `main` is still not the recommended next step
+
+## Current recommendation
+
+- okay for visibility / draft PR discussion
+- not ideal yet for final merge to `main`
+
+Why:
+
+- publishing foundation, connection management, and browse/open flows are in place
+- approved content-representation behavior is implemented
+- but the explicit `Update Remote Content...` lifecycle step is still the next intended product slice
+- branch also carries process/support documentation that may deserve scoping before any final `main` merge
 
 ## 2026-06-10 audit update
 
@@ -18,12 +42,15 @@ Status: active implementation and audit follow-up after merge with current `main
 
 - Repo: `C:\code\git-src\quill`
 - Branch: `features/publishing-providers-framework`
-- local `main`, `origin/main`, and `fork/main` match at `c43ff0f`
-- latest merge commit on the feature branch: `23b8adf`
+- local historical notes below may mention older merge points; latest meaningful branch state is the merged-and-documented state above
+- latest documentation-only cleanup commits after the merge include:
+  - `249ba49` `docs(codex): record merge readiness assessment`
+  - `08f3677` `docs(codex): centralize notes and planning artifacts`
+  - `1b65db4` `docs(codex): record clean push checkpoint`
 
 ## Source of truth
 
-- Planning spec: `codex-plans/publishing-providers-framework.md`
+- Planning spec: `codex-notes/plans/publishing-providers-framework.md`
 - Tracking issue: `#140`
 - Issue URL: `http://github.com/community-access/quill`
 - Product source of truth: `docs/QUILL-PRD.md`
