@@ -1,5 +1,35 @@
 # Codex Review Log
 
+## 2026-06-10 23:03:19 -04:00
+
+Codex-notes reorganization:
+
+- committed the current merge-readiness assessment state first
+- created a central `codex-notes/` folder to reduce root-folder clutter
+- moved tracked Codex artifacts into:
+  - `codex-notes/handoff/`
+  - `codex-notes/logs/`
+  - `codex-notes/memory/`
+  - `codex-notes/notes/`
+  - `codex-notes/plans/`
+- added `codex-notes/README.md` so the new layout is self-explanatory
+
+Files moved in this pass:
+
+- `codex-handoff.md` -> `codex-notes/handoff/codex-handoff.md`
+- `codex-review-log.md` -> `codex-notes/logs/codex-review-log.md`
+- `codex-memory/publishing-providers-framework-readiness.md` -> `codex-notes/memory/publishing-providers-framework-readiness.md`
+- `codex-plans/publishing-providers-framework.md` -> `codex-notes/plans/publishing-providers-framework.md`
+- `main-branch-audit-note-2026-06-10.md` -> `codex-notes/notes/main-branch-audit-note-2026-06-10.md`
+- `publishing-main-merge-readiness-note-2026-06-10.md` -> `codex-notes/notes/publishing-main-merge-readiness-note-2026-06-10.md`
+- `publishing-remote-integration-planning-2026-06-10.md` -> `codex-notes/notes/publishing-remote-integration-planning-2026-06-10.md`
+
+Current result:
+
+- root is cleaner
+- Codex planning/history artifacts now live under one obvious top-level folder
+- no additional production-code changes were made in this cleanup pass
+
 ## 2026-06-10 22:56:23 -04:00
 
 Repo-organization request:

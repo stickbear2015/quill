@@ -1,5 +1,16 @@
 # Codex Handoff
 
+## 2026-06-10 23:03:19 -04:00 Codex Notes Home
+
+- Codex support artifacts have now been centralized under `codex-notes/`
+- current canonical locations:
+  - handoff: `codex-notes/handoff/codex-handoff.md`
+  - review log: `codex-notes/logs/codex-review-log.md`
+  - branch memory: `codex-notes/memory/`
+  - planning docs: `codex-notes/plans/`
+  - one-off notes: `codex-notes/notes/`
+- this was a housekeeping-only pass; no product behavior changed
+
 ## 2026-06-10 22:56:23 -04:00 Repo Organization
 
 - next immediate work is repo housekeeping, not product code
