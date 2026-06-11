@@ -1,5 +1,43 @@
 # Codex Review Log
 
+## 2026-06-10 22:56:23 -04:00
+
+Repo-organization request:
+
+- user asked for a two-step cleanup:
+  - first commit the current readiness-assessment note/log state
+  - then move planning, logs, handoff docs, notes, and Codex memory/planning artifacts into a central folder
+- intent is repo tidiness: root is getting crowded
+- next actions from this checkpoint:
+  - commit current markdown state as-is
+  - create a central Codex-notes location
+  - move tracked note artifacts there
+  - update references and log the reorganization in detail
+
+## 2026-06-10 22:48:16 -04:00
+
+Merge-readiness assessment:
+
+- reviewed branch history against current `origin/main`
+- checked recent upstream direction before making a recommendation
+- created a dedicated note:
+  - `publishing-main-merge-readiness-note-2026-06-10.md`
+
+Current recommendation:
+
+- do not rush this branch straight into `main` yet
+- branch looks ready for draft PR / review visibility
+- branch does not yet look ideal for direct merge because:
+  - publishing lifecycle work is still incomplete (`Update Remote Content...` is still pending)
+  - `main` is in active adjacent UI churn from notebook/menu/Node runtime work
+  - the branch currently carries planning/log/handoff artifacts in addition to production code
+
+Summary judgment:
+
+- ready for review: yes
+- ready for draft PR: yes
+- ready for direct merge to `main` as-is: no
+
 ## 2026-06-10 22:27:23 -04:00
 
 Merge-and-audit checkpoint:

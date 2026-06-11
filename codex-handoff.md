@@ -1,5 +1,39 @@
 # Codex Handoff
 
+## 2026-06-10 22:56:23 -04:00 Repo Organization
+
+- next immediate work is repo housekeeping, not product code
+- user requested:
+  - commit the current readiness-assessment note/log state first
+  - then consolidate planning/log/handoff/note artifacts into a central folder
+- expected follow-up after this checkpoint:
+  - centralize Codex process docs under one top-level location
+  - update any references that still assume root-level note files
+  - record the moves in the review log and handoff
+
+## 2026-06-10 22:48:16 -04:00 Merge Readiness
+
+- assessed whether the publishing branch should be merged to `main` now
+- created:
+  - `publishing-main-merge-readiness-note-2026-06-10.md`
+- current recommendation is to hold off on a direct merge
+
+Reasoning summary:
+
+- the implemented publishing slice is stable and reviewable
+- the full end-to-end publishing workflow is still incomplete
+- `main` has recently been moving quickly in nearby UI architecture:
+  - remote I/O
+  - menu consolidation
+  - notebook workspace
+  - Node runtime / Quillins packaging
+- this branch also contains branch-process documentation that should likely be reviewed before any full merge to `main`
+
+Practical recommendation:
+
+- okay to open or maintain a draft PR for visibility
+- better to finish `Update Remote Content...` and do a cleanup/scoping pass before asking for final merge
+
 ## 2026-06-10 22:27:23 -04:00 Merge + Audit
 
 - merged current `origin/main` into `features/publishing-providers-framework`
