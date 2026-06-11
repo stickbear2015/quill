@@ -1,5 +1,19 @@
 # Codex Review Log
 
+## 2026-06-10 23:06:36 -04:00
+
+Clean-and-push checkpoint:
+
+- user deleted the now-empty old folder after the Codex-notes reorganization
+- checked tracked git state before committing
+- tracked branch state was already clean, so the folder removal did not leave additional staged or unstaged tracked changes
+- recording this checkpoint so the log reflects the final cleanup and push request
+
+Next action from this checkpoint:
+
+- commit this log update
+- push the branch so the remote tip matches the clean local state
+
 ## 2026-06-10 23:03:19 -04:00
 
 Codex-notes reorganization:
