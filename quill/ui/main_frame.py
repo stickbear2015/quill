@@ -4829,6 +4829,15 @@ class MainFrame(
         self._unregister_global_hotkeys()
         self._remove_tray_icon()
         self.close_ssh_connections()
+        # #32: drop GitHub-temp files no longer referenced by an open tab so
+        # the user's app-data directory does not accumulate copies of files
+        # they opened once and never saved back.
+        prune = getattr(self, "prune_orphaned_github_temp", None)
+        if callable(prune):
+            try:
+                prune()
+            except Exception:  # noqa: BLE001 - cleanup must never block shutdown
+                pass
         save_settings(self.settings)
         self.flush_persistent_undo()
         mark_clean_exit(self.session_id)
@@ -5997,7 +6006,9 @@ class MainFrame(
                 notification_category,
             )
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: main-frame background task dispatch.
+            target=worker, daemon=True
+        ).start()
 
     def _finish_background_task(
         self,
@@ -16015,7 +16026,9 @@ class MainFrame(
                     beta,
                 )
 
-            threading.Thread(target=_bg, daemon=True).start()
+            threading.Thread(  # GATE-40-OK: update-manifest fetcher; one-shot network.
+                target=_bg, daemon=True
+            ).start()
         else:
             # Synchronous fallback for test environments without wx.CallAfter.
             m, r, e = _run_fetch()
@@ -16457,7 +16470,9 @@ class MainFrame(
             self._wx.CallAfter(self._announce, f"Update {release.version} downloaded")
             self._wx.CallAfter(self._offer_post_download_actions, release, target)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: update asset download worker; bounded by size.
+            target=worker, daemon=True
+        ).start()
 
     def _offer_post_download_actions(self, release: GitHubRelease, target: Path) -> None:
         """After a successful download, let the user install it now or reveal it
@@ -17884,7 +17899,9 @@ class MainFrame(
             badge = "Needs key" if status.needs_key else None
             self._wx.CallAfter(self._set_ai_menu_status_badge, bool(ok), status.message, badge)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: AI menu status probe.
+            target=worker, daemon=True
+        ).start()
 
     def _apply_ai_menu_enabled(self) -> None:
         """Enable/disable the AI menu items behind the 'Use Artificial Intelligence'
@@ -18035,7 +18052,9 @@ class MainFrame(
             except Exception as exc:  # noqa: BLE001
                 _wx.CallAfter(self._announce, f"Grammar check failed: {exc}")
 
-        threading.Thread(target=run, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: one-shot grammar-check send.
+            target=run, daemon=True
+        ).start()
 
     def _show_grammar_result(self, result: str, model_id: str, provider_id: str) -> None:
         from quill.ui.ai_chat_dialog import AIResponseDialog

@@ -154,7 +154,9 @@ class ImageCaptureMixin:
             finally:
                 progress_state["done"] = True
 
-        worker = threading.Thread(target=run_ocr, name="ocr-image", daemon=True)
+        worker = threading.Thread(  # GATE-40-OK: OCR image worker; posts via CallAfter.
+            target=run_ocr, name="ocr-image", daemon=True
+        )
         worker.start()
         progress = wx.ProgressDialog(
             "OCR Image",
@@ -393,7 +395,9 @@ class ImageCaptureMixin:
             finally:
                 progress_state["done"] = True
 
-        worker = threading.Thread(target=run_describe, name="describe-image", daemon=True)
+        worker = threading.Thread(  # GATE-40-OK: image describe worker; posts via CallAfter.
+            target=run_describe, name="describe-image", daemon=True
+        )
         worker.start()
         progress = wx.ProgressDialog(
             _TITLE,

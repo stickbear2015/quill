@@ -314,6 +314,183 @@ def _check_checklistbox(paths: Iterable[Path]) -> list[Violation]:
     return violations
 
 
+# Finding #40: per CLAUDE.md the UI thread owns widgets and background work
+# must run on QuillTaskManager.  Direct threading.Thread calls in quill/ui
+# bypass cancellation and shutdown-draining semantics.  This gate holds the
+# line: existing offenders are allowed through with an explicit comment so
+# migration is gradual and audited.
+#
+#     threading.Thread(  # GATE-40-OK: <reason>, target migrated in <ticket>
+#         ...
+#     ).start()
+#
+# The reason must be specific (ticket id, or "ad-hoc one-shot, no
+# cancellation needed because <observable reason>").  Generic "legacy" /
+# "TODO" reasons are rejected at code review.
+_GATE_40_OK_MARKER = "# GATE-40-OK:"
+# The wx heartbeat watchdog is a long-lived daemon that runs outside the
+# task manager on purpose (it survives app shutdown so it can raise
+# diagnostics).  It is the only legitimate threading.Thread under
+# quill/stability and is exempt from the gate.
+_GATE_40_EXEMPT_PATHS = frozenset({
+    _REPO_ROOT / "quill" / "stability" / "wx_heartbeat.py",
+})
+
+
+def _check_threading_thread(paths: Iterable[Path]) -> list[Violation]:
+    """Ban direct ``threading.Thread(...)`` construction in quill/ui.
+
+    Finding #40 / CLAUDE.md invariant: background work in the UI layer must
+    go through :class:`quill.stability.task_manager.TaskManager` so the
+    runtime can drain, cancel, and report results.  Each existing call site
+    is given an explicit exemption marker so the migration is auditable.
+    """
+    violations: list[Violation] = []
+    for path in paths:
+        if path in _GATE_40_EXEMPT_PATHS:
+            continue
+        # Use the relative path string so the marker is portable across
+        # developer machines and CI clones.
+        try:
+            rel = path.relative_to(_REPO_ROOT).as_posix()
+        except ValueError:
+            rel = str(path)
+        if rel.startswith("tests/"):
+            # Tests are free to spin up threads to exercise the code under
+            # test; the invariant targets production UI code only.
+            continue
+        source_lines = path.read_text(encoding="utf-8").splitlines()
+        tree = ast.parse("\n".join(source_lines), filename=str(path))
+        for node in ast.walk(tree):
+            if not _is_threading_thread_call(node):
+                continue
+            lineno = _node_lineno(node)
+            # The line of the Call node usually contains the marker; ruff
+            # may move it to the next line, so check a 4-line window.
+            window = source_lines[lineno - 1 : lineno + 4]
+            if any(_GATE_40_OK_MARKER in ln for ln in window):
+                continue
+            violations.append(
+                Violation(
+                    path,
+                    lineno,
+                    "threading.Thread(...) in quill/ui bypasses "
+                    "QuillTaskManager; use TaskManager.submit() instead. "
+                    "Add '# GATE-40-OK: <reason>' to exempt an existing site "
+                    "while it is migrated.",
+                )
+            )
+    return violations
+
+
+def _is_threading_thread_call(node: ast.AST) -> bool:
+    """True for a ``threading.Thread(...)`` construction call."""
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "Thread"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "threading"
+    )
+
+
+# Finding #41: announce-dialog gate.  Raw wx.MessageBox calls bypass
+# ``MainFrame._show_message_box`` (which handles z-order, region tracking,
+# and screen-reader announcement) and are not consistently announced.  Each
+# new call site should go through the wrapper; existing sites get an
+# explicit exemption marker:
+#
+#     wx.MessageBox(  # GATE-41-OK: <reason>
+#         "..."
+#     )
+#
+# Note: ``quill/ui/dialog_contract.py`` exposes the sanctioned
+# ``show_message_box`` helper that wraps ``wx.MessageBox`` with announce +
+# region hooks.
+_GATE_41_OK_MARKER = "# GATE-41-OK:"
+_GATE_41_EXEMPT_PATHS = frozenset({
+    # The sanctioned wrapper itself legitimately calls wx.MessageBox.
+    _REPO_ROOT / "quill" / "ui" / "dialog_contract.py",
+    # MainFrame's _show_message_box wrapper delegates to wx.MessageBox.
+    _REPO_ROOT / "quill" / "ui" / "main_frame.py",
+})
+_GATE_41_DIRECTORIES = (
+    _REPO_ROOT / "quill" / "ui",
+    _REPO_ROOT / "quill" / "devtools",
+)
+
+
+def _check_wx_message_box(paths: Iterable[Path]) -> list[Violation]:
+    """Ban raw ``wx.MessageBox(...)`` in quill/ui and quill/devtools.
+
+    Finding #41: those surfaces must route through the region-track /
+    announce wrapper (``MainFrame._show_message_box`` or
+    :func:`quill.ui.dialog_contract.show_message_box`) so every dialog is
+    heard by NVDA/JAWS/Narrator.  Exempt an existing site with the
+    ``GATE-41-OK`` marker.
+    """
+    violations: list[Violation] = []
+    for path in paths:
+        if path in _GATE_41_EXEMPT_PATHS:
+            continue
+        try:
+            rel = path.relative_to(_REPO_ROOT).as_posix()
+        except ValueError:
+            rel = str(path)
+        if rel.startswith("tests/"):
+            continue
+        # Only enforce on the governed directories (quill/ui, quill/devtools).
+        if not any(_is_under(path, root) for root in _GATE_41_DIRECTORIES):
+            continue
+        source_lines = path.read_text(encoding="utf-8").splitlines()
+        tree = ast.parse("\n".join(source_lines), filename=str(path))
+        for node in ast.walk(tree):
+            if not _is_wx_message_box_call(node):
+                continue
+            lineno = _node_lineno(node)
+            window = source_lines[lineno - 1 : lineno + 4]
+            if any(_GATE_41_OK_MARKER in ln for ln in window):
+                continue
+            violations.append(
+                Violation(
+                    path,
+                    lineno,
+                    "wx.MessageBox(...) in quill/ui/devtools bypasses the "
+                    "announce-dialog wrapper; call "
+                    "MainFrame._show_message_box or "
+                    "quill.ui.dialog_contract.show_message_box instead. "
+                    "Add '# GATE-41-OK: <reason>' to exempt an existing site.",
+                )
+            )
+    return violations
+
+
+def _is_wx_message_box_call(node: ast.AST) -> bool:
+    """True for a ``wx.MessageBox(...)`` call (not a definition)."""
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "MessageBox"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "wx"
+    )
+
+
+def _node_lineno(node: ast.AST) -> int:
+    """Return a usable 1-based line number for an AST node (always positive)."""
+    lineno = getattr(node, "lineno", 0) or 0
+    return lineno if lineno > 0 else 1
+
+
+def _is_under(path: Path, root: Path) -> bool:
+    """Return True when *path* lives under *root* (or is *root* itself)."""
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
 def _check_dialog_registry() -> list[Violation]:
     """Every source dialog surface must be registered and classified.
 
@@ -384,6 +561,8 @@ def find_violations() -> list[Violation]:
     violations.extend(_check_raw_xml(sorted(_PACKAGE_ROOT.rglob("*.py"))))
     violations.extend(_check_dialog_contract(sorted(_UI_ROOT.rglob("*.py"))))
     violations.extend(_check_checklistbox(sorted(_UI_ROOT.rglob("*.py"))))
+    violations.extend(_check_threading_thread(sorted(_UI_ROOT.rglob("*.py"))))
+    violations.extend(_check_wx_message_box(sorted(_PACKAGE_ROOT.rglob("*.py"))))
     violations.extend(_check_dialog_registry())
     violations.extend(_check_ruff_config())
     return violations

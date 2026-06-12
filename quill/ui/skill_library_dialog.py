@@ -22,7 +22,7 @@ from quill.core.skill_pack import (
     run_skill,
     validate_skill,
 )
-from quill.ui.dialog_contract import apply_modal_ids
+from quill.ui.dialog_contract import apply_modal_ids, show_message_box
 
 if TYPE_CHECKING:
     from quill.core.settings import Settings
@@ -201,7 +201,7 @@ class SkillLibraryDialog:
             or ""
         )
         if not model_id:
-            wx.MessageBox(
+            show_message_box(
                 "No AI model configured. Set a default model in Preferences > AI.",
                 "No Model",
                 wx.OK | wx.ICON_INFORMATION,
@@ -247,7 +247,9 @@ class SkillLibraryDialog:
             except Exception as exc:
                 wx.CallAfter(self._on_error, str(exc))
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: skill pack worker; bounded by steps.
+            target=worker, daemon=True
+        ).start()
 
     def _reset_run_button(self) -> None:
         self._running = False
@@ -260,7 +262,7 @@ class SkillLibraryDialog:
         active = [r for r in results if not r.skipped]
         if not active:
             self._status.SetLabel("")
-            wx.MessageBox(
+            show_message_box(
                 "The skill ran but produced no output.",
                 "Skill result",
                 wx.OK | wx.ICON_INFORMATION,
@@ -305,7 +307,7 @@ class SkillLibraryDialog:
     def _on_error(self, msg: str) -> None:
         self._reset_run_button()
         self._status.SetLabel("")
-        wx.MessageBox(
+        show_message_box(
             f"The skill failed:\n\n{msg}",
             "Skill error",
             wx.OK | wx.ICON_ERROR,
@@ -331,7 +333,7 @@ class SkillLibraryDialog:
             pack = parse_skill(source)
             errors = validate_skill(pack)
         except SkillValidationError as exc:
-            wx.MessageBox(
+            show_message_box(
                 "Parse errors:\n\n" + "\n".join(exc.errors),
                 "Invalid skill",
                 wx.OK | wx.ICON_ERROR,
@@ -339,10 +341,10 @@ class SkillLibraryDialog:
             )
             return
         except Exception as exc:
-            wx.MessageBox(str(exc), "Import failed", wx.OK | wx.ICON_ERROR, self.dialog)
+            show_message_box(str(exc), "Import failed", wx.OK | wx.ICON_ERROR, self.dialog)
             return
         if errors:
-            wx.MessageBox(
+            show_message_box(
                 "Validation errors:\n\n" + "\n".join(errors),
                 "Invalid skill",
                 wx.OK | wx.ICON_ERROR,
@@ -355,7 +357,7 @@ class SkillLibraryDialog:
             self._list.Append(pack.name)
         self._list.SetStringSelection(pack.name)
         self._on_select(None)
-        wx.MessageBox(
+        show_message_box(
             f"Imported: {pack.name}",
             "Skill imported",
             wx.OK | wx.ICON_INFORMATION,

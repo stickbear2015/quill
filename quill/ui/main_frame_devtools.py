@@ -160,7 +160,15 @@ class DevToolsMixin:
         entries = [e.source for e in _history.load(50)]
         win.load_history(entries)
         win.set_status(f"Ready - Python | {self.console_get_document_name() or 'no document'}")
+        # #47: the TypeScript worker announces when it finishes starting; the
+        # Python console had the same silence gap on first open.  Announce a
+        # brief ready cue so screen-reader users hear that the window is
+        # live before they type.
+        first_open = not getattr(self, "_dev_python_console_announced", False)
         win.show()
+        if first_open:
+            self._dev_python_console_announced = True
+            self._announce("Python console ready. Press F6 to focus the editor.")
 
     def open_typescript_console(self) -> None:
         """Tools > Advanced > Developer Console > Open TypeScript Console"""
@@ -174,7 +182,9 @@ class DevToolsMixin:
         win.show()
         ts = self._dt_ts_console()
         if not ts.is_running():
-            threading.Thread(target=self._dt_start_ts_worker, daemon=True).start()
+            threading.Thread(  # GATE-40-OK: long-lived TS worker.
+                target=self._dt_start_ts_worker, daemon=True
+            ).start()
 
     def copy_diagnostic_summary(self) -> None:
         """Tools > Advanced > Developer Console > Copy Diagnostic Summary"""
@@ -192,7 +202,9 @@ class DevToolsMixin:
 
     def restart_typescript_worker(self) -> None:
         self._dt_ts_console()  # ensure created before thread starts
-        threading.Thread(target=self._dt_restart_ts_worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: TS worker restart.
+            target=self._dt_restart_ts_worker, daemon=True
+        ).start()
 
     # ------------------------------------------------------------------
     # Execution callbacks (called from ConsoleWindow on UI thread)
@@ -231,7 +243,7 @@ class DevToolsMixin:
         win.set_status("Running TypeScript...")
         self._announce("Running TypeScript.")
         ts = self._dt_ts_console()
-        threading.Thread(
+        threading.Thread(  # GATE-40-OK: TS execute thread; bounded by source.
             target=self._dt_ts_execute_thread,
             args=(ts, source, win),
             daemon=True,
@@ -270,7 +282,9 @@ class DevToolsMixin:
         if getattr(self, "_dev_console_consent_shown", False):
             return True
         wx = self._wx
-        result = wx.MessageBox(
+        from quill.ui.dialog_contract import show_message_box
+
+        result = show_message_box(
             _CONSENT_TEXT,
             "Developer Console",
             wx.OK | wx.CANCEL | wx.ICON_INFORMATION,

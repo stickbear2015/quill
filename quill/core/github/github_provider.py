@@ -47,6 +47,17 @@ def _get_gh_module() -> Any:
         ) from exc
 
 
+def _looks_binary(data: bytes, *, sample: int = 8000) -> bool:
+    """Return True if *data* contains a NUL byte within the first *sample* bytes.
+
+    Used to refuse non-text files at the GitHub provider boundary (finding
+    #25).  The previous latin-1 fallback silently turned images and other
+    binaries into a "text" view that round-tripped through save-back as
+    mangled UTF-8.
+    """
+    return b"\x00" in data[:sample]
+
+
 class GitHubRemoteProvider(RemoteProvider):
     """Read-only GitHub provider using the PyGithub library."""
 
@@ -103,17 +114,36 @@ class GitHubRemoteProvider(RemoteProvider):
             html_url=repo.html_url,
         )
 
-    def list_refs(self, repository: RemoteRepository) -> list[RemoteRef]:
+    def list_refs(
+        self,
+        repository: RemoteRepository,
+        *,
+        limit: int = 100,
+    ) -> list[RemoteRef]:
+        """Return up to *limit* branches and tags for *repository*.
+
+        ``limit`` is the per-kind cap.  A repo with thousands of refs (e.g.
+        ``kubernetes/kubernetes`` has 2000+ branches) used to burn an entire
+        anonymous GitHub rate-limit window before the dialog became
+        responsive (finding #34).  Callers that genuinely need the full
+        list should pass a larger ``limit`` explicitly; the dialog uses a
+        cap of 100 by default and a "Show all refs" affordance.
+        """
         gh = _get_gh_module()
         try:
             repo = self._gh.get_repo(repository.full_name)
-            refs: list[RemoteRef] = [
-                RemoteRef(name=b.name, kind="branch") for b in repo.get_branches()
-            ]
-            refs += [RemoteRef(name=t.name, kind="tag") for t in repo.get_tags()]
-            return refs
         except gh.GithubException as exc:
             raise RuntimeError(f"Could not list refs: {exc}") from exc
+        refs: list[RemoteRef] = []
+        for b in repo.get_branches():
+            refs.append(RemoteRef(name=b.name, kind="branch"))
+            if len(refs) >= limit:
+                return refs
+        for t in repo.get_tags():
+            refs.append(RemoteRef(name=t.name, kind="tag"))
+            if len(refs) >= limit:
+                return refs
+        return refs
 
     def list_directory(
         self,
@@ -168,6 +198,15 @@ class GitHubRemoteProvider(RemoteProvider):
                 f"{_GITHUB_FILE_SIZE_LIMIT:,} bytes. Download it manually."
             )
         raw: bytes = content.decoded_content
+        if _looks_binary(raw):
+            # #25: refuse to silently coerce binary content into a text editor
+            # and a save-back round-trip (the old latin-1 fallback corrupted
+            # bytes, and the resulting UTF-8 file was useless for the user).
+            raise ValueError(
+                f"{path!r} on {ref!r} looks like a binary file "
+                f"(NUL byte detected in the first {len(raw)} bytes). "
+                "Download it manually instead of opening it in the editor."
+            )
         html_url: str = content.html_url or (
             f"https://github.com/{repository.full_name}/blob/{ref}/{path}"
         )

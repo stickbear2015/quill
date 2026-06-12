@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 import wx
 
 from quill.core.prompt_library import CATEGORIES, Prompt, PromptLibrary
+from quill.ui.dialog_contract import show_message_box
 
 if TYPE_CHECKING:
     from quill.core.settings import Settings
@@ -216,7 +217,7 @@ class PromptLibraryDialog:
             return
         input_text = self._input.GetValue()
         if not input_text.strip():
-            wx.MessageBox(
+            show_message_box(
                 "Enter text to process in the Input text field before running a prompt.",
                 "No Input Text",
                 wx.OK | wx.ICON_INFORMATION,
@@ -227,7 +228,7 @@ class PromptLibraryDialog:
         provider_id = self._settings.ai_chat_default_provider
         model_id = self._settings.ai_prompt_default_model or self._settings.ai_chat_default_model
         if not model_id:
-            wx.MessageBox(
+            show_message_box(
                 "No AI model configured. Set a default model in Preferences > AI.",
                 "No Model",
                 wx.OK | wx.ICON_INFORMATION,
@@ -256,7 +257,9 @@ class PromptLibraryDialog:
             except Exception as exc:  # noqa: BLE001
                 wx.CallAfter(self._on_run_error, str(exc))
 
-        threading.Thread(target=run, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: prompt library send worker.
+            target=run, daemon=True
+        ).start()
 
     def _on_result(self, result: str, model_id: str, provider_id: str) -> None:
         self._running = False
@@ -272,7 +275,7 @@ class PromptLibraryDialog:
         self._running = False
         self._status.SetLabel("")
         self._update_buttons()
-        wx.MessageBox(
+        show_message_box(
             f"AI request failed: {message}",
             "Prompt Run Failed",
             wx.OK | wx.ICON_ERROR,
@@ -349,7 +352,7 @@ class PromptLibraryDialog:
         try:
             added = self._lib.import_pqp(Path(path_str))
         except Exception as exc:  # noqa: BLE001
-            wx.MessageBox(
+            show_message_box(
                 f"Import failed: {exc}",
                 "Import Error",
                 wx.OK | wx.ICON_ERROR,
@@ -359,7 +362,7 @@ class PromptLibraryDialog:
         self._rebuild_list()
         msg = f"Imported {len(added)} prompt(s)." if added else "No new prompts to import."
         self._listbox.SetName(f"Prompt list — {msg}")
-        wx.MessageBox(msg, "Import Complete", wx.OK | wx.ICON_INFORMATION, self.dialog)
+        show_message_box(msg, "Import Complete", wx.OK | wx.ICON_INFORMATION, self.dialog)
 
     def _on_export(self, _event: object) -> None:
         with wx.FileDialog(
@@ -377,14 +380,14 @@ class PromptLibraryDialog:
         try:
             count = self._lib.export_pqp(Path(path_str))
         except Exception as exc:  # noqa: BLE001
-            wx.MessageBox(
+            show_message_box(
                 f"Export failed: {exc}",
                 "Export Error",
                 wx.OK | wx.ICON_ERROR,
                 self.dialog,
             )
             return
-        wx.MessageBox(
+        show_message_box(
             f"Exported {count} prompt(s) to {path_str}",
             "Export Complete",
             wx.OK | wx.ICON_INFORMATION,

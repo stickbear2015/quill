@@ -24,6 +24,13 @@ if TYPE_CHECKING:
     from quill.core.github.github_provider import GitHubRemoteProvider
     from quill.core.github.models import BrowseResult, RemoteNode, RemoteRef, RemoteRepository
 
+# Cap for the first-pass refs fetch in the browser dialog.  Anonymous GitHub
+# has a 60-req/hour limit and a popular repo can have thousands of branches,
+# so we show the default branch plus up to 99 more and offer a "Show all
+# refs" affordance to opt into the full fetch (finding #34).
+LIST_REFS_INITIAL_LIMIT = 100
+LIST_REFS_FULL_LIMIT = 5_000
+
 # ---------------------------------------------------------------------------
 # Consent dialog (one-time, shown before any GitHub network access)
 # ---------------------------------------------------------------------------
@@ -266,6 +273,10 @@ class GitHubRepositoryBrowserDialog:
         self._path_stack: list[str] = []  # stack of ancestor paths; top = current dir
         self._nodes: list[RemoteNode] = []
         self._refs: list[RemoteRef] = []
+        # When the user clicks "Show all refs" we re-run list_refs with a
+        # much higher cap.  ``_refs_truncated`` is True while the initial
+        # list is still the cap'd version (finding #34).
+        self._refs_truncated = False
 
         self.dialog = wx.Dialog(
             parent,
@@ -339,6 +350,9 @@ class GitHubRepositoryBrowserDialog:
         self._refresh_btn = wx.Button(panel, label="Refresh")
         self._refresh_btn.SetName("Refresh current folder")
         self._refresh_btn.Enable(False)
+        self._show_all_refs_btn = wx.Button(panel, label="Show all refs")
+        self._show_all_refs_btn.SetName("Show all branches and tags")
+        self._show_all_refs_btn.Enable(False)
         self._copy_url_btn = wx.Button(panel, label="Copy URL")
         self._copy_url_btn.SetName("Copy GitHub URL to clipboard")
         self._copy_url_btn.Enable(False)
@@ -347,6 +361,7 @@ class GitHubRepositoryBrowserDialog:
         btn_row.Add(self._open_btn, flag=wx.RIGHT, border=6)
         btn_row.Add(self._go_up_btn, flag=wx.RIGHT, border=6)
         btn_row.Add(self._refresh_btn, flag=wx.RIGHT, border=6)
+        btn_row.Add(self._show_all_refs_btn, flag=wx.RIGHT, border=6)
         btn_row.Add(self._copy_url_btn, flag=wx.RIGHT, border=6)
         btn_row.AddStretchSpacer()
         btn_row.Add(cancel_btn)
@@ -367,6 +382,7 @@ class GitHubRepositoryBrowserDialog:
         self._open_btn.Bind(wx.EVT_BUTTON, self._on_open)
         self._go_up_btn.Bind(wx.EVT_BUTTON, self._on_go_up)
         self._refresh_btn.Bind(wx.EVT_BUTTON, self._on_refresh)
+        self._show_all_refs_btn.Bind(wx.EVT_BUTTON, self._on_show_all_refs)
         self._copy_url_btn.Bind(wx.EVT_BUTTON, self._on_copy_url)
         self.dialog.Bind(wx.EVT_CHAR_HOOK, self._on_key)
 
@@ -398,9 +414,20 @@ class GitHubRepositoryBrowserDialog:
             return
         self._set_loading(True)
         self._set_status(f"Loading {full_name}...")
-        threading.Thread(
+        threading.Thread(  # GATE-40-OK: GitHub repo loader; bounded by LIST_REFS_INITIAL_LIMIT.
             target=self._load_repo_worker,
-            args=(full_name,),
+            args=(full_name, LIST_REFS_INITIAL_LIMIT),
+            daemon=True,
+        ).start()
+
+    def _on_show_all_refs(self, _event: object) -> None:
+        if not self._repository:
+            return
+        self._set_loading(True)
+        self._set_status("Loading all branches and tags...")
+        threading.Thread(  # GATE-40-OK: full-refs loader; bounded by LIST_REFS_FULL_LIMIT.
+            target=self._load_repo_worker,
+            args=(self._repository.full_name, LIST_REFS_FULL_LIMIT),
             daemon=True,
         ).start()
 
@@ -484,12 +511,12 @@ class GitHubRepositoryBrowserDialog:
     # ------------------------------------------------------------------
     # Workers and UI updates
 
-    def _load_repo_worker(self, full_name: str) -> None:
+    def _load_repo_worker(self, full_name: str, limit: int) -> None:
         wx = self._wx
         try:
             repo = self._provider.get_repository(full_name)
-            refs = self._provider.list_refs(repo)
-            wx.CallAfter(self._on_repo_loaded, repo, refs)
+            refs = self._provider.list_refs(repo, limit=limit)
+            wx.CallAfter(self._on_repo_loaded, repo, refs, limit)
         except Exception as exc:  # noqa: BLE001
             wx.CallAfter(self._on_load_error, str(exc))
 
@@ -497,9 +524,14 @@ class GitHubRepositoryBrowserDialog:
         self,
         repo: RemoteRepository,
         refs: list[RemoteRef],
+        limit: int,
     ) -> None:
         self._repository = repo
         self._refs = refs
+        # "Show all refs" stays available only while we have a capped list
+        # (the dialog was opened with the default small cap) so the user
+        # can opt into the full pull.
+        self._refs_truncated = limit <= LIST_REFS_INITIAL_LIMIT
         self._ref_choice.Clear()
         for ref in refs:
             label = f"{ref.name} ({ref.kind})"
@@ -513,7 +545,15 @@ class GitHubRepositoryBrowserDialog:
         self._current_ref = refs[default_idx].name if refs else ""
         self._path_stack.clear()
         desc = f" — {repo.description}" if repo.description else ""
-        self._set_status(f"Loaded {repo.full_name}{desc}. Loading files...")
+        if self._refs_truncated:
+            self._show_all_refs_btn.Enable(True)
+            self._set_status(
+                f"Loaded {repo.full_name}{desc}. Showing first {len(refs)} "
+                "refs; click 'Show all refs' for the full list."
+            )
+        else:
+            self._show_all_refs_btn.Enable(False)
+            self._set_status(f"Loaded {repo.full_name}{desc}.")
         self._load_directory("")
 
     def _on_load_error(self, message: str) -> None:
@@ -527,7 +567,7 @@ class GitHubRepositoryBrowserDialog:
         display_path = "/" + path if path else "/"
         self._path_label.SetLabel(f"Path: {display_path}")
         self._set_status(f"Loading {display_path}...")
-        threading.Thread(
+        threading.Thread(  # GATE-40-OK: directory listing worker; bounded by API page size.
             target=self._load_dir_worker,
             args=(self._repository, path, self._current_ref),
             daemon=True,

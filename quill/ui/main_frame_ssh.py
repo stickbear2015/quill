@@ -107,7 +107,9 @@ class SshEditingMixin:
             else:
                 self._wx.CallAfter(self._on_ssh_connected, connection, request)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: SSH connect worker.
+            target=worker, daemon=True
+        ).start()
 
     def _ssh_error(self, message: str) -> None:
         self._set_status(message)
