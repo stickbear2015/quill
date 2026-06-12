@@ -211,9 +211,12 @@ from quill.core.keymap import (
     DEFAULT_KEYMAP,
     KEYBOARD_PACK_CUSTOM,
     KEYBOARD_PACK_DEFAULT,
+    KQP_EXTENSION,
     build_keymap_for_pack,
+    export_keyboard_pack,
     export_keymap,
     find_keymap_conflict,
+    import_keyboard_pack,
     import_keymap,
     keyboard_pack_description,
     keyboard_pack_names,
@@ -239,6 +242,7 @@ from quill.core.menu_customization import (
     save_menu_customization,
 )
 from quill.core.metrics import compute_document_stats
+from quill.core.multi_press import MultiPressDispatcher
 from quill.core.navigation import (
     next_block_start,
     next_heading_start,
@@ -473,11 +477,17 @@ from quill.ui.assistant_tools import (
     RunPythonDialog,
     WritingAssistantDialog,
 )
+from quill.ui.context_help import ContextHelpMixin
 from quill.ui.csv_grid import CsvGridSurface
 from quill.ui.dialog_contract import apply_modal_ids, focus_primary_control, show_modal_dialog
 from quill.ui.editor_surface import PLAIN, RICH, surface_kind
+from quill.ui.html_paste_cleaner import analyze_paste
+from quill.ui.main_frame_abbreviations import AbbreviationsMixin
 from quill.ui.main_frame_ai_actions import AiActionsMixin
 from quill.ui.main_frame_browse import BrowseModeMixin
+from quill.ui.main_frame_copy_tray import CopyTrayMixin
+from quill.ui.main_frame_devtools import DevToolsMixin
+from quill.ui.main_frame_github import GitHubRemoteMixin
 from quill.ui.main_frame_image import ImageCaptureMixin
 from quill.ui.main_frame_intellisense import IntellisensePopupMixin
 from quill.ui.main_frame_line_commands import LineCommandsMixin
@@ -767,6 +777,7 @@ class _IntellisensePopup:
 
 
 class MainFrame(
+    AbbreviationsMixin,
     AiActionsMixin,
     ImageCaptureMixin,
     BrowseModeMixin,
@@ -778,11 +789,15 @@ class MainFrame(
     StatusBarMixin,
     IntellisensePopupMixin,
     LineCommandsMixin,
+    CopyTrayMixin,
     ProfilePickerMixin,
     SshEditingMixin,
+    GitHubRemoteMixin,
+    DevToolsMixin,
     PowerToolsActionsMixin,
     PowerToolsMenuMixin,
     QuillinsMenuMixin,
+    ContextHelpMixin,
 ):
     _ANNOUNCEMENT_BACKEND_LABELS: dict[str, str] = {
         "auto": "Automatic (use Prism when available)",
@@ -806,6 +821,8 @@ class MainFrame(
         "file_path": "File Path",
         "quill_key_mode": "QUILL Key",
         "extend_mode": "Extend Mode",
+        "abbreviations": "Abbreviations",
+        "copy_tray_slots": "Copy Tray",
         "sr_name": "Screen Reader",
         "suggestion": "Suggested Action",
         "notebook_goal": "Notebook Goal",
@@ -827,6 +844,8 @@ class MainFrame(
         "file_path": 260,
         "quill_key_mode": 130,
         "extend_mode": 110,
+        "abbreviations": 120,
+        "copy_tray_slots": 110,
         "sr_name": 160,
         "suggestion": 220,
         "notebook_goal": 200,
@@ -848,6 +867,8 @@ class MainFrame(
         "file_path": "core.file",
         "quill_key_mode": "core.navigate",
         "extend_mode": "core.edit",
+        "abbreviations": "core.edit",
+        "copy_tray_slots": "core.edit",
         "sr_name": "core.app",
         "suggestion": "core.app",
         "notebook_goal": "core.notebook",
@@ -922,6 +943,13 @@ class MainFrame(
             self.settings.announcement_backend = "status_only"
             self.settings.announcement_trace_enabled = False
             self.settings.assistant_enabled = False
+        try:
+            from quill.core.i18n import init_locale
+
+            lang = getattr(self.settings, "language", None) or None
+            self._active_language = init_locale(lang)
+        except Exception:
+            self._active_language = "en"
         self.keymap = dict(DEFAULT_KEYMAP) if safe_mode else load_keymap()
         self.recent_files = [] if safe_mode else load_recent_files()
         self._trusted_locations = set() if safe_mode else load_trusted_locations()
@@ -1028,6 +1056,7 @@ class MainFrame(
             load_snippet_library() if not safe_mode else SnippetLibrary(version=1, snippets=[])
         )
         self._snippet_expansion_guard = False
+        self._init_abbreviations()
         self._intellisense_popup: _IntellisensePopup | None = None
         self._intellisense_context: IntellisenseContext | None = None
         self._intellisense_fragment_text = ""
@@ -1082,6 +1111,7 @@ class MainFrame(
         self._apply_accelerators()
         self._reload_global_hotkeys()
         self._bind_events()
+        self._init_context_help()
         self._apply_startup_document_preference()
         self._apply_announcement_trace_setting()
 
@@ -1097,6 +1127,10 @@ class MainFrame(
             self._refresh_title()
         except Exception:
             self._report_startup_task_failure("startup finalization")
+
+    @property
+    def _help_frame(self) -> object:
+        return self.frame
 
     def show(self) -> None:
         self.frame.Show(True)
@@ -1238,6 +1272,54 @@ class MainFrame(
             "Open over SSH: Site Manager...",
             self.open_ssh_site_manager,
             self._binding_for("file.ssh_site_manager"),
+        )
+        self.commands.register(
+            "file.open_github_repository",
+            "Open Remote GitHub Repository...",
+            self.open_github_repository,
+            None,
+        )
+        self.commands.register(
+            "file.open_github_file_url",
+            "Open Remote GitHub File URL...",
+            self.open_github_file_url,
+            None,
+        )
+        self.commands.register(
+            "file.github_save_back",
+            "Save to GitHub...",
+            self.github_save_back,
+            None,
+        )
+        self.commands.register(
+            "file.github_manage_accounts",
+            "Manage GitHub Accounts...",
+            self.manage_github_accounts,
+            None,
+        )
+        self.commands.register(
+            "tools.open_python_console",
+            "Open Python Console...",
+            self.open_python_console,
+            None,
+        )
+        self.commands.register(
+            "tools.open_typescript_console",
+            "Open TypeScript Console...",
+            self.open_typescript_console,
+            None,
+        )
+        self.commands.register(
+            "tools.copy_diagnostic_summary",
+            "Copy Diagnostic Summary",
+            self.copy_diagnostic_summary,
+            None,
+        )
+        self.commands.register(
+            "tools.restart_typescript_worker",
+            "Restart TypeScript Worker",
+            self.restart_typescript_worker,
+            None,
         )
         self.commands.register(
             "file.save",
@@ -1468,10 +1550,34 @@ class MainFrame(
             None,
         )
         self.commands.register(
+            "tools.ask_ai",
+            "Ask AI...",
+            self.open_ask_ai,
+            None,
+        )
+        self.commands.register(
+            "tools.prompt_library",
+            "Prompt Library",
+            self.open_prompt_library,
+            None,
+        )
+        self.commands.register(
+            "tools.skill_library",
+            "Skill Library",
+            self.open_skill_library,
+            None,
+        )
+        self.commands.register(
+            "tools.check_grammar_ai",
+            "Check Grammar with AI",
+            self.check_grammar_with_ai,
+            None,
+        )
+        self.commands.register(
             "tools.ask_quill_chat",
             "Ask Quill Chat",
             self.open_ask_quill_chat,
-            None,
+            self._binding_for("tools.ask_quill_chat"),
         )
         self.commands.register(
             "tools.ai_model",
@@ -2079,6 +2185,18 @@ class MainFrame(
             None,
         )
         self.commands.register(
+            "tools.export_keyboard_pack",
+            "Export Keyboard Pack (.kqp)...",
+            self.export_keyboard_pack_file,
+            None,
+        )
+        self.commands.register(
+            "tools.import_keyboard_pack",
+            "Import Keyboard Pack (.kqp)...",
+            self.import_keyboard_pack_file,
+            None,
+        )
+        self.commands.register(
             "tools.reset_keymap",
             "Reset Keymap",
             self.reset_keymap_defaults,
@@ -2571,6 +2689,24 @@ class MainFrame(
             self._binding_for("format.manage_snippets"),
         )
         self.commands.register(
+            "format.expand_abbreviation",
+            "Expand Abbreviation",
+            self.expand_abbreviation_at_cursor,
+            self._binding_for("format.expand_abbreviation"),
+        )
+        self.commands.register(
+            "format.manage_abbreviations",
+            "Manage Abbreviations...",
+            self.open_abbreviation_manager,
+            self._binding_for("format.manage_abbreviations"),
+        )
+        self.commands.register(
+            "format.toggle_abbreviation_expansion",
+            "Toggle Abbreviation Expansion",
+            self.toggle_abbreviation_expansion,
+            self._binding_for("format.toggle_abbreviation_expansion"),
+        )
+        self.commands.register(
             "format.bold",
             "Bold",
             self.format_bold,
@@ -2754,13 +2890,37 @@ class MainFrame(
             "edit.reverse_lines",
             "Reverse Lines",
             self.reverse_lines,
-            None,
+            self._binding_for("edit.reverse_lines"),
         )
         self.commands.register(
             "edit.remove_duplicate_lines",
             "Remove Duplicate Lines",
             self.remove_duplicate_lines,
             None,
+        )
+        self.commands.register(
+            "edit.quote_lines",
+            "Quote Lines",
+            self.quote_lines,
+            self._binding_for("edit.quote_lines"),
+        )
+        self.commands.register(
+            "edit.unquote_lines",
+            "Unquote Lines",
+            self.unquote_lines,
+            self._binding_for("edit.unquote_lines"),
+        )
+        self.commands.register(
+            "edit.duplicate_selection",
+            "Duplicate Selection",
+            self.duplicate_selection,
+            None,
+        )
+        self.commands.register(
+            "edit.select_chunk",
+            "Select Chunk",
+            self.select_chunk,
+            self._binding_for("edit.select_chunk"),
         )
         self.commands.register(
             "edit.trim_trailing_whitespace",
@@ -2827,6 +2987,33 @@ class MainFrame(
             "Magic Paste",
             self.magic_paste,
             None,
+        )
+        # Copy Tray per-slot commands — registered here (not through the power-tools
+        # manifest) so they share the explicit menu-ID arrays and avoid duplicate entries.
+        for _ct_n in range(1, 13):
+            self.commands.register(
+                f"edit.copy_to_tray_{_ct_n}",
+                f"Copy to Tray Slot {_ct_n}",
+                (lambda _n=_ct_n: lambda: self.copy_to_tray_slot(_n))(),
+                self._binding_for(f"edit.copy_to_tray_{_ct_n}"),
+            )
+            self.commands.register(
+                f"edit.paste_from_tray_{_ct_n}",
+                f"Paste from Tray Slot {_ct_n}",
+                (lambda _n=_ct_n: lambda: self.paste_from_tray_slot(_n))(),
+                self._binding_for(f"edit.paste_from_tray_{_ct_n}"),
+            )
+        self.commands.register(
+            "edit.copy_to_next_slot",
+            "Copy to Next Empty Tray Slot",
+            self.copy_to_next_slot,
+            self._binding_for("edit.copy_to_next_slot"),
+        )
+        self.commands.register(
+            "edit.search_tray_slots",
+            "Search Copy Tray Slots",
+            self.search_tray_slots,
+            self._binding_for("edit.search_tray_slots"),
         )
         self._register_power_tools_commands()
         self._register_quillins_commands()
@@ -2901,6 +3088,9 @@ class MainFrame(
             "tools.ai_prompt_studio": self._id_ai_prompt_studio,
             "tools.ai_agent_center": self._id_ai_agent_center,
             "tools.ai_accessibility_agent": self._id_ai_accessibility_agent,
+            "tools.prompt_library": self._id_prompt_library,
+            "tools.skill_library": self._id_skill_library,
+            "tools.check_grammar_ai": self._id_check_grammar_ai,
             "tools.ask_quill_chat": self._id_ask_quill_chat,
             "tools.ai_model": self._id_ai_model,
             "tools.ai_session_browser": self._id_ai_session_browser,
@@ -3042,7 +3232,17 @@ class MainFrame(
             "format.insert_markdown_tag": self._id_insert_markdown_tag,
             "format.insert_snippet": self._id_insert_snippet,
             "format.manage_snippets": self._id_manage_snippets,
+            "format.expand_abbreviation": self._id_expand_abbreviation,
+            "format.manage_abbreviations": self._id_manage_abbreviations,
+            "format.toggle_abbreviation_expansion": self._id_toggle_abbreviation_expansion,
             "edit.word_prediction": self._id_word_prediction,
+            # Copy Tray
+            "edit.open_copy_tray": self._id_open_copy_tray,
+            "edit.clear_all_tray_slots": self._id_clear_all_tray_slots,
+            "edit.copy_to_next_slot": self._id_copy_to_next_slot,
+            "edit.search_tray_slots": self._id_search_tray_slots,
+            **{f"edit.copy_to_tray_{i}": self._id_copy_tray_slots[i - 1] for i in range(1, 13)},
+            **{f"edit.paste_from_tray_{i}": self._id_paste_tray_slots[i - 1] for i in range(1, 13)},
         }
 
     def _on_command_run(self, command_id: str) -> None:
@@ -3477,6 +3677,12 @@ class MainFrame(
 
     def _on_text_changed(self, _event: object) -> None:
         if self._voice_command_guard:
+            return
+        if (
+            not self._abbreviation_expansion_guard
+            and getattr(self.settings, "abbreviation_expansion", True)
+            and self._expand_abbreviation_if_match()
+        ):
             return
         if (
             not self._snippet_expansion_guard
@@ -4193,8 +4399,13 @@ class MainFrame(
         )
         menu.Append(paste_id, "Paste")
         menu.AppendSeparator()
+        select_chunk_id = wx.NewIdRef()
         menu.Append(select_all_id, "Select All")
         menu.Append(select_line_id, "Select Line")
+        menu.Append(
+            select_chunk_id,
+            self._menu_label("Select Chunk", "edit.select_chunk"),
+        )
 
         # Disable selection-only actions when there is no selection.
         if not has_selection:
@@ -4218,8 +4429,18 @@ class MainFrame(
         transform_menu.Append(sentence_id, "Sentence case")
         transform_menu.Append(toggle_case_id, "Toggle Case")
         transform_menu.AppendSeparator()
+        quote_id = wx.NewIdRef()
+        unquote_id = wx.NewIdRef()
+        dup_sel_id = wx.NewIdRef()
         transform_menu.Append(sort_asc_id, "Sort Lines Ascending")
         transform_menu.Append(sort_desc_id, "Sort Lines Descending")
+        transform_menu.AppendSeparator()
+        transform_menu.Append(quote_id, self._menu_label("Quote Lines", "edit.quote_lines"))
+        transform_menu.Append(unquote_id, self._menu_label("Unquote Lines", "edit.unquote_lines"))
+        transform_menu.AppendSeparator()
+        transform_menu.Append(
+            dup_sel_id, self._menu_label("Duplicate Selection", "edit.duplicate_selection")
+        )
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.format_upper_case(), id=upper_id)
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.format_lower_case(), id=lower_id)
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.format_title_case(), id=title_id)
@@ -4227,7 +4448,10 @@ class MainFrame(
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.format_toggle_case(), id=toggle_case_id)
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.sort_lines_ascending(), id=sort_asc_id)
         transform_menu.Bind(wx.EVT_MENU, lambda _e: self.sort_lines_descending(), id=sort_desc_id)
-        menu.AppendSubMenu(transform_menu, "Transform")
+        transform_menu.Bind(wx.EVT_MENU, lambda _e: self.quote_lines(), id=quote_id)
+        transform_menu.Bind(wx.EVT_MENU, lambda _e: self.unquote_lines(), id=unquote_id)
+        transform_menu.Bind(wx.EVT_MENU, lambda _e: self.duplicate_selection(), id=dup_sel_id)
+        menu.AppendSubMenu(transform_menu, "Change &Case")
 
         # --- Line submenu. ---
         line_menu = wx.Menu()
@@ -4367,6 +4591,7 @@ class MainFrame(
             id=select_all_id,
         )
         menu.Bind(wx.EVT_MENU, lambda _e: self.select_line(), id=select_line_id)
+        menu.Bind(wx.EVT_MENU, lambda _e: self.select_chunk(), id=select_chunk_id)
         menu.Bind(wx.EVT_MENU, lambda _e: self.open_spell_check_dialog(), id=spell_id)
         menu.Bind(wx.EVT_MENU, lambda _e: self.next_misspelling(), id=next_spell_id)
         menu.Bind(wx.EVT_MENU, lambda _e: self.go_to_line(), id=go_line_id)
@@ -5203,8 +5428,15 @@ class MainFrame(
             or raw_text.startswith("[")
             and "](" in raw_text
         )
+
+        # Detect HTML (before checking markdown, since HTML can look like markdown).
+        html_context = analyze_paste(raw_text)
+        is_html = html_context.is_html
+
         if has_bitmap:
             content_type = "image"
+        elif is_html:
+            content_type = "HTML"
         elif is_url:
             content_type = "URL"
         elif is_markdown:
@@ -5234,6 +5466,9 @@ class MainFrame(
             choices.insert(0, ("Paste as Markdown link", "link"))
         elif content_type == "Markdown":
             choices.insert(0, ("Paste as Markdown (keep formatting)", "markdown"))
+        elif content_type == "HTML":
+            choices.insert(0, ("Paste HTML as clean text", "html_clean"))
+            choices.insert(1, ("Paste HTML as-is", "html_raw"))
         elif content_type == "image":
             choices.insert(0, ("Insert image reference", "image_ref"))
 
@@ -5276,6 +5511,15 @@ class MainFrame(
                 link_text = raw_text.strip().rstrip("/").rsplit("/", 1)[-1] or "link"
                 self.editor.WriteText(f"[{link_text}]({raw_text.strip()})")
         elif mode_key == "markdown":
+            if self.editor is not None:
+                self.editor.WriteText(raw_text)
+        elif mode_key == "html_clean":
+            if self.editor is not None:
+                clean_text = html_context.get_paste_text(clean=True)
+                self.editor.WriteText(clean_text)
+                if self.quill_settings.auto_clean_html_paste:
+                    self._set_status(f"Pasted cleaned HTML ({len(clean_text)} chars)")
+        elif mode_key == "html_raw":
             if self.editor is not None:
                 self.editor.WriteText(raw_text)
         elif mode_key == "image_ref":
@@ -6816,6 +7060,32 @@ class MainFrame(
         exit_id = wx.NewIdRef()
         menu.Append(show_id, "Show Quill")
         menu.AppendSeparator()
+        # Copy Tray submenu — list occupied slots for quick paste
+        ct_sub = wx.Menu()
+        tray = self._tray()
+        has_any = False
+        for n, slot in tray.all_slots():
+            if not slot.is_empty():
+                has_any = True
+                label_part = f" ({slot.label})" if slot.label else ""
+                item_label = f"&{n}.{label_part} {slot.preview(50)}"
+                slot_id = wx.NewIdRef()
+                ct_sub.Append(slot_id, item_label)
+                menu.Bind(
+                    wx.EVT_MENU,
+                    lambda _e, _n=n: self._tray_paste_slot(_n),
+                    id=slot_id,
+                )
+        if not has_any:
+            empty_id = wx.NewIdRef()
+            ct_sub.Append(empty_id, "(all slots empty)")
+            ct_sub.Enable(empty_id, False)
+        ct_sub.AppendSeparator()
+        open_tray_id = wx.NewIdRef()
+        ct_sub.Append(open_tray_id, "Open Copy Tray...")
+        menu.Bind(wx.EVT_MENU, lambda _e: self.open_copy_tray(), id=open_tray_id)
+        menu.AppendSubMenu(ct_sub, "Copy &Tray")
+        menu.AppendSeparator()
         menu.Append(sticky_id, "Sticky Notes...")
         menu.Append(new_sticky_id, "New Sticky Note...")
         menu.AppendSeparator()
@@ -6826,6 +7096,11 @@ class MainFrame(
         menu.Bind(wx.EVT_MENU, lambda _e: self._exit_from_tray(), id=exit_id)
         self._tray_icon.PopupMenu(menu)
         menu.Destroy()
+
+    def _tray_paste_slot(self, n: int) -> None:
+        """Restore the window (if hidden) then paste from Copy Tray slot *n*."""
+        self._restore_from_tray()
+        self.paste_from_tray_slot(n)
 
     def _exit_from_tray(self) -> None:
         self._is_exiting = True
@@ -7532,10 +7807,58 @@ class MainFrame(
             pass
 
     def open_palette(self) -> None:
+        """Open Command Palette (single press) or re-run last command (double press)."""
+        if not hasattr(self, "_palette_dispatcher"):
+            window_ms = int(getattr(getattr(self, "settings", None), "multi_press_window_ms", 400))
+            self._palette_dispatcher = MultiPressDispatcher(window_ms=window_ms)
+            self._palette_timer: object = None
+            self._last_palette_command_id: str | None = None
+        dispatcher = self._palette_dispatcher
+        count, needs_timer = dispatcher.press("palette")
+        existing = self._palette_timer
+        if existing is not None:
+            stop = getattr(existing, "Stop", None)
+            if callable(stop):
+                stop()
+        if needs_timer:
+            self._palette_timer = self._wx.CallLater(
+                dispatcher.window_ms,
+                self._fire_palette_action,
+            )
+        else:
+            self._palette_timer = None
+            self._fire_palette_action_with_count(count)
+
+    def _fire_palette_action(self) -> None:
+        count = self._palette_dispatcher.timeout("palette")
+        self._palette_timer = None
+        self._fire_palette_action_with_count(count)
+
+    def _fire_palette_action_with_count(self, count: int) -> None:
+        if count >= 2:
+            self._run_last_palette_command()
+        else:
+            self._open_palette_dialog()
+
+    def _open_palette_dialog(self) -> None:
         dialog = CommandPaletteDialog(
             self.frame, self.commands, self.features, announce_fn=self._announce
         )
         dialog.show_modal_and_run()
+        command_id = dialog.last_run_command_id()
+        if command_id:
+            self._last_palette_command_id = command_id
+
+    def _run_last_palette_command(self) -> None:
+        command_id = getattr(self, "_last_palette_command_id", None)
+        if command_id is None:
+            self._announce("No recent palette command to repeat")
+            return
+        try:
+            self.commands.run(command_id)
+            self._announce("Repeated last palette command")
+        except Exception:  # noqa: BLE001
+            self._announce("Could not repeat last palette command")
 
     def create_sticky_note(self) -> None:
         if self._safe_mode:
@@ -7759,6 +8082,7 @@ class MainFrame(
     #: Wildcard for exported QUILL settings files (SET-7).
     QSF_WILDCARD = "QUILL settings file (*.qsf)|*.qsf|All files (*.*)|*.*"
     QPF_WILDCARD = "QUILL profile file (*.qpf)|*.qpf|All files (*.*)|*.*"
+    KQP_WILDCARD = "Keyboard Quill Pack (*.kqp)|*.kqp|All files (*.*)|*.*"
 
     def _settings_dialog_apply_refresh(self, status: str) -> None:
         """Persist ``self.settings`` and re-run every UI side effect.
@@ -8405,7 +8729,9 @@ class MainFrame(
             notebook = wx.Notebook(dialog)
             notebook.SetName("Settings categories")
 
-            def _add_field_row(parent_panel, sizer, label: str, control, reset=None) -> None:
+            def _add_field_row(
+                parent_panel, sizer, label: str, control_or_factory, reset=None
+            ) -> object:
                 row = wx.BoxSizer(wx.HORIZONTAL)
                 row.Add(
                     wx.StaticText(parent_panel, label=label),
@@ -8413,10 +8739,12 @@ class MainFrame(
                     wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
                     8,
                 )
-                row.Add(control, 1, wx.EXPAND)
+                ctrl = control_or_factory() if callable(control_or_factory) else control_or_factory
+                row.Add(ctrl, 1, wx.EXPAND)
                 if reset is not None:
                     row.Add(reset, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
                 sizer.Add(row, 0, wx.EXPAND | wx.ALL, 6)
+                return ctrl
 
             def _reset_one(key: str) -> None:
                 writer = writers.get(key)
@@ -8592,16 +8920,24 @@ class MainFrame(
                     page_sizer.Add(ext_master_cb, 0, wx.ALL, 6)
                     _engine_ids = list_engine_ids()
                     _first_engine = load_engine_config(_engine_ids[0]) if _engine_ids else None
-                    ext_name_field = wx.TextCtrl(page)
+                    ext_name_field = _add_field_row(
+                        page,
+                        page_sizer,
+                        "External engine name",
+                        lambda p=page: wx.TextCtrl(p),
+                    )
                     ext_name_field.SetName("External engine name")
                     ext_name_field.SetValue(_first_engine.engine_id if _first_engine else "")
-                    _add_field_row(page, page_sizer, "External engine name", ext_name_field)
-                    ext_command_field = wx.TextCtrl(page)
+                    ext_command_field = _add_field_row(
+                        page,
+                        page_sizer,
+                        "External engine command",
+                        lambda p=page: wx.TextCtrl(p),
+                    )
                     ext_command_field.SetName("External engine command")
                     ext_command_field.SetValue(
                         " ".join(_first_engine.command) if _first_engine else ""
                     )
-                    _add_field_row(page, page_sizer, "External engine command", ext_command_field)
                     ext_engine_enabled_cb = wx.CheckBox(page, label="Enable this external engine")
                     ext_engine_enabled_cb.SetValue(
                         bool(_first_engine.enabled) if _first_engine else False
@@ -9238,7 +9574,7 @@ class MainFrame(
             base = self._STATUS_BAR_LABELS.get(item, item)
             return f"{base} (shown)" if shown else f"{base} (hidden)"
 
-        chooser = wx.CheckListBox(
+        chooser = wx.CheckListBox(  # A11Y-SR-1-OK: state in label text; pending CheckBox conversion
             dialog,
             choices=[state_label(item, item not in hidden) for item in item_order],
         )
@@ -9408,7 +9744,7 @@ class MainFrame(
             wx.LEFT | wx.RIGHT,
             8,
         )
-        chooser = wx.CheckListBox(
+        chooser = wx.CheckListBox(  # A11Y-SR-1-OK: export picker; pending CheckBox conversion
             panel,
             choices=[f"{offer.title} - {offer.summary}" for offer in offers],
         )
@@ -9559,7 +9895,7 @@ class MainFrame(
         )
         root.Add(preview, 1, wx.ALL | wx.EXPAND, 8)
         root.Add(wx.StaticText(panel, label="Apply these sections:"), 0, wx.LEFT | wx.RIGHT, 8)
-        chooser = wx.CheckListBox(
+        chooser = wx.CheckListBox(  # A11Y-SR-1-OK: import picker; pending CheckBox conversion
             panel,
             choices=[f"{title} - {summary}" for _id, title, summary in sections],
         )
@@ -9629,6 +9965,74 @@ class MainFrame(
         self._mark_keyboard_pack_custom()
         self._reload_shortcuts_from_keymap()
         self._set_status(f"Imported keymap from {source.name}")
+
+    def export_keyboard_pack_file(self) -> None:
+        wx = self._wx
+        pack_name = self.settings.keyboard_pack
+        pack_desc = keyboard_pack_description(pack_name)
+
+        # Collect name and description via a simple dialog before the file picker.
+        dlg = wx.Dialog(self.frame, title="Export Keyboard Pack", size=(480, 220))
+        root = wx.BoxSizer(wx.VERTICAL)
+        root.Add(wx.StaticText(dlg, label="Pack &name:"), 0, wx.ALL, 8)
+        name_ctrl = wx.TextCtrl(dlg, value=pack_name)
+        root.Add(name_ctrl, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 8)
+        root.Add(
+            wx.StaticText(dlg, label="&Description (optional):"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8
+        )
+        desc_ctrl = wx.TextCtrl(dlg, value=pack_desc if pack_desc else "")
+        root.Add(desc_ctrl, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 8)
+        buttons = dlg.CreateButtonSizer(wx.OK | wx.CANCEL)
+        if buttons is not None:
+            root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
+        apply_modal_ids(dlg, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+        dlg.SetSizer(root)
+
+        if self._show_modal_dialog(dlg, "Export Keyboard Pack") != wx.ID_OK:
+            return
+        name = name_ctrl.GetValue().strip() or pack_name
+        description = desc_ctrl.GetValue().strip()
+
+        default_file = name.replace(" ", "-").lower() + KQP_EXTENSION
+        with wx.FileDialog(
+            self.frame,
+            "Export keyboard pack",
+            defaultFile=default_file,
+            wildcard=self.KQP_WILDCARD,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as file_dlg:
+            if self._show_modal_dialog(file_dlg, "Export keyboard pack") != wx.ID_OK:
+                return
+            target = Path(file_dlg.GetPath())
+        if target.suffix.lower() != KQP_EXTENSION:
+            target = target.with_suffix(KQP_EXTENSION)
+        export_keyboard_pack(target, self.keymap, name=name, description=description)
+        self._set_status(f"Exported keyboard pack to {target.name}")
+
+    def import_keyboard_pack_file(self) -> None:
+        wx = self._wx
+        with wx.FileDialog(
+            self.frame,
+            "Import keyboard pack",
+            wildcard=self.KQP_WILDCARD,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+        ) as dialog:
+            if self._show_modal_dialog(dialog, "Import keyboard pack") != wx.ID_OK:
+                return
+            source = Path(dialog.GetPath())
+        try:
+            name, description, merged = import_keyboard_pack(source)
+        except ValueError as exc:
+            self._show_message_box(str(exc), "Import Failed", wx.ICON_ERROR | wx.OK)
+            return
+        self.keymap = merged
+        self._mark_keyboard_pack_custom()
+        self._reload_shortcuts_from_keymap()
+        summary = f"Imported keyboard pack: {name}"
+        if description:
+            summary += f". {description}"
+        self._set_status(summary)
+        self._announce(summary)
 
     def reset_keymap_defaults(self) -> None:
         wx = self._wx
@@ -16977,43 +17381,50 @@ class MainFrame(
         form = wx.FlexGridSizer(0, 3, 8, 8)
         form.AddGrowableCol(1, 1)
 
-        def add_row(label: str, control: object, button: object | None = None) -> None:
+        def add_row(label: str, make_ctrl, button: object | None = None) -> object:
             form.Add(wx.StaticText(panel, label=label), 0, wx.ALIGN_CENTER_VERTICAL)
-            form.Add(control, 1, wx.EXPAND)
+            ctrl = make_ctrl()
+            form.Add(ctrl, 1, wx.EXPAND)
             if button is None:
                 form.AddSpacer(1)
             else:
                 form.Add(button, 0)
+            return ctrl
 
-        folder_picker = wx.DirPickerCtrl(panel, path=str(default_root))
-        add_row("Starting folder", folder_picker)
-
-        file_pattern_ctrl = wx.TextCtrl(panel, value="*")
-        add_row("File pattern", file_pattern_ctrl)
-
-        query_ctrl = wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
-        add_row("Search text", query_ctrl)
+        folder_picker = add_row(
+            "Starting folder", lambda: wx.DirPickerCtrl(panel, path=str(default_root))
+        )
+        file_pattern_ctrl = add_row("File pattern", lambda: wx.TextCtrl(panel, value="*"))
+        query_ctrl = add_row(
+            "Search text", lambda: wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
+        )
 
         replacement_ctrl = None
         if replace:
-            replacement_ctrl = wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
-            add_row("Replacement", replacement_ctrl)
+            replacement_ctrl = add_row(
+                "Replacement",
+                lambda: wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER),
+            )
 
-        mode_choice = wx.Choice(panel, choices=["Plain text", "Wildcard", "Regular expression"])
+        mode_choice = add_row(
+            "Match mode",
+            lambda: wx.Choice(panel, choices=["Plain text", "Wildcard", "Regular expression"]),
+        )
         mode_choice.SetSelection(0)
-        add_row("Match mode", mode_choice)
 
-        output_choice = wx.Choice(
-            panel,
-            choices=[
-                "Filenames only",
-                "Filenames with line numbers and counts",
-                "Counts only",
-                "Filename with line context",
-            ],
+        output_choice = add_row(
+            "Output format",
+            lambda: wx.Choice(
+                panel,
+                choices=[
+                    "Filenames only",
+                    "Filenames with line numbers and counts",
+                    "Counts only",
+                    "Filename with line context",
+                ],
+            ),
         )
         output_choice.SetSelection(3)
-        add_row("Output format", output_choice)
 
         case_sensitive = wx.CheckBox(panel, label="Case sensitive")
         whole_word = wx.CheckBox(panel, label="Whole word")
@@ -17614,6 +18025,7 @@ class MainFrame(
 
             self._set_status(AI_DISABLED_MESSAGE)
             return
+
         self._apply_style_to_assistant()
         tool_catalog = allowed_tools(self.commands, getattr(self, "features", None))
         dialog = AskQuillChatDialog(
@@ -17629,6 +18041,104 @@ class MainFrame(
             review_changes=self.open_ai_diff_review,
         )
         dialog.show()
+
+    def open_ask_ai(self) -> None:
+        from quill.ui.ai_chat_dialog import AskAIDialog
+
+        dlg = AskAIDialog(self.frame, self.settings)
+        dlg.show()
+        dlg.close()
+
+    def open_prompt_library(self) -> None:
+        from quill.ui.prompt_library_dialog import PromptLibraryDialog
+
+        lib = self._get_prompt_library()
+        dlg = PromptLibraryDialog(
+            self.frame,
+            lib,
+            self.settings,
+            selection=str(self.editor.GetStringSelection()),
+            document=str(self.editor.GetValue()),
+            title=self._current_document_title(),
+        )
+        dlg.show()
+        dlg.close()
+
+    def open_skill_library(self) -> None:
+        from quill.ui.skill_library_dialog import SkillLibraryDialog
+
+        dlg = SkillLibraryDialog(
+            self.frame,
+            self._get_skill_files(),
+            self.settings,
+            selection=str(self.editor.GetStringSelection()),
+            document=str(self.editor.GetValue()),
+            title_text=self._current_document_title(),
+            on_insert=self._ai_insert_text,
+        )
+        dlg.show()
+        dlg.close()
+
+    def _get_skill_files(self) -> list:
+
+        paths: list[Path] = []
+        for item in self._installed_quillins():
+            for sqp in sorted(item.directory.glob("*.sqp")):
+                paths.append(sqp)
+        return paths
+
+    def check_grammar_with_ai(self) -> None:
+        import threading
+
+        lib = self._get_prompt_library()
+        grammar = lib.find_by_id("builtin-check-grammar")
+        if grammar is None:
+            self._announce("Grammar prompt not found.")
+            return
+        selection = str(self.editor.GetStringSelection()) or str(self.editor.GetValue())
+        if not selection.strip():
+            self._announce("No text to check grammar for.")
+            return
+        provider_id = self.settings.ai_chat_default_provider
+        model_id = self.settings.ai_prompt_default_model or self.settings.ai_chat_default_model
+        if not model_id:
+            self._set_status("No AI model configured. Set one in Preferences > AI.")
+            return
+        prompt_text = grammar.text.replace("{selection}", selection)
+        self._announce(f"Checking grammar with {model_id}...")
+
+        def run() -> None:
+            import wx as _wx
+
+            try:
+                from quill.core.ai_chat import send_prompt
+                from quill.platform.windows.credential_manager import get_credential
+
+                api_key = get_credential(f"quill-{provider_id}-api-key") or ""
+                result = send_prompt(provider_id, model_id, prompt_text, api_key=api_key)
+                _wx.CallAfter(self._show_grammar_result, result, model_id, provider_id)
+            except Exception as exc:  # noqa: BLE001
+                _wx.CallAfter(self._announce, f"Grammar check failed: {exc}")
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _show_grammar_result(self, result: str, model_id: str, provider_id: str) -> None:
+        from quill.ui.ai_chat_dialog import AIResponseDialog
+
+        dlg = AIResponseDialog(self.frame, result, model_id, provider_id)
+        dlg.show()
+        dlg.close()
+
+    def _get_prompt_library(self) -> object:
+        if not hasattr(self, "_prompt_library_cache"):
+            from quill.core.paths import app_data_dir
+            from quill.core.prompt_library import PromptLibrary
+
+            lib = PromptLibrary(app_data_dir() / "prompts.json")
+            for item in self._installed_quillins():
+                lib.load_quillin_prompts(item.directory / "prompts.json")
+            self._prompt_library_cache = lib
+        return self._prompt_library_cache
 
     def _ai_insert_text(self, text: str) -> None:
         self.editor.WriteText(text)
@@ -19448,22 +19958,23 @@ class MainFrame(
     def open_individual_feature_toggles(self) -> None:
         """Per-feature override surface (FLAG-3).
 
-        Lists every non-locked feature with a checkbox reflecting its current
-        effective state on top of the active profile. Toggling a feature
-        applies live, persists, and announces the dependency cascade; locked
-        core features are not listed because they cannot be turned off.
+        Lists every user-toggleable feature with a CheckBox reflecting its
+        current effective state on top of the active profile. Locked-on and
+        locked-off features are omitted because neither is user-toggleable.
+        Individual wx.CheckBox controls are used instead of CheckListBox so
+        screen readers (NVDA/JAWS) announce checked state on navigation.
         """
         wx = self._wx
         toggleable = sorted(
             (
                 (feature_id, definition)
                 for feature_id, definition in FEATURE_DEFINITIONS.items()
-                if not definition.locked_on
+                if not definition.locked_on and not definition.locked_off
             ),
             key=lambda item: (item[1].category, item[1].name),
         )
         feature_ids = [feature_id for feature_id, _definition in toggleable]
-        dialog = wx.Dialog(self.frame, title="Manage Individual Features", size=(700, 620))
+        dialog = wx.Dialog(self.frame, title="Manage Individual Features", size=(700, 640))
         panel = wx.Panel(dialog)
         root = wx.BoxSizer(wx.VERTICAL)
         root.Add(
@@ -19472,51 +19983,70 @@ class MainFrame(
                 label=(
                     "Turn individual features on or off on top of your profile. "
                     "Enabling a feature also enables what it needs; disabling one "
-                    "turns off the features that depend on it."
+                    "turns off the features that depend on it. "
+                    "Use Space or Enter to toggle the focused feature."
                 ),
             ),
             0,
             wx.ALL | wx.EXPAND,
             8,
         )
-        chooser = wx.CheckListBox(
-            panel,
-            choices=[definition.name for _feature_id, definition in toggleable],
-        )
+
+        # Scrolled panel of individual CheckBox controls — NVDA/JAWS announce
+        # "checked" / "not checked" natively when focus moves between them,
+        # unlike CheckListBox which only announces name without state.
+        scroll = wx.ScrolledWindow(panel, style=wx.VSCROLL)
+        scroll.SetScrollRate(0, 20)
+        scroll_sizer = wx.BoxSizer(wx.VERTICAL)
+        checkboxes: list[wx.CheckBox] = []
+        for feature_id, definition in toggleable:
+            cb = wx.CheckBox(scroll, label=definition.name)
+            cb.SetValue(self.features.is_enabled(feature_id))
+            checkboxes.append(cb)
+            scroll_sizer.Add(cb, 0, wx.ALL, 3)
+        scroll.SetSizer(scroll_sizer)
+
         detail = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        detail.SetValue("Tab to a feature checkbox to see details below.")
 
         def sync_checks() -> None:
             for index, feature_id in enumerate(feature_ids):
-                chooser.Check(index, self.features.is_enabled(feature_id))
+                if index < len(checkboxes):
+                    checkboxes[index].SetValue(self.features.is_enabled(feature_id))
 
-        def refresh_detail() -> None:
-            selection = chooser.GetSelection()
-            if selection == wx.NOT_FOUND or selection < 0 or selection >= len(feature_ids):
-                detail.SetValue("Select a feature to see why it is on or off.")
-                return
-            detail.SetValue(self.features.describe_feature(feature_ids[selection]))
+        def refresh_detail(index: int) -> None:
+            if 0 <= index < len(feature_ids):
+                detail.SetValue(self.features.describe_feature(feature_ids[index]))
 
-        def on_toggle(event: object) -> None:
-            index = event.GetSelection() if hasattr(event, "GetSelection") else wx.NOT_FOUND
-            if index == wx.NOT_FOUND or index < 0 or index >= len(feature_ids):
-                return
-            feature_id = feature_ids[index]
-            enabled = chooser.IsChecked(index)
-            affected = self.features.set_feature_enabled(feature_id, enabled)
-            announcement = self.features.describe_feature_toggle(feature_id, enabled, affected)
-            sync_checks()
-            chooser.SetSelection(index)
-            refresh_detail()
-            self._build_menu()
-            self._apply_accelerators()
-            self._set_status(announcement)
+        def make_focus_handler(index: int):
+            def _on_focus(_event: object) -> None:
+                refresh_detail(index)
 
-        sync_checks()
-        refresh_detail()
-        chooser.Bind(wx.EVT_CHECKLISTBOX, on_toggle)
-        chooser.Bind(wx.EVT_LISTBOX, lambda _e: refresh_detail())
-        root.Add(chooser, 1, wx.ALL | wx.EXPAND, 8)
-        root.Add(detail, 1, wx.ALL | wx.EXPAND, 8)
+            return _on_focus
+
+        def make_toggle_handler(index: int):
+            def _on_toggle(_event: object) -> None:
+                if index < 0 or index >= len(feature_ids):
+                    return
+                feature_id = feature_ids[index]
+                enabled = checkboxes[index].GetValue()
+                affected = self.features.set_feature_enabled(feature_id, enabled)
+                announcement = self.features.describe_feature_toggle(feature_id, enabled, affected)
+                sync_checks()
+                refresh_detail(index)
+                self._build_menu()
+                self._apply_accelerators()
+                self._set_status(announcement)
+
+            return _on_toggle
+
+        for i, cb in enumerate(checkboxes):
+            cb.Bind(wx.EVT_CHECKBOX, make_toggle_handler(i))
+            cb.Bind(wx.EVT_SET_FOCUS, make_focus_handler(i))
+
+        root.Add(scroll, 1, wx.ALL | wx.EXPAND, 8)
+        root.Add(detail, 0, wx.ALL | wx.EXPAND, 8)
+        root.SetItemMinSize(detail, (-1, 80))
         buttons = dialog.CreateButtonSizer(wx.OK)
         if buttons is not None:
             ok_button = dialog.FindWindowById(wx.ID_OK)
@@ -19533,6 +20063,8 @@ class MainFrame(
         if buttons is not None:
             outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
         dialog.SetSizerAndFit(outer)
+        if checkboxes:
+            wx.CallAfter(checkboxes[0].SetFocus)
         self._show_modal_dialog(dialog, "Manage Individual Features")
         self._refresh_title()
 
@@ -20108,32 +20640,25 @@ class MainFrame(
         self._set_status("Reset to Essential profile")
         self._refresh_title()
 
+    def show_help_on_control(self) -> None:
+        """F1: show context-sensitive help for the currently focused control."""
+        self.show_control_help(user_guide_opener=self.open_user_guide_section)
+
+    def open_user_guide_section(self, section: str | None = None) -> None:
+        """Open the user guide, optionally scrolling to *section*."""
+        self.open_user_guide()
+
     def run_startup_wizard(self) -> None:
-        wx = self._wx
-        self.show_startup_wizard_page()
-        proceed = self._show_message_box(
-            "The Startup Wizard overview opened in preview. Start guided setup now?\n\n"
-            "This will walk through profile, AI, assistant, speech, and watch folder setup.",
-            "Startup Wizard",
-            wx.ICON_QUESTION | wx.YES_NO,
-        )
-        if proceed != wx.YES:
-            self._set_status("Startup Wizard opened")
-            return
-        if not self._show_trust_consent_onboarding(force=True):
-            self._set_status("Startup consent is required to continue setup.")
-            return
-        self._show_profile_onboarding(force=True)
-        self._offer_ai_onboarding()
-        self._show_assistant_onboarding(force=True)
-        self._show_glow_onboarding(force=True)
-        self._show_speech_onboarding(force=True)
-        # BITS Whisperer is deferred to QUILL 2.0 (the master `core.bw_whisperer`
-        # flag is locked off), so a 1.0 first run never offers transcription setup.
-        if self._feature_enabled("core.bw_whisperer"):
-            self._show_bw_onboarding(force=True)
-        self._show_watch_folder_onboarding(force=True)
-        self._set_status("Startup Wizard completed")
+        from quill.core.settings import save_settings
+        from quill.ui.setup_wizard import run_setup_wizard
+
+        feature_manager: FeatureManager = self.feature_manager  # type: ignore[attr-defined]
+        changed = run_setup_wizard(self.frame, self.settings, feature_manager)
+        if changed:
+            save_settings(self.settings)
+            feature_manager.save()
+            self._apply_accelerators()
+            self._set_status("Personalise QUILL completed")
 
     def run_profile_onboarding(self) -> None:
         # Backward-compatible alias for older command IDs and automation scripts.
@@ -20144,6 +20669,26 @@ class MainFrame(
             editor = getattr(self, "editor", None)
             if editor is not None and hasattr(editor, "SetFocus"):
                 self._wx.CallAfter(editor.SetFocus)
+
+        # New unified first-run wizard: run when setup_wizard_completed is False
+        # (i.e., a fresh install that has not seen the wizard yet).  After the
+        # wizard finishes or is cancelled, skip the legacy per-feature prompts so
+        # they do not double-up on top of the new flow.
+        if not getattr(self.settings, "setup_wizard_completed", True):
+            try:
+                self.run_startup_wizard()
+            except Exception:
+                self._report_startup_task_failure("first-run setup wizard")
+            for _flag in (
+                "_first_run_profile_prompt",
+                "_first_run_assistant_prompt",
+                "_first_run_glow_prompt",
+                "_first_run_speech_prompt",
+                "_first_run_watch_folder_prompt",
+            ):
+                setattr(self, _flag, False)
+            _focus_editor()
+            return
 
         if any((
             getattr(self, "_first_run_trust_consent_prompt", False),

@@ -2050,6 +2050,167 @@ of scope for a Quillin and must be a reviewed first-party module
 instead.</li>
 </ul>
 <hr />
+<h2
+id="20-skill-quill-pack-sqp--multi-step-ai-workflows-in-plain-text">20.
+Skill Quill Pack (.sqp) — multi-step AI workflows in plain text</h2>
+<p>A <code>.sqp</code> (Skill Quill Pack) file is the natural extension
+of a <code>.pqp</code> prompt pack: instead of one static instruction, a
+skill is a Markdown document whose headings define sequential steps and
+whose special fenced blocks control data flow, branching, and output
+handling.</p>
+<p><strong>Design principle.</strong> A skill should be readable — and
+editable — by anyone who can use a text editor. There is no GUI skill
+builder, no node graph, no DSL reference card. You open the file in
+QUILL, read each step like a recipe, change any instruction, and save.
+That is the whole authoring loop.</p>
+<h3 id="201-file-format-quillskill1">20.1 File format
+(quill.skill/1)</h3>
+<p>A <code>.sqp</code> file is a Markdown document with a YAML front
+matter block followed by level-1 headings that define steps.</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="an">schema:</span><span class="co"> quill.skill/1</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="an">name:</span><span class="co"> My Skill</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> Does something useful.</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> Your Name</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="an">version:</span><span class="co"> 1.0.0</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="an">parameters:</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: tone</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">    label: Tone</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">    type: choice</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">    choices: [formal, casual]</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co">    default: formal</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="fu"># Step 1: Do the first thing</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>Write a {parameters.tone} paragraph about {selection}.</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="fu"># Step 2: Refine</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>Polish this text:</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>{step1.output}</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="in">```output</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="in">format: text</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="in">label: Final result</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="in">accept_into: selection</span></span></code></pre></div>
+<pre><code>
+### 20.2 Front matter fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `schema` | yes | Must be `quill.skill/1` |
+| `name` | yes | Display name in the Skill Library |
+| `description` | recommended | One-line description |
+| `author` | recommended | Author name |
+| `version` | no | Semver string (default `1.0.0`) |
+| `parameters` | no | List of parameter declarations |
+
+### 20.3 Parameters
+
+Each parameter in the `parameters` list has these fields:
+
+| Field | Description |
+| --- | --- |
+| `name` | Internal name, used as `{parameters.name}` |
+| `label` | Shown to user in the parameter dialog |
+| `type` | `text`, `multiline`, `choice`, `bool`, `number` |
+| `choices` | Required when `type` is `choice`: `[a, b, c]` |
+| `default` | Default value |
+
+### 20.4 Steps
+
+Each `# Heading` at depth 1 defines one step. The body between headings is the prompt template. Steps are numbered 1-based in document order.
+
+**Variable interpolation.** Step prompts and input blocks may reference:
+
+| Variable | Value |
+| --- | --- |
+| `{selection}` | Current editor selection (full document if empty) |
+| `{document}` | Full document text |
+| `{title}` | Document title |
+| `{clipboard}` | System clipboard text at skill-start time |
+| `{step1.output}` | Output from step 1; `{step2.output}` from step 2, etc. |
+| `{parameters.name}` | Value of declared parameter `name` |
+
+### 20.5 Special fenced blocks
+
+**`input`** — appends literal data to the prompt (keeps the instruction prose clean):</code></pre>
+<pre class="input"><code>{selection}</code></pre>
+<pre><code>
+**`condition`** — evaluates before the step&#39;s prompt; jumps to a named step:</code></pre>
+<pre class="condition"><code>if: &quot;{step1.output}&quot; contains &quot;question&quot;
+then: step2
+else: step3</code></pre>
+<pre><code>
+Supported operators: `contains`, `equals`, `starts_with`, `ends_with`, `length_gt`, `length_lt`, `is_empty`.
+
+**`output`** — on the last step, controls how the result is presented:</code></pre>
+<pre class="output"><code>format: text
+label: Rewritten paragraph
+accept_into: selection</code></pre>
+<pre><code>
+`format` values: `text`, `list`, `json`. `accept_into` values: `selection` (replaces editor selection on Accept), `clipboard`, `none`.
+
+**`use-prompt`** — delegates to a named prompt in the Prompt Library instead of sending a new instruction:</code></pre>
+<pre class="use-prompt"><code>name: Improve Clarity
+input: {step1.output}</code></pre>
+<pre><code>
+### 20.6 Execution model
+
+1. QUILL collects parameter values (shows dialog if any parameter lacks a default).
+2. Steps execute in order. Each step&#39;s prompt template is interpolated with the current context, the prompt is sent to the AI (synchronously; no streaming), and the response is stored as `{stepN.output}`.
+3. If a `condition` block is present, its result determines which step runs next.
+4. After the final step, the `output` block controls the result presentation.
+5. Every step announces &quot;Running step N of M...&quot; and the result announces &quot;Skill complete.&quot;
+6. No document text changes without explicit Accept in the result dialog.
+7. Nested `use-skill` calls are bounded to depth 2 to keep execution predictable.
+
+### 20.7 Validation tool
+
+```powershell
+python -m quill.tools.sqp_validator path/to/skill.sqp
+python -m quill.tools.sqp_validator path/to/directory/ --strict</code></pre>
+<p>Exit 0 on clean; exit 1 on errors. <code>--strict</code> also warns
+about missing <code>description</code> and <code>author</code>.</p>
+<h3 id="208-quillin-distribution">20.8 Quillin distribution</h3>
+<p>A Quillin may ship <code>.sqp</code> files alongside its manifest.
+QUILL discovers them the same way it discovers <code>prompts.json</code>
+— at Skill Library load time. The bundled <code>ai-writing-skills</code>
+Quillin ships four sample skills: Accessible Rewrite, Research and
+Draft, Meeting Notes to Action Items, Argument Strengthener.</p>
+<h3 id="209-schema-and-implementation">20.9 Schema and
+implementation</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quill/core/skill_pack.py</code></td>
+<td><code>SkillPack</code> dataclass, <code>.sqp</code> parser,
+<code>validate_skill()</code>, <code>run_skill()</code></td>
+</tr>
+<tr>
+<td><code>quill/tools/sqp_validator.py</code></td>
+<td>CLI validator: <code>python -m quill.tools.sqp_validator</code></td>
+</tr>
+<tr>
+<td><code>quill/quillins_bundled/ai-writing-skills/</code></td>
+<td>Four bundled <code>.sqp</code> skills</td>
+</tr>
+<tr>
+<td><code>tests/unit/core/test_skill_pack.py</code></td>
+<td>23 tests covering parsing, validation, runner, branching, bundled
+files</td>
+</tr>
+</tbody>
+</table>
+<hr />
 <h2 id="appendix-a--language-options-considered">Appendix A — Language
 options considered</h2>
 <table>

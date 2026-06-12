@@ -2,6 +2,36 @@
 
 Status: stable implementation checkpoint with current `origin/main` merged, focused validation green, and next work identified.
 
+## 2026-06-12 upstream resync update
+
+- refreshed from current `origin/main` and merged that updated `main` back into `features/publishing-providers-framework`
+- synced `main` tip during this pass: `97d04f6`
+- major newly integrated upstream themes include:
+  - developer console / QDC
+  - GitHub remote file access
+  - autoupdate / deployment work
+  - help, translation, setup-wizard, copy-tray, prompt-library, and abbreviation surfaces
+- publishing integration still reads cleanly after that newer shell churn:
+  - GitHub Remote uses `File > Open from Remote`
+  - publishing still uses `File > Publish`
+  - publishing command mappings coexist with newer developer-console command mappings
+
+## 2026-06-12 validation update
+
+- publishing-owned plus merge-sensitive branch slice passed after the new sync
+- result:
+  - `129 passed in 19.12s`
+
+Validated areas included:
+
+- publishing core and browse/open flows
+- feature mapping and feature visibility
+- remote-sites persistence/dialogs
+- main-frame characterization
+- file-menu contract for publishing placement
+- dialog inventory and banned-pattern gates
+- budget gate and adjacent menu/wiring/status-bar contracts
+
 ## 2026-06-10 final state update
 
 - current branch is `features/publishing-providers-framework`

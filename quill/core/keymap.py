@@ -11,8 +11,8 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "file.open": "Ctrl+O",
     "file.save": "Ctrl+S",
     "file.save_as": "Ctrl+Shift+S",
-    "file.open_from_remote": "Ctrl+Shift+Grave, R",  # QUILL-key chord
-    "file.save_to_remote": "Ctrl+Shift+Grave, Shift+R",  # QUILL-key chord
+    "file.open_from_remote": "Ctrl+Shift+Grave, Shift+O",  # QUILL-key chord (R taken by read-aloud)
+    "file.save_to_remote": "Ctrl+Shift+Grave, W",  # QUILL-key chord
     "file.manage_remote_sites": "Ctrl+Shift+Grave, Shift+M",  # QUILL-key chord
     "file.close_document": "Ctrl+W",
     "file.print": "Ctrl+P",
@@ -36,6 +36,7 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "navigate.previous_structure": "Alt+Up",
     "navigate.heading_organizer": "Ctrl+Shift+Grave, O",
     "navigate.list_bookmarks": "Alt+Shift+B",
+    "tools.ask_quill_chat": "Alt+Q",
     "tools.word_count": "Ctrl+Shift+W",
     "tools.spell_check_dialog": "F7",
     "tools.next_misspelling": "Alt+F7",
@@ -72,9 +73,10 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "edit.replace_all": "Ctrl+Shift+H",
     "edit.insert_link": "Ctrl+K",
     "edit.follow_link": "Ctrl+Enter",
-    "edit.word_prediction": "Ctrl+Space",
+    "edit.word_prediction": "Ctrl+.",  # freed Ctrl+Space for select_chunk (§4.22)
+    "edit.select_chunk": "Ctrl+Space",  # §4.22 EdSharp parity
     "view.preview": "Ctrl+Shift+V",
-    "view.browser_preview": "Ctrl+Shift+Grave, B",  # §10.8.2: V→B (V freed for magic paste)
+    "view.browser_preview": "Ctrl+Shift+Grave, V",  # §10.8.2: QUILL-key chord
     "view.split_preview": "Ctrl+Shift+Backslash",
     "view.focus_preview": "Ctrl+F6",
     "view.switch_editing_lens": "Ctrl+Shift+Grave, K",
@@ -93,6 +95,10 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "edit.select_to_end_of_line": "Shift+End",
     "edit.select_to_start_of_document": "Ctrl+Shift+Home",
     "edit.select_to_end_of_document": "Ctrl+Shift+End",
+    "edit.quote_lines": "Ctrl+Q",  # §4.22 EdSharp parity
+    "edit.unquote_lines": "Ctrl+Shift+Q",  # §4.22 EdSharp parity
+    "edit.duplicate_selection": "",  # §4.17; no default key to avoid Ctrl+D clash
+    "edit.reverse_lines": "Alt+Shift+Z",  # §4.22 EdSharp parity
     "format.toggle_line_comment": "Ctrl+/",
     "format.toggle_block_comment": "Shift+Alt+A",
     "format.indent": "Ctrl+]",
@@ -112,6 +118,13 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "format.insert_markdown_tag": "Ctrl+Shift+Grave, M",
     "format.insert_snippet": "Ctrl+Shift+Grave, S",
     "format.manage_snippets": "Ctrl+Shift+Grave, Shift+S",
+    "format.expand_abbreviation": "Ctrl+Shift+Grave, A",
+    "format.manage_abbreviations": "Ctrl+Shift+Grave, Shift+A",
+    "format.toggle_abbreviation_expansion": "Ctrl+Shift+Grave, E",
+    "power.insert_special_character": "F2",  # §4.22 EdSharp parity
+    "power.number_lines": "Alt+Shift+N",  # §4.22 Number Items parity
+    "power.trim_blank_lines": "Ctrl+Shift+Enter",  # §4.22 Trim Blanks parity
+    "power.keep_unique_lines": "Alt+Shift+K",  # §4.22 Keep Unique parity
     "quill.quick_nav.heading": "H",
     "quill.quick_nav.link": "A",
     "quill.quick_nav.list": "L",
@@ -140,6 +153,40 @@ DEFAULT_KEYMAP: dict[str, str] = {
     # §10.8 — magic paste moves to QUILL key, V (handled in QuillKeyMixin prefix
     # state machine).  Ctrl+Alt+V removed — screen readers eat Ctrl+Alt+ chords.
     "edit.magic_paste": "",
+    # §CopyTray — Copy Tray slot access (12 slots).
+    # Paste: Ctrl+Shift+N for N=1-9, Ctrl+Shift+0 for slot 10,
+    #        Ctrl+Shift+- for slot 11, Ctrl+Shift+= for slot 12.
+    # Copy:  QUILL+Shift+N for same key positions (Shift+digit/symbol).
+    # QUILL+1-6 (bare) are heading shortcuts; Shift variants are distinct.
+    # Open tray dialog: QUILL+X.
+    "edit.open_copy_tray": "Ctrl+Shift+Grave, X",
+    "edit.clear_all_tray_slots": "",
+    "edit.copy_to_next_slot": "",
+    "edit.search_tray_slots": "",
+    "edit.copy_to_tray_1": "Ctrl+Shift+Grave, Shift+1",
+    "edit.copy_to_tray_2": "Ctrl+Shift+Grave, Shift+2",
+    "edit.copy_to_tray_3": "Ctrl+Shift+Grave, Shift+3",
+    "edit.copy_to_tray_4": "Ctrl+Shift+Grave, Shift+4",
+    "edit.copy_to_tray_5": "Ctrl+Shift+Grave, Shift+5",
+    "edit.copy_to_tray_6": "Ctrl+Shift+Grave, Shift+6",
+    "edit.copy_to_tray_7": "Ctrl+Shift+Grave, Shift+7",
+    "edit.copy_to_tray_8": "Ctrl+Shift+Grave, Shift+8",
+    "edit.copy_to_tray_9": "Ctrl+Shift+Grave, Shift+9",
+    "edit.copy_to_tray_10": "Ctrl+Shift+Grave, Shift+0",
+    "edit.copy_to_tray_11": "Ctrl+Shift+Grave, Shift+-",
+    "edit.copy_to_tray_12": "Ctrl+Shift+Grave, Shift+=",
+    "edit.paste_from_tray_1": "Ctrl+Shift+1",
+    "edit.paste_from_tray_2": "Ctrl+Shift+2",
+    "edit.paste_from_tray_3": "Ctrl+Shift+3",
+    "edit.paste_from_tray_4": "Ctrl+Shift+4",
+    "edit.paste_from_tray_5": "Ctrl+Shift+5",
+    "edit.paste_from_tray_6": "Ctrl+Shift+6",
+    "edit.paste_from_tray_7": "Ctrl+Shift+7",
+    "edit.paste_from_tray_8": "Ctrl+Shift+8",
+    "edit.paste_from_tray_9": "Ctrl+Shift+9",
+    "edit.paste_from_tray_10": "Ctrl+Shift+0",
+    "edit.paste_from_tray_11": "Ctrl+Shift+-",
+    "edit.paste_from_tray_12": "Ctrl+Shift+=",
 }
 
 
@@ -206,6 +253,9 @@ _PACK_LABELS: dict[str, str] = {
     "format.list_manager": "List Manager",
     "format.insert_snippet": "Insert Snippet",
     "format.manage_snippets": "Manage Snippets",
+    "format.expand_abbreviation": "Expand Abbreviation",
+    "format.manage_abbreviations": "Manage Abbreviations",
+    "format.toggle_abbreviation_expansion": "Toggle Abbreviation Expansion",
     "format.toggle_line_comment": "Toggle Line Comment",
     "format.upper_case": "Upper Case",
     "navigate.back_location": "Back",
@@ -229,6 +279,9 @@ _PACK_LABELS: dict[str, str] = {
     "tools.replace_in_files": "Replace Across Files",
     "tools.thesaurus": "Thesaurus",
     "tools.search_in_files": "Search In Files",
+    "tools.ask_quill_chat": "Ask Quill",
+    "tools.prompt_library": "Prompt Library",
+    "tools.check_grammar_ai": "Check Grammar with AI",
     "tools.word_count": "Word Count",
     "tools.writing_instructions": "Open Writing Instructions",
     "view.browser_preview": "Browser Preview",
@@ -376,6 +429,9 @@ KEYBOARD_PACKS: dict[str, KeyboardPack] = {
 }
 
 
+_PROFILES_DIR = Path(__file__).resolve().parent / "keymap"
+
+
 def keymap_path() -> Path:
     return app_data_dir() / "keymap.json"
 
@@ -383,6 +439,39 @@ def keymap_path() -> Path:
 def load_keymap() -> dict[str, str]:
     raw = read_json(keymap_path(), default={})
     return merge_keymaps(raw)
+
+
+def load_keymap_profile(name: str) -> dict[str, str]:
+    """Return the merged keymap for a named JSON profile in quill/core/keymap/.
+
+    Falls back to DEFAULT_KEYMAP if the profile file is not found.
+    Profile names map to ``profile_<name>.json``; spaces are replaced with
+    underscores and the string is lower-cased.  Example: ``"Minimal"``
+    loads ``profile_minimal.json``.
+    """
+    slug = name.lower().replace(" ", "_")
+    profile_path = _PROFILES_DIR / f"profile_{slug}.json"
+    data = read_json(profile_path, default={})
+    if not isinstance(data, dict):
+        return DEFAULT_KEYMAP.copy()
+    bindings = data.get("bindings", {})
+    if not isinstance(bindings, dict):
+        return DEFAULT_KEYMAP.copy()
+    merged = DEFAULT_KEYMAP.copy()
+    merged.update({k: v for k, v in bindings.items() if isinstance(v, str)})
+    return merged
+
+
+def list_keymap_profiles() -> list[str]:
+    """Return the display names of available JSON profiles."""
+    profiles: list[str] = []
+    if not _PROFILES_DIR.is_dir():
+        return profiles
+    for path in sorted(_PROFILES_DIR.glob("profile_*.json")):
+        data = read_json(path, default={})
+        if isinstance(data, dict) and "_name" in data:
+            profiles.append(str(data["_name"]))
+    return profiles
 
 
 def save_keymap(keymap: dict[str, str]) -> None:
@@ -457,6 +546,9 @@ def merge_keymaps(raw: object) -> dict[str, str]:
         "format.insert_markdown_tag": ("CTRL+ALT+M", "Ctrl+Shift+Grave, M"),
         "format.insert_snippet": ("CTRL+ALT+SPACE", "Ctrl+Shift+Grave, S"),
         "format.manage_snippets": ("CTRL+ALT+SHIFT+SPACE", "Ctrl+Shift+Grave, Shift+S"),
+        "format.expand_abbreviation": ("", "Ctrl+Shift+Grave, A"),
+        "format.manage_abbreviations": ("", "Ctrl+Shift+Grave, Shift+A"),
+        "format.toggle_abbreviation_expansion": ("", "Ctrl+Shift+Grave, E"),
     }
     legacy_preview_conflict = (
         str(raw.get("view.preview", "")).strip().upper() == "CTRL+SHIFT+P"
@@ -490,6 +582,60 @@ def import_keymap(source: Path) -> dict[str, str]:
     merged = merge_keymaps(raw)
     save_keymap(merged)
     return merged
+
+
+KQP_EXTENSION = ".kqp"
+_KQP_VERSION = 1
+
+
+def export_keyboard_pack(
+    target: Path,
+    keymap: dict[str, str],
+    name: str,
+    description: str,
+    author: str = "",
+    version: str = "1.0",
+) -> None:
+    """Write a .kqp (Keyboard Quill Pack) file.
+
+    Only bindings that differ from DEFAULT_KEYMAP are stored so the file
+    captures intent rather than a snapshot of defaults that may change.
+    """
+    delta: dict[str, str] = {k: v for k, v in keymap.items() if v != DEFAULT_KEYMAP.get(k)}
+    payload: dict[str, object] = {
+        "kqp_version": _KQP_VERSION,
+        "name": name.strip(),
+        "description": description.strip(),
+        "author": author.strip(),
+        "version": version.strip(),
+        "bindings": delta,
+    }
+    write_json_atomic(target, payload)
+
+
+def import_keyboard_pack(source: Path) -> tuple[str, str, dict[str, str]]:
+    """Read a .kqp file. Return (name, description, merged_keymap).
+
+    Raises ValueError if the file is missing, malformed, or uses an
+    unsupported kqp_version.  The merged keymap is persisted via save_keymap.
+    """
+    raw = read_json(source, default=None)
+    if not isinstance(raw, dict):
+        raise ValueError(f"{source.name} is not a valid Keyboard Quill Pack (expected JSON object)")
+    file_version = raw.get("kqp_version")
+    if file_version != _KQP_VERSION:
+        raise ValueError(
+            f"{source.name}: unsupported kqp_version {file_version!r} "
+            f"(this build supports version {_KQP_VERSION})"
+        )
+    name = str(raw.get("name", source.stem)) or source.stem
+    description = str(raw.get("description", ""))
+    bindings = raw.get("bindings", {})
+    if not isinstance(bindings, dict):
+        raise ValueError(f"{source.name}: 'bindings' must be a JSON object")
+    merged = merge_keymaps(bindings)
+    save_keymap(merged)
+    return name, description, merged
 
 
 def reset_keymap() -> dict[str, str]:

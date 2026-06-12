@@ -75,6 +75,11 @@ SETTING_GROUPS: tuple[SettingGroup, ...] = (
         "Security and Privacy",
         "Host-key trust, network consent, and other safety toggles.",
     ),
+    SettingGroup(
+        "developer",
+        "Developer Console",
+        "Python and TypeScript consoles for developers and power users.",
+    ),
 )
 
 _GROUP_IDS = {group.id for group in SETTING_GROUPS}
@@ -162,6 +167,15 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         minimum=1,
         maximum=50,
         keywords=("recent", "history", "files"),
+    ),
+    SettingSpec(
+        "language",
+        "Interface language",
+        "general",
+        "text",
+        "BCP 47 language tag for the UI (e.g. 'en', 'fr', 'es'). "
+        "Leave blank to use the operating-system language.",
+        keywords=("language", "locale", "translation", "interface"),
     ),
     SettingSpec(
         "confirm_destructive_actions",
@@ -262,6 +276,30 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         keywords=("snippet", "expand", "template"),
     ),
     SettingSpec(
+        "abbreviation_expansion",
+        "Abbreviation expansion",
+        "editing",
+        "bool",
+        "Automatically expand abbreviations as you type (e.g. 'btw ' becomes 'by the way ').",
+        keywords=("abbreviation", "shorthand", "textexpander", "autocorrect", "expand"),
+    ),
+    SettingSpec(
+        "abbreviation_expansion_sound",
+        "Play sound on abbreviation expansion",
+        "editing",
+        "bool",
+        "Play a sound each time an abbreviation is expanded.",
+        keywords=("abbreviation", "sound", "audio", "beep"),
+    ),
+    SettingSpec(
+        "abbreviation_expansion_sound_file",
+        "Abbreviation expansion sound file",
+        "editing",
+        "text",
+        "Path to a .wav file played on expansion. Leave blank for the default system sound.",
+        keywords=("abbreviation", "sound", "wav", "audio"),
+    ),
+    SettingSpec(
         "persistent_undo",
         "Enable persistent undo",
         "editing",
@@ -300,16 +338,8 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         ),
         keywords=("word", "docx", "open", "structured"),
     ),
-    SettingSpec(
-        "editor_surface",
-        "Editing surface",
-        "editing",
-        "choice",
-        "Write in the plain-text editor, or open rich files in the Rich text lens. "
-        "The plain surface stays the default and is the most screen-reader tested.",
-        choices=(("plain", "Plain text"), ("rich", "Rich text lens")),
-        keywords=("rich", "rtf", "formatting", "lens", "bold", "surface"),
-    ),
+    # editor_surface spec intentionally omitted while core.rich_text_lens is
+    # locked_off — re-add choices=(..., ("rich", "Rich text lens")) when ready.
     SettingSpec(
         "save_as_surface_sync",
         "Reload after Save As to match the format",
@@ -745,6 +775,41 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         feature_id="future.ai",
         keywords=("assistant", "tone", "style", "prompt"),
     ),
+    SettingSpec(
+        "ai_chat_default_provider",
+        "Ask AI default provider",
+        "ai",
+        "text",
+        "Default provider selected when the Ask AI dialog opens"
+        " (openrouter, openai, ollama_local, ollama_cloud).",
+        keywords=("ai", "chat", "provider", "openrouter", "openai", "ollama"),
+    ),
+    SettingSpec(
+        "ai_chat_default_model",
+        "Ask AI default model",
+        "ai",
+        "text",
+        "Default model ID selected when the Ask AI dialog opens."
+        " Leave blank to use the first model in the list.",
+        keywords=("ai", "chat", "model"),
+    ),
+    SettingSpec(
+        "ollama_base_url",
+        "Ollama base URL",
+        "ai",
+        "text",
+        "Base URL for the Ollama server. Default: http://localhost:11434",
+        keywords=("ollama", "ai", "local", "url"),
+    ),
+    SettingSpec(
+        "ai_prompt_default_model",
+        "AI prompt default model",
+        "ai",
+        "text",
+        "Default model ID used when running prompt-library prompts."
+        " Leave blank to fall back to the Ask AI default model.",
+        keywords=("ai", "prompt", "model", "prompt library", "grammar"),
+    ),
     # --- Transcription -----------------------------------------------------
     SettingSpec(
         "bw_provider_mode",
@@ -939,7 +1004,54 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         feature_id="read_aloud",
         keywords=("read aloud", "speech", "context menu", "verb"),
     ),
+    # --- Multi-press -------------------------------------------------------
+    SettingSpec(
+        "multi_press_window_ms",
+        "Multi-press time window (ms)",
+        "editing",
+        "int",
+        "How long QUILL waits for a second or third keypress before treating "
+        "the first as a single press. Applies to Copy Tray and Command Palette "
+        "multi-press actions. 300 ms suits fast typists; 500 ms helps users "
+        "with motor control differences. Default: 400.",
+        keywords=("multi press", "double press", "copy tray", "keyboard", "timer"),
+    ),
     # --- Security and privacy ----------------------------------------------
+    # --- Developer Console -------------------------------------------------
+    SettingSpec(
+        "console_enabled",
+        "Enable Developer Console",
+        "developer",
+        "bool",
+        "When on, the Python and TypeScript developer consoles are available "
+        "under Tools > Advanced > Developer Console. Off by default for "
+        "Essential and Writer profiles.",
+        keywords=("developer console", "qdc", "scripting", "python", "automation"),
+        feature_id="core.developer_console",
+    ),
+    SettingSpec(
+        "console_python_timeout",
+        "Python console execution timeout (seconds)",
+        "developer",
+        "int",
+        "Maximum seconds a Python console command may run before QUILL interrupts it. Default: 30.",
+        minimum=5,
+        maximum=300,
+        keywords=("developer console", "python", "timeout"),
+        feature_id="core.developer_console",
+    ),
+    SettingSpec(
+        "console_typescript_timeout",
+        "TypeScript console execution timeout (seconds)",
+        "developer",
+        "int",
+        "Maximum seconds a TypeScript console command may run before the "
+        "Node worker is restarted. Default: 30.",
+        minimum=5,
+        maximum=300,
+        keywords=("developer console", "typescript", "node", "timeout"),
+        feature_id="core.developer_console.typescript",
+    ),
     SettingSpec(
         "ssh_trust_first_use",
         "Trust SSH hosts on first connection",

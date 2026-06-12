@@ -1294,6 +1294,158 @@ well. Carrying the principle forward, three limits bind Quillins specifically:
 
 ---
 
+## 20. Skill Quill Pack (.sqp) — multi-step AI workflows in plain text
+
+A `.sqp` (Skill Quill Pack) file is the natural extension of a `.pqp` prompt pack: instead of one static instruction, a skill is a Markdown document whose headings define sequential steps and whose special fenced blocks control data flow, branching, and output handling.
+
+**Design principle.** A skill should be readable — and editable — by anyone who can use a text editor. There is no GUI skill builder, no node graph, no DSL reference card. You open the file in QUILL, read each step like a recipe, change any instruction, and save. That is the whole authoring loop.
+
+### 20.1 File format (quill.skill/1)
+
+A `.sqp` file is a Markdown document with a YAML front matter block followed by level-1 headings that define steps.
+
+```markdown
+---
+schema: quill.skill/1
+name: My Skill
+description: Does something useful.
+author: Your Name
+version: 1.0.0
+parameters:
+  - name: tone
+    label: Tone
+    type: choice
+    choices: [formal, casual]
+    default: formal
+---
+
+# Step 1: Do the first thing
+
+Write a {parameters.tone} paragraph about {selection}.
+
+# Step 2: Refine
+
+Polish this text:
+{step1.output}
+
+```output
+format: text
+label: Final result
+accept_into: selection
+```
+```
+
+### 20.2 Front matter fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `schema` | yes | Must be `quill.skill/1` |
+| `name` | yes | Display name in the Skill Library |
+| `description` | recommended | One-line description |
+| `author` | recommended | Author name |
+| `version` | no | Semver string (default `1.0.0`) |
+| `parameters` | no | List of parameter declarations |
+
+### 20.3 Parameters
+
+Each parameter in the `parameters` list has these fields:
+
+| Field | Description |
+| --- | --- |
+| `name` | Internal name, used as `{parameters.name}` |
+| `label` | Shown to user in the parameter dialog |
+| `type` | `text`, `multiline`, `choice`, `bool`, `number` |
+| `choices` | Required when `type` is `choice`: `[a, b, c]` |
+| `default` | Default value |
+
+### 20.4 Steps
+
+Each `# Heading` at depth 1 defines one step. The body between headings is the prompt template. Steps are numbered 1-based in document order.
+
+**Variable interpolation.** Step prompts and input blocks may reference:
+
+| Variable | Value |
+| --- | --- |
+| `{selection}` | Current editor selection (full document if empty) |
+| `{document}` | Full document text |
+| `{title}` | Document title |
+| `{clipboard}` | System clipboard text at skill-start time |
+| `{step1.output}` | Output from step 1; `{step2.output}` from step 2, etc. |
+| `{parameters.name}` | Value of declared parameter `name` |
+
+### 20.5 Special fenced blocks
+
+**`input`** — appends literal data to the prompt (keeps the instruction prose clean):
+```
+```input
+{selection}
+```
+```
+
+**`condition`** — evaluates before the step's prompt; jumps to a named step:
+```
+```condition
+if: "{step1.output}" contains "question"
+then: step2
+else: step3
+```
+```
+
+Supported operators: `contains`, `equals`, `starts_with`, `ends_with`, `length_gt`, `length_lt`, `is_empty`.
+
+**`output`** — on the last step, controls how the result is presented:
+```
+```output
+format: text
+label: Rewritten paragraph
+accept_into: selection
+```
+```
+
+`format` values: `text`, `list`, `json`. `accept_into` values: `selection` (replaces editor selection on Accept), `clipboard`, `none`.
+
+**`use-prompt`** — delegates to a named prompt in the Prompt Library instead of sending a new instruction:
+```
+```use-prompt
+name: Improve Clarity
+input: {step1.output}
+```
+```
+
+### 20.6 Execution model
+
+1. QUILL collects parameter values (shows dialog if any parameter lacks a default).
+2. Steps execute in order. Each step's prompt template is interpolated with the current context, the prompt is sent to the AI (synchronously; no streaming), and the response is stored as `{stepN.output}`.
+3. If a `condition` block is present, its result determines which step runs next.
+4. After the final step, the `output` block controls the result presentation.
+5. Every step announces "Running step N of M..." and the result announces "Skill complete."
+6. No document text changes without explicit Accept in the result dialog.
+7. Nested `use-skill` calls are bounded to depth 2 to keep execution predictable.
+
+### 20.7 Validation tool
+
+```powershell
+python -m quill.tools.sqp_validator path/to/skill.sqp
+python -m quill.tools.sqp_validator path/to/directory/ --strict
+```
+
+Exit 0 on clean; exit 1 on errors. `--strict` also warns about missing `description` and `author`.
+
+### 20.8 Quillin distribution
+
+A Quillin may ship `.sqp` files alongside its manifest. QUILL discovers them the same way it discovers `prompts.json` — at Skill Library load time. The bundled `ai-writing-skills` Quillin ships four sample skills: Accessible Rewrite, Research and Draft, Meeting Notes to Action Items, Argument Strengthener.
+
+### 20.9 Schema and implementation
+
+| File | Role |
+| --- | --- |
+| `quill/core/skill_pack.py` | `SkillPack` dataclass, `.sqp` parser, `validate_skill()`, `run_skill()` |
+| `quill/tools/sqp_validator.py` | CLI validator: `python -m quill.tools.sqp_validator` |
+| `quill/quillins_bundled/ai-writing-skills/` | Four bundled `.sqp` skills |
+| `tests/unit/core/test_skill_pack.py` | 23 tests covering parsing, validation, runner, branching, bundled files |
+
+---
+
 ## Appendix A — Language options considered
 
 | Option | Pros | Cons | Verdict |

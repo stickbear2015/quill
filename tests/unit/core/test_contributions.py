@@ -138,11 +138,11 @@ def test_first_party_and_quillin_collide_through_one_registry() -> None:
 
 
 def test_power_tools_manifest_is_consumed_and_conflict_free() -> None:
-    # The shipped power-tools pilot: 33 unique commands, no conflicts, every command
-    # filed under a real top-level menu by the shared registry.
+    # 33 original + 10 TextMonkey/EdSharp-parity commands (§4.22/§4.23)
+    # + 2 Copy Tray dialog-level commands (open + clear_all)
     registry = build_first_party_registry(POWER_TOOLS_COMMANDS)
-    assert len(POWER_TOOLS_COMMANDS) == 33
-    assert len(registry.commands) == 33
+    assert len(POWER_TOOLS_COMMANDS) == 45
+    assert len(registry.commands) == 45
     assert registry.conflicts == ()
     for menu in registry.menus:
         assert menu.parent in FIRST_PARTY_MENU_PARENTS
@@ -155,5 +155,5 @@ def test_power_tools_pilot_homes_match_phase_four_recirculation() -> None:
     assert parents["power.number_lines"] == "Format"
     assert parents["power.go_to_percent"] == "Navigate"
     assert parents["power.count_regex_matches"] == "Search"
-    assert parents["power.run_current_file"] == "File"
+    assert parents["power.run_current_file"] == "Tools"
     assert parents["power.toggle_read_only_guard"] == "Tools"

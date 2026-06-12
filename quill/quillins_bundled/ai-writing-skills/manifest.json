@@ -1,0 +1,12 @@
+{
+  "schema": "quill.extension/1",
+  "id": "com.quill.bundled.ai-writing-skills",
+  "name": "AI Writing Skills",
+  "version": "1.0.0",
+  "author": "QUILL Project",
+  "description": "A curated set of multi-step AI writing skills (.sqp) for the QUILL Skill Library.",
+  "license": "MIT",
+  "min_quill_version": "1.0.0",
+  "capabilities": [],
+  "contributes": {"commands": []}
+}

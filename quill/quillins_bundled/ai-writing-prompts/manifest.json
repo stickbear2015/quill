@@ -1,0 +1,14 @@
+{
+  "schema": "quill.extension/1",
+  "id": "com.quill.bundled.ai-writing-prompts",
+  "name": "AI Writing Prompts",
+  "version": "1.0.0",
+  "author": "QUILL Project",
+  "description": "A curated set of AI writing and editing prompts contributed to the QUILL Prompt Library. Loaded automatically when the Prompt Library opens.",
+  "license": "MIT",
+  "min_quill_version": "1.0.0",
+  "capabilities": [],
+  "contributes": {
+    "commands": []
+  }
+}

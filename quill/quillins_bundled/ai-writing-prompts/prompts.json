@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Expand This",
+    "category": "Writing",
+    "text": "Expand the following text into a fuller, more detailed version. Add supporting details, examples, and context while preserving the original meaning and style:\n\n{selection}"
+  },
+  {
+    "name": "Vary Sentence Rhythm",
+    "category": "Writing",
+    "text": "Rewrite the following text to vary the sentence rhythm — mix short punchy sentences with longer ones to create a more engaging read. Keep all the same ideas:\n\n{selection}"
+  },
+  {
+    "name": "Make More Vivid",
+    "category": "Writing",
+    "text": "Rewrite the following text to be more vivid and engaging, adding sensory details and stronger word choices without changing the core meaning:\n\n{selection}"
+  },
+  {
+    "name": "Write a Title",
+    "category": "Structure",
+    "text": "Suggest five possible titles for the following text. Make each title concise (under 12 words) and descriptive:\n\n{selection}"
+  },
+  {
+    "name": "Generate Outline",
+    "category": "Structure",
+    "text": "Create a structured outline for the following text, organizing the key points into a logical hierarchy with headings and subpoints:\n\n{selection}"
+  },
+  {
+    "name": "Suggest Supporting Evidence",
+    "category": "Research",
+    "text": "For the following claim or argument, suggest the types of evidence, studies, or sources that would best support it. Be specific about what kind of evidence to look for:\n\n{selection}"
+  },
+  {
+    "name": "Plain Language",
+    "category": "Editing",
+    "text": "Rewrite the following text in plain language, using simple vocabulary and short sentences so it is accessible to a general audience. Avoid jargon:\n\n{selection}"
+  }
+]

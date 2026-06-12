@@ -1,0 +1,46 @@
+---
+schema: quill.skill/1
+name: Research and Draft
+description: Extracts a topic from the selection, gathers supporting facts, then drafts an original paragraph. Good for expanding a topic sentence into a full paragraph.
+author: QUILL Project
+version: 1.0.0
+parameters:
+  - name: tone
+    label: Tone
+    type: choice
+    choices: [formal, conversational, neutral, persuasive]
+    default: neutral
+  - name: length
+    label: Target length
+    type: choice
+    choices: [50-80 words, 80-120 words, 120-200 words]
+    default: 80-120 words
+---
+
+# Step 1: Extract topic
+
+Read the following text and identify the central topic. Return only the topic as a concise noun phrase — no full sentence, no punctuation at the end.
+
+```input
+{selection}
+```
+
+# Step 2: Gather supporting facts
+
+List five distinct, factual claims about "{step1.output}" that would support a short explanatory paragraph. Number each claim. Keep each claim to a single sentence. Focus on facts, not opinions.
+
+# Step 3: Draft paragraph
+
+Write a single cohesive paragraph about "{step1.output}" that naturally weaves in the facts from Step 2.
+
+Requirements:
+- Tone: {parameters.tone}
+- Length: {parameters.length}
+- Do not start with "In conclusion" or similar stock phrases
+- Return only the paragraph, no preamble
+
+```output
+format: text
+label: Drafted paragraph
+accept_into: selection
+```

@@ -46,6 +46,18 @@ If a sighted person watched a Quill user work, they would see almost nothing on 
 - Not a book reader with pagination and reflow. Quill renders documents as editable text.
 - Not an AI chat product. AI is used only to repair reading order or extract text.
 
+### 2.3 Update Strategy and Micro-Updates
+
+Quill uses `app_updater` (AccessibleApps, MIT license) for cross-platform incremental updates, enabling smaller, faster patches:
+
+- **Incremental delivery**: Updates are distributed as small ZIP packages containing only changed files, not full reinstalls.
+- **Automatic bootstrapper**: Platform-specific bootstrappers (`bootstrap.exe`, `bootstrap-mac.sh`, `bootstrap-lin.sh`) apply updates atomically after app exit and restart.
+- **Accessible UX**: Update checks and progress are announced through the screen reader with clear prompts for user consent.
+- **Backwards-compatible install**: Full installers (Inno Setup on Windows, `.dmg` on macOS) remain available for fresh installs or offline scenarios.
+- **Signed feeds**: Update feeds are cryptographically signed (Ed25519 or RSA) to prevent tampering; signatures are verified client-side.
+
+This enables shipping bug fixes and security patches as micro-updates without re-downloading the entire application, while maintaining security and platform best practices.
+
 ---
 
 ## 3. Target users and primary scenarios
@@ -2498,6 +2510,390 @@ Ask Quill is a conversational assistant that runs entirely on the user's machine
 
 **Discoverability and reliability.** Ask Quill lives under a top-level **AI** menu (Alt+I) alongside the "Use Artificial Intelligence" toggle and AI Model settings. Generation runs off the UI thread. The single-instance lock self-heals (PID + creation-time identity) so a stale lock from a crash never blocks launch.
 
+### 5.77 Copy Tray — twelve-slot persistent clipboard
+
+Copy Tray gives users twelve independently addressable clipboard slots that survive application restarts. Each slot holds text explicitly placed there; slots are written atomically to disk on every change.
+
+**Motivation.** The system clipboard holds one item and is shared across every running application. Screen-reader users who work across multiple documents, do research from multiple sources, or paste recurring fragments (signatures, disclaimers, code boilerplate) lose clipboard contents constantly because any copy from any app overwrites it. Copy Tray is a private, persistent alternative.
+
+**Core operations.**
+
+- **Copy to slot N** — copies the current selection to slot N (1–12). Reports the slot number, optional label, and a text preview through the screen-reader bridge.
+- **Paste from slot N** — inserts the slot's text at the cursor (or replaces the selection). Reports slot number and label. Supports multi-press: single=paste, double=peek, triple=open dialog.
+- **Copy to Next Empty Slot** (`edit.copy_to_next_slot`) — copies the selection to the first unoccupied, unpinned slot in order 1–12. Announces which slot was used. If all slots are occupied, announces this rather than silently overwriting.
+- **Search Tray Slots** (`edit.search_tray_slots`) — opens a minimal search dialog. User types a query; QUILL searches all slot text and labels and announces matches. The user can press a digit key to paste that slot directly.
+- **Open Copy Tray dialog** — shows all twelve slots with slot number, optional label, and a text preview. Inline editing of content and label; auto-save on slot change. Includes Pin/Unpin button.
+- **Set label** — names a slot with a short string. Labels are spoken in all subsequent announcements, visible in the dialog, and shown in the Paste from Tray submenu alongside a text preview.
+- **Pin / Unpin** — marks a slot as pinned from the dialog. Pinned slots are never overwritten by next-empty routing and are announced with a "pinned" prefix.
+- **Clear All Tray Slots** — empties all twelve slots after a Yes/No confirmation defaulting to No.
+
+**Multi-press paste.** The paste chord supports three levels of intent:
+
+| Press count | Behaviour |
+| --- | --- |
+| Single | Paste slot content at cursor |
+| Double | Peek: announce slot content without pasting |
+| Triple | Open Copy Tray dialog focused on that slot |
+
+The press window is configurable via `multi_press_window_ms` (default 400 ms, range 100–1000 ms; found in `App > Preferences > Editing`). This lets expert users check what a slot holds before committing — useful for a crowded tray where memory may be unreliable.
+
+**Paste submenu slot labels.** The `Edit > Copy Tray > Paste from Tray` menu shows each slot's label and a text preview inline (e.g. "1  signature — Hi, I wanted to follow..."). Screen readers read both columns when navigating the submenu.
+
+**Status bar cell.** The `copy_tray_slots` status bar cell shows `Slots: X/12` (occupied count). Clicking it opens the Copy Tray dialog.
+
+**Keyboard defaults.**
+
+| Action | Default binding |
+| --- | --- |
+| Paste from slot 1–9 | `Ctrl+Shift+1` through `Ctrl+Shift+9` |
+| Paste from slot 10 | `Ctrl+Shift+0` |
+| Paste from slot 11 | `Ctrl+Shift+-` |
+| Paste from slot 12 | `Ctrl+Shift+=` |
+| Copy to slot 1–9 | `Ctrl+Shift+Grave, Shift+1` through `Ctrl+Shift+Grave, Shift+9` |
+| Copy to slot 10 | `Ctrl+Shift+Grave, Shift+0` |
+| Copy to slot 11 | `Ctrl+Shift+Grave, Shift+-` |
+| Copy to slot 12 | `Ctrl+Shift+Grave, Shift+=` |
+| Open Copy Tray dialog | `Ctrl+Shift+Grave, X` |
+
+The paste bindings use the number row directly for maximum speed. The copy bindings use the QUILL-key prefix to distinguish from heading shortcuts. All bindings are reassignable via the Keymap Editor.
+
+**Storage.** `copy_tray.json` in the QUILL user data directory. Atomic write (`os.replace`). Version-tagged JSON; corrupt files fail silently (fresh state, no crash).
+
+**Accessibility guarantees.** Every operation announces through the screen-reader bridge: "Copied to slot 1", "Pasted from slot 3 (signature)", "Slot 5 is empty", "Slot 2: by the way" (peek). The dialog list receives focus on open. Empty and non-empty slots are announced distinctly. The clear-all confirmation defaults to No.
+
+**Implementation map.** `quill/core/copy_tray.py` (pure model, mypy-clean; `TraySlot` with `pinned` field, `pin_slot`, `unpin_slot`, `first_empty_slot`, `search_slots`), `quill/core/multi_press.py` (MultiPressDispatcher, wx-free), `quill/ui/main_frame_copy_tray.py` (mixin: multi-press wiring, `copy_to_next_slot`, `search_tray_slots`, `_TraySearchDialog`, `_update_paste_tray_labels`), `quill/ui/copy_tray_dialog.py` (dialog with Pin/Unpin button), `quill/core/keymap.py` (24 slot commands + 4 management commands). Menu: `Edit > Copy Tray` submenu including "Copy to Next Empty Slot" and "Search Tray Slots...".
+
+---
+
+### 5.78 Abbreviation Expansion — TextExpander-style bare-word shortcuts
+
+Abbreviation Expansion replaces short trigger words with longer text automatically as you type. It complements the snippet system (which requires an explicit trigger prefix) by firing on any bare word followed by a delimiter.
+
+**Motivation.** Typing common phrases repeatedly is fatiguing and slow. TextExpander and similar tools are widely used but require separate purchase and licensing. QUILL's built-in abbreviation engine gives screen-reader users the same productivity gain with no external dependency and full keyboard control over every setting.
+
+**How it works.** When the user types a trigger word (e.g. `btw`) followed by any delimiter character — space, period, comma, semicolon, colon, exclamation mark, question mark, closing bracket, closing brace, tab, or newline — QUILL:
+
+1. Detects the trigger at the cursor.
+2. Looks up the trigger in the library (longest match first; case-insensitive by default).
+3. Replaces the trigger with the expanded text.
+4. Positions the cursor as specified (at `${cursor}` if present, otherwise after the expansion).
+5. Optionally plays a configured sound.
+6. Announces the expansion through the screen-reader bridge.
+
+**Default library.** Fifteen built-in abbreviations ship out-of-the-box: `afaik` → as far as I know, `afaict` → as far as I can tell, `asap` → as soon as possible, `atm` → at the moment, `btw` → by the way, `fwiw` → for what it's worth, `imo` → in my opinion, `imho` → in my humble opinion, `irl` → in real life, `omw` → on my way, `tbh` → to be honest, `tbc` → to be confirmed, `tbd` → to be determined, `ttyl` → talk to you later, `wrt` → with regard to. These are declared as `_BUILTINS` in `abbreviations.py`.
+
+**Variables.** Expansion bodies support:
+
+| Variable | Value |
+| --- | --- |
+| `${cursor}` | Cursor position after expansion |
+| `${date}` | Current date (e.g. June 11, 2026) |
+| `${time}` | Current time (12-hour, e.g. 02:30 PM) |
+| `${clipboard}` | System clipboard text at expansion time |
+
+**Keyboard defaults.**
+
+| Action | Default binding |
+| --- | --- |
+| Expand abbreviation at cursor (manual) | `Ctrl+Shift+Grave, A` |
+| Manage Abbreviations... | `Ctrl+Shift+Grave, Shift+A` |
+| Toggle expansion on/off | `Ctrl+Shift+Grave, E` |
+
+**Settings.** Four settings in `Editing` preferences:
+
+- `abbreviation_expansion` (bool, default True) — master on/off.
+- `abbreviation_expansion_sound` (bool, default False) — play a sound on expansion.
+- `abbreviation_expansion_sound_file` (text) — path to a `.wav` file; blank = system default beep.
+- `multi_press_window_ms` (int, default 400, range 100–1000) — time window for double/triple press detection across all multi-press chords (copy tray peek, command palette re-run, etc.).
+
+**Status bar.** The `abbreviations` status bar cell shows `ABR: On` or `ABR: Off`. Clicking it toggles expansion. Hidden by default; add via status bar settings.
+
+**Storage.** `abbreviations.json` in the QUILL user data directory. Atomic write. Default library written on first launch if file is absent.
+
+**Interaction with snippets.** Abbreviation expansion fires before snippet expansion in `_on_text_changed`. If an abbreviation match is found, snippet expansion is skipped for that keystroke. The `;`-prefix snippet trigger is disjoint from bare-word abbreviation triggers so conflicts are practically impossible.
+
+**Accessibility guarantees.** Every expansion announces "Expanded: \<preview\>" through the screen-reader bridge. Manual trigger (`Ctrl+Shift+Grave, A`) announces "Expanded to: \<preview\>" or "No abbreviation match". Toggle announces "Abbreviation expansion on/off".
+
+**Abbreviation Manager dialog.** `quill/ui/abbreviation_manager_dialog.py` — A11Y-4 compliant, registered in the dialog inventory. Features: search field (filters the list in real time), Import button (merges a JSON file, skips duplicate IDs, announces count), Export button (saves full library to a JSON file). Disabled abbreviations shown with "(disabled)" suffix.
+
+**`AbbreviationLibrary` class API** (all methods on `quill/core/abbreviations.AbbreviationLibrary`):
+
+- `add(abbr, expansion, **kwargs) -> Abbreviation` — adds a new abbreviation, generates a UUID.
+- `remove(id) -> None` — removes by ID.
+- `enable(id) / disable(id) -> None` — toggle without deletion.
+- `update(id, **fields) -> Abbreviation` — updates one or more fields; uses `object.__setattr__` for `slots=True` dataclass.
+- `all() -> list[Abbreviation]` — full library in insert order.
+- `enabled_only() -> list[Abbreviation]` — only enabled entries.
+- `find_by_trigger(text, case_sensitive) -> Abbreviation | None` — looks up by trigger word.
+
+**Implementation map.** `quill/core/abbreviations.py` (pure model, mypy-clean: `Abbreviation` dataclass, `AbbreviationLibrary`, `try_expand`, `resolve_expansion`, `_BUILTINS`), `quill/ui/main_frame_abbreviations.py` (`AbbreviationsMixin`), `quill/ui/abbreviation_manager_dialog.py` (management dialog with search + import/export). Menu: `Insert > Expand Abbreviation`, `Insert > Manage Abbreviations...`, `Insert > Toggle Abbreviation Expansion`.
+
+---
+
+### 5.79 Ask AI — lightweight in-editor AI chat
+
+Ask AI is a modal dialog that lets users send a prompt to a configured AI provider and read the response without leaving QUILL. No document text is changed; the dialog is purely informational.
+
+**Motivation.** Screen-reader users frequently need to ask a quick question while writing — define a term, check a fact, explore a phrasing option — and switching to a browser or a separate AI client breaks flow, especially when using NVDA or JAWS where switching applications involves extra navigation. Ask AI keeps the interaction entirely within the QUILL keyboard model.
+
+**Entry point.** `Tools > AI Assistant > Ask AI...` (`Alt+Q` default chord). The Command Palette entry is "Ask AI". The binding is user-reassignable.
+
+**Providers.** Three providers are supported. QUILL detects which keys are configured and only shows available providers.
+
+| Provider | Auth | Model discovery |
+| --- | --- | --- |
+| OpenRouter | API key (DPAPI-encrypted) | `GET /api/v1/models`, cached per session |
+| OpenAI | API key (DPAPI-encrypted) | `GET /v1/models`, filtered to `gpt-*`/`o*` families |
+| Ollama | None (local) | `GET /api/tags`; greyed out if service not running |
+
+**Smart focus.** When the dialog opens, focus lands in the Prompt field if the provider and model are already configured. If not yet configured, focus starts on the Provider choice so the user is guided to set it up first.
+
+**Dialog layout.**
+
+```
+Provider:  [OpenRouter v]
+Model:     [claude-3-5-sonnet v]
+Prompt:    [multiline — Ctrl+Enter to send]
+[Send]  [Clear]  [Close]
+```
+
+The response opens in a separate read-only dialog (model label at top, scrollable text area, Copy to Clipboard, Close). Closing the response dialog returns focus to the Ask AI dialog so the user can ask a follow-up without reopening.
+
+**Settings** (in `Preferences > AI`):
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ai_chat_default_provider` | str | `"openrouter"` | Last-used provider |
+| `ai_chat_default_model` | str | `""` | Last-used model |
+| `ollama_base_url` | str | `"http://localhost:11434"` | Ollama endpoint (override for remote Ollama) |
+
+**Keys stored in Windows Credential Manager** (never in `settings.json`): `quill-openrouter-api-key`, `quill-openai-api-key`.
+
+**Safe Mode.** The Ask AI menu item and dialog are disabled when `QUILL_SAFE_MODE=1`.
+
+**Network egress.** Audited in `network_egress_audit.py`: `openrouter_chat`, `openai_chat`, `ollama_chat`, `openrouter_models`, `openai_models`, `ollama_models`. Timeout: 60 s for chat, 10 s for model list.
+
+**Implementation map.** `quill/core/ai_chat.py` (provider abstraction: `send_prompt`, `list_models`), `quill/ui/ai_chat_dialog.py` (Ask AI dialog + AI Response dialog, A11Y-4 hardened, registered in dialog inventory).
+
+---
+
+### 5.80 Check Grammar with AI
+
+Check Grammar with AI sends the current selection (or full document if nothing is selected) to the configured AI model with a grammar-review prompt and displays the result in the AI Response dialog. No edits are applied automatically.
+
+**Entry point.** `Edit > Grammar > Check Grammar with AI`. Command Palette: "Check Grammar with AI". User-assignable binding; no default chord.
+
+**Default prompt.**
+
+```
+You are a grammar and style editor. Review the following text and list
+only the corrections needed. For each correction, give: the original
+phrase, the corrected phrase, and a one-sentence reason. Do not rewrite
+the whole passage. If the text is correct, say "No issues found."
+
+Text:
+{selection}
+```
+
+When Phase 3 (§5.81) is active, the command uses the user's "Check Grammar" prompt from the Prompt Library instead, so the instruction text is fully customisable.
+
+**Model selection.** Uses `settings.ai_prompt_default_model` when set, otherwise falls back to `settings.ai_chat_default_model`. This lets users choose a different (e.g. more capable) model for grammar review than for casual chat.
+
+**Implementation.** Single method `check_grammar_with_ai()` in `MainFrame`. Runs on a background thread (`threading.Thread`, daemon=True); UI updates via `wx.CallAfter`. Command id: `tools.check_grammar_ai`.
+
+---
+
+### 5.81 AI Prompt Library
+
+The Prompt Library is a named, user-expandable collection of AI instructions. Each prompt operates on the current selection or document: the user picks a prompt, QUILL sends the text and the prompt to the AI, and a response dialog shows the result. No document text changes without explicit action.
+
+**Motivation.** Power users accumulate a personal set of AI instructions they run repeatedly — improve clarity, vary sentence rhythm, convert to bullets, generate an outline. Without a library, these prompts must be retyped or pasted from an external file each time. The Prompt Library turns these into first-class named commands, accessible from the keyboard, the command palette, and the dialog.
+
+**Entry point.** `Tools > AI Assistant > Prompt Library...`. Command Palette: "Prompt Library". User-assignable binding.
+
+**Prompt object fields.**
+
+| Field | Description |
+| --- | --- |
+| `name` | Short display name ("Improve clarity") |
+| `text` | Instruction text, with `{selection}`, `{document}`, `{title}` variables |
+| `category` | Editing, Writing, Structure, Research, or Custom |
+| `is_builtin` | True for shipped defaults — editable but not deletable |
+| `id` | UUID, stable across renames |
+| `shortcut` | Optional keyboard chord bound to this prompt |
+| `enabled` | False to hide from menus without deleting |
+| `source` | "builtin", "user", or Quillin id |
+
+**Built-in prompts (12).** Shipped defaults, always present, user-editable:
+
+- Editing: Check Grammar, Improve Clarity, Fix Grammar, Make Concise, Active Voice, Formal Tone, Conversational Tone
+- Writing: Continue from Here
+- Structure: Convert to Bullet Points
+- Research: Define This Term, Find Counterarguments
+- Custom: (none shipped; user-created)
+
+**Prompt Library Dialog.** Split layout: left panel shows a searchable list of all prompts (filtered by the search field in real time); right panel shows the selected prompt's text and an optional input override. Buttons: Run with AI, New Prompt, Edit, Disable/Enable, Delete, Import .pqp, Export .pqp, Close. A11Y-4 hardened, registered in the dialog inventory.
+
+**Settings.**
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ai_prompt_default_model` | str | `""` | Model used for prompt runs. Blank inherits `ai_chat_default_model`. |
+
+**Storage.** `%APPDATA%\Quill\prompts.json` — atomic write, schema-validated. Built-in prompts are not persisted; only user additions and overrides to built-ins are stored.
+
+**Quillin bridge.** A Quillin may ship a `prompts.json` file alongside its manifest. QUILL loads it automatically when the Prompt Library opens, adding those prompts to the library for the session (not persisted to disk). The bundled `ai-writing-prompts` Quillin ships 7 additional prompts this way: Expand This, Vary Sentence Rhythm, Make More Vivid (Writing); Write a Title, Generate Outline (Structure); Suggest Supporting Evidence (Research); Plain Language (Editing).
+
+**Implementation map.** `quill/core/prompt_library.py` (`Prompt` dataclass, `PromptLibrary` CRUD, `.pqp` import/export, Quillin prompt loading), `quill/ui/prompt_library_dialog.py` (Prompt Library dialog), `quill/quillins_bundled/ai-writing-prompts/` (bundled prompt pack).
+
+---
+
+### 5.82 Prompt Quill Pack (.pqp) — shareable prompt collections
+
+A `.pqp` (Prompt Quill Pack) file is a JSON document that packages a named collection of prompts for sharing or backup.
+
+**File format.**
+
+```json
+{
+  "schema": "quill.prompt-pack/1",
+  "name": "My Writing Prompts",
+  "prompts": [
+    {
+      "name": "Make Punchy",
+      "text": "Rewrite this as a punchy one-liner: {selection}",
+      "category": "Editing"
+    }
+  ]
+}
+```
+
+**Import.** Via the Import .pqp button in the Prompt Library dialog. Prompts whose name already exists in the library are skipped; the count of newly added prompts is announced.
+
+**Export.** Via the Export .pqp button. Exports all user-defined prompts (or a selected subset). Built-in prompts can optionally be included when the user has edited them.
+
+**Use case.** A writing team can share a `.pqp` file containing their house-style prompts. A power user can back up their library and restore it on a new machine. A Quillin author can distribute prompts as a `.pqp` for users who prefer not to install a Quillin.
+
+---
+
+### 5.83 Quillin Manager — install, update, and remove extensions
+
+The Quillin Manager (`Tools > Quillins`) lets users discover, enable, disable, and uninstall Quillins. As of this version it also supports installing a new Quillin directly from a local folder.
+
+**Install from Folder.** The Install from Folder button opens a system folder picker. QUILL reads the selected folder's `manifest.json`, validates it, copies the directory into the per-user extensions root (`%APPDATA%\Quill\extensions\<id>\`), enables the Quillin, and refreshes the list. If an extension with the same id is already installed, it is replaced. Path containment is enforced: a crafted extension id cannot install files outside the extensions root.
+
+**Remove.** Selecting an extension and pressing Remove deletes its directory and removes its state entry. Confirmation is required.
+
+**Enable/Disable.** Toggle without uninstalling. A disabled Quillin's prompts and commands are not loaded.
+
+**Manifest display.** Selecting a Quillin shows its name, version, author, description, declared capabilities, and any validation errors. This gives users the information they need to make an informed trust decision before enabling.
+
+**Security model (SEC-8).** Third-party Quillin *discovery* (auto-scanning the extensions root) is locked off for QUILL 1.0 (`core.third_party_plugins` feature flag is `locked_off`). Install from Folder is the only way to add a third-party Quillin. The user must explicitly choose the folder, providing informed consent equivalent to "install this extension". Bundled Quillins (shipped inside the QUILL install tree) are always discovered and are not affected by the SEC-8 lock.
+
+**Implementation map.** `quill/core/quillins/loader.py` (`install_extension`, `remove_extension`, `set_enabled`), `quill/ui/main_frame_quillins.py` (`QuillinsManagerMixin` — manager panel, Install from Folder button and handler).
+
+---
+
+### 5.84 Skill Quill Pack (.sqp) — multi-step AI workflows in plain text
+
+A `.sqp` (Skill Quill Pack) file is a Markdown document with YAML front matter where level-1 headings define sequential AI steps. It extends `.pqp` prompt packs from single instructions to multi-step workflows with parameters, variable chaining, and conditional branching.
+
+**Motivation.** Many real AI tasks are not single-shot prompts. Research then draft. Analyse then rewrite. Detect intent then branch. Encoding this logic in JSON means writing a DSL nobody can author without tooling. Writing it in Markdown means any user can open the file, read every step, and edit it — no schema browser, no visual designer. The skill is the document.
+
+**Key design choices:**
+- No streaming — each step sends a full prompt and receives a full response before the next step runs. This makes step outputs reliable as inputs to subsequent steps.
+- Synchronous execution from the caller's perspective; threading is the UI layer's responsibility.
+- Depth limit of 2 for nested skill calls to keep execution predictable.
+
+**File format (`quill.skill/1`).**
+
+```markdown
+---
+schema: quill.skill/1
+name: Research and Draft
+description: Extracts topic, gathers facts, drafts a paragraph.
+author: QUILL Project
+version: 1.0.0
+parameters:
+  - name: tone
+    label: Tone
+    type: choice
+    choices: [formal, conversational, neutral]
+    default: neutral
+---
+
+# Step 1: Extract topic
+
+Identify the main topic in: {selection}
+
+# Step 2: Research
+
+List five facts about "{step1.output}".
+
+# Step 3: Draft
+
+Write a {parameters.tone} paragraph weaving in those facts.
+Facts: {step2.output}
+
+```output
+format: text
+label: Drafted paragraph
+accept_into: selection
+```
+```
+
+**Special blocks inside steps:**
+
+| Block type | Purpose |
+| --- | --- |
+| `` `input` `` | Appends literal data to the prompt text |
+| `` `condition` `` | Branches execution: `if: "X" contains "Y" / then: step3 / else: step4` |
+| `` `output` `` | On last step: `format` (text/list/json), `label`, `accept_into` (selection/clipboard/none) |
+| `` `use-prompt` `` | Delegates to a named prompt from the Prompt Library |
+| `` `use-skill` `` | Calls another skill (depth-bounded) |
+
+**Variables.** `{selection}`, `{document}`, `{title}`, `{clipboard}`, `{stepN.output}`, `{parameters.name}`.
+
+**Validation tool.** `python -m quill.tools.sqp_validator <path>` validates one file or a directory. Exit 0 clean, exit 1 errors, `--strict` also checks for missing metadata.
+
+**Bundled skills.** The `ai-writing-skills` Quillin ships four sample skills: Accessible Rewrite, Research and Draft, Meeting Notes to Action Items, Argument Strengthener.
+
+**Implementation map.**
+
+| File | Role |
+| --- | --- |
+| `quill/core/skill_pack.py` | `SkillPack` dataclass, `.sqp` parser, validator, synchronous runner |
+| `quill/tools/sqp_validator.py` | CLI validator |
+| `quill/quillins_bundled/ai-writing-skills/` | Four bundled `.sqp` skill files |
+| `tests/unit/core/test_skill_pack.py` | 23 tests: parsing, validation, runner, branching, bundled files |
+
+---
+
+### 5.85 Portable API key store
+
+By default QUILL stores AI provider keys in the Windows Credential Manager, which ties them to the current Windows user account. Portable mode offers an alternative: a DPAPI-encrypted file (`keys.enc`) in the QUILL data directory, activated by setting `QUILL_PORTABLE=1`.
+
+**Motivation.** Some users run QUILL from a self-contained folder on a network share or external drive. They want all QUILL data — settings, data files, and keys — to live in one directory without requiring Credential Manager access on each machine. A DPAPI-encrypted file achieves this: everything stays in the folder, and the file is protected by the Windows user-account key.
+
+**Access priority chain (highest wins):**
+
+1. Environment variable (`QUILL_OPENROUTER_KEY`, `QUILL_OPENAI_KEY`, `QUILL_OLLAMA_KEY`, `QUILL_ASSISTANT_KEY`) — for CI pipelines and developer overrides.
+2. Portable file store (`keys.enc`) — when `QUILL_PORTABLE=1` is set.
+3. Windows Credential Manager — default for standard installations.
+
+**Activation.** Set `QUILL_PORTABLE=1` in the process environment before launching QUILL. No other configuration is needed. The `keys.enc` file is created automatically in `app_data_dir()` on first key save.
+
+**Security properties.** The file is encrypted with Windows DPAPI using a QUILL-specific entropy token. It is decryptable only on the same Windows machine by the same user account that encrypted it. Moving `keys.enc` to a different machine or a different Windows account will fail to decrypt; the user must re-enter their keys.
+
+**Implementation map.**
+
+| File | Role |
+| --- | --- |
+| `quill/platform/windows/credential_store.py` | Unified load/save/delete with env-var, portable file, and Credential Manager backends |
+| `quill/platform/windows/dpapi.py` | DPAPI `protect_secret`/`unprotect_secret` (existing) |
+| `quill/ui/ai_chat_dialog.py` | `_load_api_key`/`_save_api_key` updated to use credential_store |
+| `quill/core/assistant_ai.py` | `_load/save/delete_api_key_from_credential_manager` updated to use credential_store |
+
 ---
 
 ## 6. Spell checking deep dive
@@ -3909,3 +4305,324 @@ The governing rules remain the same throughout the roadmap: local-first processi
 
 - [x] Wire the `quill.core.menu_customization` model into an accessible Menu Editor UI for **top-level** menus: reorder, rename, show/hide, and one Reset to Factory Defaults, opened from Edit > Customize Menus... (`app.menu_editor`). The build applies the saved customization through a post-build transform pass on the menu bar that bails out untouched if anything looks unexpected.
 - [ ] Extend the Menu Editor to per-item reordering/hiding and editor context-menu entries (the `quill.core.menu_customization` model already supports both; the remaining work is the item-level UI and a stable item-key binding in the menu build).
+
+### 21.21 AI chat, Prompt Library, and Quillin Manager (Phase 2/3)
+
+- [x] Add `ask_ai` dialog with provider selection (OpenRouter, OpenAI, Ollama), model list, and prompt field. Smart focus: prompt field when configured, provider choice when not. A11Y-4 hardened.
+- [x] Add `check_grammar_with_ai()` command — sends selection or full document to AI; uses `ai_prompt_default_model` setting (falls back to `ai_chat_default_model`). Runs off UI thread.
+- [x] Add AI Prompt Library (`quill/core/prompt_library.py`) with 12 built-in prompts, full CRUD, enable/disable, per-prompt optional shortcut, and `.pqp` import/export.
+- [x] Add Prompt Library dialog (`quill/ui/prompt_library_dialog.py`) — searchable list, run with AI, new/edit/delete prompts, import/export `.pqp`.
+- [x] Add `ai_prompt_default_model` setting in `Preferences > AI`.
+- [x] Add bundled Quillin `ai-writing-prompts` with 7 prompts contributed to the Prompt Library at load time (no capability declaration needed; prompts.json sidecar pattern).
+- [x] Add `install_extension()` to `quill/core/quillins/loader.py` with path-containment enforcement.
+- [x] Add Install from Folder button to Quillin Manager; uses `wx.DirDialog` + `install_extension()`.
+- [x] Add `.pqp` (Prompt Quill Pack) file format: `{"schema": "quill.prompt-pack/1", "name": "...", "prompts": [...]}`.
+- [x] API keys stored exclusively in Windows Credential Manager (`quill-openrouter-api-key`, `quill-openai-api-key`, `quill-ollama-api-key`); never in `settings.json`.
+- [x] Add `.sqp` (Skill Quill Pack) file format: `quill.skill/1` schema; YAML front matter + Markdown steps; parameters, condition branching, output blocks, use-prompt/use-skill delegation.
+- [x] Add `quill/core/skill_pack.py`: parser, validator (`validate_skill`), synchronous runner (`run_skill`); no streaming by design.
+- [x] Add `quill/tools/sqp_validator.py`: CLI validator with `--strict` mode.
+- [x] Add bundled `ai-writing-skills` Quillin with 4 sample skills (Accessible Rewrite, Research and Draft, Meeting Notes to Action Items, Argument Strengthener).
+- [x] Add `tests/unit/core/test_skill_pack.py`: 23 tests covering parsing, validation, runner, condition branching, depth limit, and all bundled files.
+- [x] Add `quill/platform/windows/credential_store.py`: unified credential access with env-var, portable DPAPI file, and Credential Manager backends. Activated by `QUILL_PORTABLE=1`. Update `ai_chat_dialog.py` and `assistant_ai.py` to use it.
+
+---
+
+## §22. Startup Wizard — Personalise QUILL
+
+### §22.1 Overview
+
+The Startup Wizard is a first-run wizard that lets every user shape QUILL to their work and accessibility needs before the main frame appears. It is also re-runnable at any time via Help > Personalise QUILL. Features the user disables are completely hidden — no menus, no commands, no phantom shortcuts.
+
+The wizard is a `wx.adv.Wizard` subclass with nine `wx.adv.WizardPageSimple` pages. Every page announces its heading via a live region on `EVT_WIZARD_PAGE_CHANGED`. Focus on page change lands on the first interactive control. Show/hide of conditional sub-sections uses `sizer.Show()` + `Layout()` so no hidden control can receive keyboard focus.
+
+### §22.2 The Nine Pages
+
+1. **Welcome** — introductory text; no configuration.
+2. **Keyboard and Sound** — QUILL key (Caps Lock / Insert / None), sound effects, and (conditional) interface language selector when `.mo` files are present.
+3. **AI Writing Assistance** — enable/disable AI; if enabled, choose provider (OpenAI, OpenRouter, Ollama, Set up later), API key or Ollama host, and default model.
+4. **Remote File Editing** — enable/disable SSH/SFTP; optional inline site-entry form (friendly name, host, port, username).
+5. **QUILL Extensions (Quillins)** — enable/disable Quillin support; option to auto-install bundled extensions; read-only list of bundled Quillins.
+6. **Power Tools** — enable/disable the Power Tools menu and commands.
+7. **Notebook Workspace** — enable/disable multi-document notebook mode.
+8. **Keyboard Profile** — choose a starting keyboard profile (QUILL Default, Minimal, Screen Reader Friendly) from profiles scanned in `quill/core/keymap/`.
+9. **Summary and Finish** — read-only two-column list of every decision made in pages 2-8; Finish writes settings atomically.
+
+### §22.3 Feature Gating via FeatureManager
+
+`quill/core/feature_flags.py` defines a frozen `FeatureFlags` dataclass and `is_enabled(flag: str) -> bool`. The wizard writes a `feature_flags` block into `settings.json` via `write_json_atomic`. `MainFrame.__init__` loads flags before building menus, the command registry, and keybindings.
+
+The two network-capable gated features are:
+
+- `core.remote` — SSH/SFTP remote editing. When disabled, the Remote menu and all SSH commands are absent.
+- `future.ai` — AI writing assistance. When disabled, Ask Quill, Prompt Library, Skill Library, grammar check, and all AI commands are absent.
+
+Commands with `feature_tag = None` are always present (core editing). Commands whose tag is disabled are excluded from the command palette search and their keyboard bindings are not registered, so `Ctrl+?` discovery shows no ghost shortcuts.
+
+### §22.4 First-Run Detection and Re-run
+
+`setup_wizard_completed` in `settings.json` (type bool, default False) controls first-run detection. When the field is absent or False, `MainFrame.__init__` runs `run_setup_wizard(parent=None)` before any UI is shown, then reloads settings before building menus.
+
+Re-run opens the wizard in update mode with all pages pre-filled. Changed flags trigger `_apply_feature_flags()`, which rebuilds the affected menu groups, refreshes the command palette, re-applies the keymap profile, and announces the change — no restart required.
+
+### §22.5 Settings Additions
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `setup_wizard_completed` | bool | False | Suppresses wizard on next launch |
+| `feature_flags_ai` | bool | True | Master switch for all AI features |
+| `feature_flags_remote` | bool | True | Master switch for remote editing |
+| `feature_flags_quillins` | bool | True | Master switch for Quillins |
+| `feature_flags_power_tools` | bool | True | Master switch for Power Tools |
+| `feature_flags_notebook` | bool | True | Master switch for Notebook workspace |
+| `keymap_profile` | str | "default" | Active keyboard profile name |
+
+### §22.6 Implementation Status
+
+**SHIPPED.** Phases 1-3 complete: `setup_wizard.py`, `setup_wizard_pages.py`, `feature_flags.py`, `feature_registry.py`, and `check_feature_tags.py` CI gate are all in production. Phase 4 (additional keymap profiles beyond the shipped defaults) is in progress.
+
+---
+
+## §23. Context-Sensitive Help System
+
+### §23.1 Overview
+
+QUILL provides three help keystrokes that give the user immediate, contextual assistance without leaving the keyboard:
+
+| Key | Command | Behaviour |
+|---|---|---|
+| F1 | Help on This Control | Shows a small dialog describing the focused control |
+| Ctrl+F1 | Open User Guide | Opens docs/html/USER_GUIDE.html in the system browser |
+| Shift+F1 | What Can I Do Here? | Document-type context report (enhanced) |
+
+`F1` always returns something useful. There are three fallback levels: (1) named schema topic via `ctrl.GetName()`, (2) generic description by `ctrl.GetClassName()`, (3) control name + tooltip + prompt to open the User Guide.
+
+### §23.2 Architecture
+
+```
+quill/core/help/topics.json          schema: topic id, title, body, keystrokes, user_guide_section
+quill/core/help/renderer.py          render_live(), render_doc(), generate_markdown()
+quill/ui/context_help.py             ContextHelpDialog, ContextHelpMixin, describe_focused()
+quill/tools/build_docs.py            generates docs/CONTROL_REFERENCE.md from topics.json
+quill/tools/check_help_coverage.py   CI gate: stale entries fail; coverage gaps warn
+```
+
+Topic IDs are derived from `ctrl.GetName()`. Dialog controls are prefixed with the dialog's accessible name: `connect_to_ssh_server.host_or_ip_address`. This works because the dialog contract already requires every interactive control to carry a meaningful `SetName()`.
+
+`ContextHelpMixin` is added to `MainFrame`'s MRO. It tracks the last-focused control via `EVT_CHILD_FOCUS` so that navigating to `Help > Help on This Control` via the menu bar still describes the correct control.
+
+### §23.3 ContextHelpDialog Screen-Reader Design
+
+The dialog contains a single read-only `wx.TextCtrl` (multi-line, no border, dialog background colour) with combined title and body text, plus a Close button. Using one TextCtrl means NVDA reads the dialog title then the entire content line by line on open, without the user tabbing between controls first. Focus lands on the TextCtrl. Closing the dialog restores focus to the described control.
+
+The dialog is registered in `dialog_inventory.json`. `affirmative_id = wx.ID_CLOSE`. Escape also closes it.
+
+### §23.4 Topics Coverage
+
+The schema (`quill/core/help/topics.json`) currently contains 109 topics covering:
+
+- Main editor surface, status bar, document tabs
+- All major dialogs: Find/Replace, Spell Check, AI Assistant, Remote/SSH, Preferences pages
+- Startup Wizard pages (F1 on any wizard control explains the effect of each choice)
+- Feature profiles, keyboard packs, read-aloud settings, GLOW workflows
+
+Full coverage target is 250 topics (all `SetName()` calls in `quill/ui/`).
+
+### §23.5 CI Gate
+
+`quill/tools/check_help_coverage.py` enforces two rules:
+
+- **Blocking:** A topic ID in `topics.json` has no matching `SetName()` call in `quill/ui/`. Stale entries describe UI that no longer exists.
+- **Warning (non-blocking until `--strict`):** A `SetName()` call in `quill/ui/` has no matching topic. Coverage gap printed to stdout during the authoring sprint.
+
+### §23.6 Implementation Status
+
+**SHIPPED.** Phase A (infrastructure: `topics.json`, `renderer.py`, `context_help.py`, F1/Ctrl+F1/Shift+F1 wiring) complete. Phase B (schema authoring sprint, 109 of 250 topics complete) in progress. Phase D (coverage gate) complete. Phases C (documentation HTML build) and E (user guide restructure) in progress.
+
+---
+
+## §24. Translation and Community Localization
+
+### §24.1 Overview
+
+QUILL uses GNU gettext for all user-visible strings, with Babel for POT extraction and Crowdin for community translation management. The design follows the NV Access NVDA translation model, which has produced high-quality, screen-reader-tested translations across 50+ languages.
+
+Speech announcement strings are first-class translation targets. They are marked with `#. SPEECH:` extracted comments in the POT file so translators can filter them for review and test them with a native screen reader in the target language.
+
+### §24.2 Pipeline
+
+```
+quill/core/i18n.py          _(), ngettext(), lazy_gettext(), init_locale()
+babel.cfg                   Babel extraction configuration
+quill/locale/quill.pot      Master string template (auto-generated by pybabel extract)
+quill/locale/{lang}/LC_MESSAGES/quill.po   Per-language translation (community, via Crowdin)
+quill/locale/{lang}/LC_MESSAGES/quill.mo   Compiled binary (generated by pybabel compile)
+quill/tools/check_translation.py           CI gate
+```
+
+`init_locale()` is called in `MainFrame.__init__` before any UI string. The `language` setting (BCP 47 tag, default empty = OS locale) controls the active locale. The startup wizard's Page 2 shows a language selector when more than one `.mo` file is present.
+
+### §24.3 Crowdin Components
+
+Three Crowdin components manage translation content:
+
+1. **UI strings** — source `quill/locale/quill.pot`, target `quill/locale/{lang}/LC_MESSAGES/quill.po`
+2. **Context-sensitive help** — source `quill/core/help/topics.json`, target `quill/core/help/topics_{lang}.json`
+3. **Quillin manifests** — source each bundled `manifest.json`, target `manifest_{lang}.json`
+
+Auto-PR on approved translation; PRs land on `main` after the CI gate passes.
+
+### §24.4 Four-Tier Role Model
+
+| Role | Responsibilities |
+|---|---|
+| Translator | Suggests translations in Crowdin |
+| Proofreader | Approves or rejects suggestions for their language |
+| Language Coordinator | Manages proofreaders, owns language quality, reviews PRs |
+| Translation Coordinator | Project-level; runs translation calls, onboards teams, resolves disputes |
+
+The Translation Coordinator is a named maintainer role in `MAINTAINERS.md`.
+
+### §24.5 Language Priority
+
+- **Tier 1 (target: ship with QUILL 1.0):** French (fr), German (de), Spanish (es)
+- **Tier 2 (close follow-on):** Portuguese/Brazilian Portuguese (pt_BR), Japanese (ja), Italian (it)
+- **Tier 3 (RTL, requires layout work):** Arabic (ar), Hebrew (he)
+
+Completeness thresholds: 90% for established languages, 70% for a language's first release. Languages below threshold are excluded from that release's language selector.
+
+### §24.6 CI Gate
+
+`quill/tools/check_translation.py` checks: POT currency (dry-run pybabel extract + diff), completeness threshold per language, mnemonic `&` preservation, placeholder `{n}` / `%(count)s` preservation, and no empty translated strings.
+
+### §24.7 Implementation Status
+
+**Phase 1 infrastructure complete:** `quill/core/i18n.py`, `babel.cfg`, `check_translation.py` gate, `language` setting, and `init_locale()` call are all in production. **Phase 2 (string marking sprint)** is in progress — sweeping all user-visible strings in `quill/ui/` and `quill/core/` to wrap them with `_()`. Pilot languages (fr, de, es) are pending community formation and a named Translation Coordinator.
+
+---
+
+## §25. GitHub Remote File Access
+
+### §25.1 Overview
+
+QUILL provides first-class GitHub repository browsing, remote file opening, and file commit-back through **File > Open from Remote > GitHub Repository...** This lets users open files from any public or private GitHub repository without requiring the GitHub CLI, GitHub Desktop, local Git, VS Code, or command-line interaction.
+
+The implementation uses **PyGithub** behind QUILL's own `RemoteProvider` abstraction (`quill/core/github/provider.py`), which keeps the UI layer stable if the backend changes (e.g. direct REST, GitLab, Bitbucket).
+
+### §25.2 Menu Structure
+
+Added to the existing **File > Open from Remote** submenu:
+
+```
+File > Open from Remote
+  ...FTP / SFTP / WebDAV / S3 items (existing)...
+  ---
+  GitHub Repository...
+  GitHub File URL...
+  Save to GitHub...
+  ---
+  Manage Remote Sites...   (existing)
+  Manage GitHub Accounts...
+```
+
+All four GitHub commands are also available through the Command Palette.
+
+### §25.3 Feature Flag
+
+Feature ID: `core.github_remote`  
+Category: `core`  
+Privacy: `network after confirmation`  
+Dependencies: `core.remote`  
+Optional dep: `pip install "quill[github]"` (installs PyGithub >= 2.0)
+
+When the flag is off, all four GitHub menu items are absent. When PyGithub is not installed, QUILL shows a friendly message with the install command.
+
+### §25.4 Authentication
+
+**First-run consent.** The first time the user opens a GitHub feature, a one-time consent dialog explains that QUILL will connect to api.github.com for the user's chosen repositories. Consent is stored in `github_consent.json` in the user data directory.
+
+**Anonymous access.** Public repositories are browsable without a token. Rate limits are lower (60 requests/hour vs 5,000 with auth).
+
+**Personal Access Token.** The user pastes a token with at minimum `public_repo` scope (add `repo` for private repositories). The token is stored in **Windows Credential Manager** under the target name `quill-github-token` using DPAPI. Never stored in `settings.json` or any plaintext file.
+
+**Token management.** File > Open from Remote > Manage GitHub Accounts... lets the user view the stored identity, add/replace the token, and sign out (deletes the stored token).
+
+### §25.5 Repository Browser
+
+A native `wx.Dialog` with:
+
+- **Account label** (signed-in identity or "Anonymous").
+- **Repository field** (`owner/repo` text entry) + **Load** button. Enter key also triggers Load.
+- **Branch/tag choice** (populated after Load; defaults to the repository's default branch).
+- **Current path label** (breadcrumb).
+- **File list** (`wx.ListCtrl`, single-select, columns: Name / Type / Size). Directories appear first, sorted A-Z; files follow, sorted A-Z.
+- **Status label** (loading state, error messages, item count).
+- **Buttons**: Open File, Go Up, Refresh, Copy URL, Cancel.
+
+Keyboard shortcuts:
+- Enter on a folder: navigates into it.
+- Enter on a file: same as Open File.
+- Backspace: go up one level (when not at root).
+- F5: refresh.
+
+All controls have accessible names. Long operations (repository load, directory listing, file fetch) run on daemon threads; the dialog remains interactive during loading.
+
+### §25.6 GitHub File URL
+
+**File > Open from Remote > GitHub File URL...** accepts a pasted `https://github.com/owner/repo/blob/branch/path` URL and opens the file directly without requiring the user to navigate the browser. Useful for sharing links.
+
+### §25.7 Save to GitHub
+
+**File > Open from Remote > Save to GitHub...** is available when the active document was opened from GitHub. QUILL prompts for a commit message, then commits the current document text to the same repository, branch, and path using the GitHub API (`update_file`). The file SHA is tracked for optimistic concurrency; if the file has changed remotely since it was opened, GitHub returns a 409 and QUILL shows a clear error.
+
+Requirements: the stored token must have `repo` (write) scope on the target repository.
+
+This command is intentionally not wired to the regular Save shortcut. The user must invoke it explicitly from the menu or Command Palette to avoid accidental commits.
+
+### §25.8 Remote Origin Metadata
+
+When a file is opened from GitHub, QUILL stores a `RemoteOrigin` dataclass keyed by the local temp path:
+
+```python
+RemoteOrigin(
+    provider="github",
+    account_id="github:login",
+    repository="owner/repo",
+    ref="main",
+    path="docs/example.md",
+    sha="abc123...",
+    url="https://github.com/owner/repo/blob/main/docs/example.md",
+    opened_at="2026-06-12T..."
+)
+```
+
+The tab's `source_label` is set to `GitHub: owner/repo (branch)` and shown in the title bar.
+
+### §25.9 Security Properties
+
+- No network access until the user explicitly opens a GitHub feature and accepts the consent dialog.
+- Tokens stored via DPAPI; never logged, never in diagnostic bundles.
+- File size limit: 1 MB (GitHub API limit for the contents endpoint). Files exceeding this are rejected with a clear error.
+- Save-back requires explicit user action and a commit message.
+- No silent background syncing or polling.
+
+### §25.10 Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `quill/core/github/__init__.py` | Package marker |
+| `quill/core/github/models.py` | `RemoteAccount`, `RemoteRepository`, `RemoteRef`, `RemoteNode`, `RemoteFile`, `RemoteOrigin`, `BrowseResult` |
+| `quill/core/github/provider.py` | Abstract `RemoteProvider` interface |
+| `quill/core/github/github_provider.py` | `GitHubRemoteProvider` (PyGithub) |
+| `quill/core/github/token_store.py` | Credential Manager token storage |
+| `quill/core/github/consent.py` | One-time consent state |
+| `quill/ui/github_dialogs.py` | Consent, sign-in, manage-accounts, repository browser dialogs |
+| `quill/ui/main_frame_github.py` | `GitHubRemoteMixin` — orchestration and threading |
+
+### §25.11 Implementation Status
+
+**SHIPPED** (2026-06-12). All five implementation phases complete:
+- Phase 1: Core service layer and models.
+- Phase 2: Authentication (token + anonymous).
+- Phase 3: Repository browser dialog.
+- Phase 4: Remote document integration (origin metadata, title, save-back).
+- Phase 5: Gate compliance (banned patterns, dialog inventory, module size budget, mypy overrides).

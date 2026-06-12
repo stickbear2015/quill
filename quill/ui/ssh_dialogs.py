@@ -61,32 +61,41 @@ class QuickConnectDialog:
         grid = wx.FlexGridSizer(0, 2, 8, 8)
         grid.AddGrowableCol(1, 1)
 
-        def row(label_text: str, control: object) -> None:
+        def row(label_text: str, make_ctrl) -> object:
             grid.Add(wx.StaticText(self.dialog, label=label_text), 0, wx.ALIGN_CENTER_VERTICAL)
-            grid.Add(control, 1, wx.EXPAND)
+            ctrl = make_ctrl()
+            grid.Add(ctrl, 1, wx.EXPAND)
+            return ctrl
 
-        self.host = wx.TextCtrl(self.dialog, value=site.host)
+        self.host = row("Host or IP address", lambda: wx.TextCtrl(self.dialog, value=site.host))
         self.host.SetName("Host or IP address")
-        row("Host or IP address", self.host)
-        self.port = wx.SpinCtrl(self.dialog, min=1, max=65535, initial=site.port or DEFAULT_PORT)
+        self.port = row(
+            "Port",
+            lambda: wx.SpinCtrl(self.dialog, min=1, max=65535, initial=site.port or DEFAULT_PORT),
+        )
         self.port.SetName("Port")
-        row("Port", self.port)
-        self.username = wx.TextCtrl(self.dialog, value=site.username)
+        self.username = row("Username", lambda: wx.TextCtrl(self.dialog, value=site.username))
         self.username.SetName("Username")
-        row("Username", self.username)
-        self.auth = wx.Choice(self.dialog, choices=[label for label, _v in _AUTH_LABELS])
+        self.auth = row(
+            "Authentication",
+            lambda: wx.Choice(self.dialog, choices=[lbl for lbl, _v in _AUTH_LABELS]),
+        )
         self.auth.SetName("Authentication")
         self.auth.SetSelection(_auth_index(site.auth))
-        row("Authentication", self.auth)
-        self.password = wx.TextCtrl(self.dialog, style=wx.TE_PASSWORD)
+        self.password = row(
+            "Password / key passphrase",
+            lambda: wx.TextCtrl(self.dialog, style=wx.TE_PASSWORD),
+        )
         self.password.SetName("Password or key passphrase")
-        row("Password / key passphrase", self.password)
-        self.key_path = wx.TextCtrl(self.dialog, value=site.key_path)
+        self.key_path = row(
+            "Private key file", lambda: wx.TextCtrl(self.dialog, value=site.key_path)
+        )
         self.key_path.SetName("Private key file")
-        row("Private key file", self.key_path)
-        self.default_dir = wx.TextCtrl(self.dialog, value=site.default_dir or "/")
+        self.default_dir = row(
+            "Start directory",
+            lambda: wx.TextCtrl(self.dialog, value=site.default_dir or "/"),
+        )
         self.default_dir.SetName("Start directory")
-        row("Start directory", self.default_dir)
 
         root = wx.BoxSizer(wx.VERTICAL)
         root.Add(grid, 1, wx.EXPAND | wx.ALL, 12)
@@ -135,32 +144,53 @@ class SiteEditDialog:
         grid = wx.FlexGridSizer(0, 2, 8, 8)
         grid.AddGrowableCol(1, 1)
 
-        def row(label_text: str, control: object) -> None:
+        def row(label_text: str, make_ctrl) -> object:
             grid.Add(wx.StaticText(self.dialog, label=label_text), 0, wx.ALIGN_CENTER_VERTICAL)
-            grid.Add(control, 1, wx.EXPAND)
+            ctrl = make_ctrl()
+            grid.Add(ctrl, 1, wx.EXPAND)
+            return ctrl
 
-        self.name = wx.TextCtrl(self.dialog, value=site.name)
+        self.name = row("Friendly name", lambda: wx.TextCtrl(self.dialog, value=site.name))
         self.name.SetName("Friendly name")
-        row("Friendly name", self.name)
-        self.host = wx.TextCtrl(self.dialog, value=site.host)
+        self.host = row("Host or IP address", lambda: wx.TextCtrl(self.dialog, value=site.host))
         self.host.SetName("Host or IP address")
-        row("Host or IP address", self.host)
-        self.port = wx.SpinCtrl(self.dialog, min=1, max=65535, initial=site.port or DEFAULT_PORT)
+        self.port = row(
+            "Port",
+            lambda: wx.SpinCtrl(self.dialog, min=1, max=65535, initial=site.port or DEFAULT_PORT),
+        )
         self.port.SetName("Port")
-        row("Port", self.port)
-        self.username = wx.TextCtrl(self.dialog, value=site.username)
+        self.username = row("Username", lambda: wx.TextCtrl(self.dialog, value=site.username))
         self.username.SetName("Username")
-        row("Username", self.username)
-        self.auth = wx.Choice(self.dialog, choices=[label for label, _v in _AUTH_LABELS])
+        self.auth = row(
+            "Authentication",
+            lambda: wx.Choice(self.dialog, choices=[lbl for lbl, _v in _AUTH_LABELS]),
+        )
         self.auth.SetName("Authentication")
         self.auth.SetSelection(_auth_index(site.auth))
-        row("Authentication", self.auth)
+        key_picker = wx.BoxSizer(wx.HORIZONTAL)
         self.key_path = wx.TextCtrl(self.dialog, value=site.key_path)
-        self.key_path.SetName("Private key file")
-        row("Private key file", self.key_path)
-        self.default_dir = wx.TextCtrl(self.dialog, value=site.default_dir)
+        self.key_path.SetName("Private key file path")
+        self.key_path.SetToolTip(
+            "Path to your SSH private key file on disk. OpenSSH, PEM, and PuTTY "
+            "(.ppk) formats are supported. The file itself is not opened until "
+            "you click Save and then Connect from the site manager."
+        )
+        key_picker.Add(self.key_path, 1, wx.ALIGN_CENTER_VERTICAL)
+        self.key_browse = wx.Button(self.dialog, label="Browse...")
+        self.key_browse.SetName("Browse for private key file")
+        self.key_browse.SetToolTip("Pick the SSH private key file on disk")
+        self.key_browse.Bind(wx.EVT_BUTTON, self._on_browse_key)
+        key_picker.Add(self.key_browse, 0, wx.LEFT, 6)
+        grid.Add(
+            wx.StaticText(self.dialog, label="Private key file (path on disk)"),
+            0,
+            wx.ALIGN_CENTER_VERTICAL,
+        )
+        grid.Add(key_picker, 1, wx.EXPAND)
+        self.default_dir = row(
+            "Default directory", lambda: wx.TextCtrl(self.dialog, value=site.default_dir)
+        )
         self.default_dir.SetName("Default directory")
-        row("Default directory", self.default_dir)
 
         root = wx.BoxSizer(wx.VERTICAL)
         root.Add(
@@ -179,6 +209,23 @@ class SiteEditDialog:
         buttons.Add(wx.Button(self.dialog, wx.ID_CANCEL, label="Cancel"), 0)
         root.Add(buttons, 0, wx.EXPAND | wx.ALL, 12)
         self.dialog.SetSizerAndFit(root)
+
+    def _on_browse_key(self, _event: object) -> None:
+        wx = self._wx
+        style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        with wx.FileDialog(
+            self.dialog,
+            "Choose SSH private key file",
+            wildcard=(
+                "All private keys (*.ppk;*.pem;*.key;id_*)|*.ppk;*.pem;*.key;id_*|"
+                "PuTTY (*.ppk)|*.ppk|"
+                "OpenSSH / PEM (*.pem;*.key;id_*)|*.pem;*.key;id_*|"
+                "All files (*.*)|*.*"
+            ),
+            style=style,
+        ) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.key_path.SetValue(dialog.GetPath())
 
     def show(self) -> SiteConfig | None:
         wx = self._wx

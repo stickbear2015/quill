@@ -250,6 +250,45 @@ def remove_extension(extension_id: str, *, root: Path | None = None) -> bool:
     return removed
 
 
+def install_extension(source_dir: Path, *, root: Path | None = None) -> str:
+    """Install or update a Quillin by copying its directory into the extensions root.
+
+    ``source_dir`` must contain a valid ``manifest.json``. Returns the extension
+    id on success. Raises ``ValueError`` when the manifest is absent or unreadable,
+    and ``ManifestError`` when it fails validation.
+
+    Path containment is enforced: the destination is always directly inside
+    ``extensions_root()`` — a crafted id cannot install outside it.
+    """
+
+    import json as _json
+
+    from quill.core.quillins.model import ManifestError
+
+    manifest_path = source_dir / _MANIFEST_FILENAME
+    if not manifest_path.is_file():
+        raise ValueError(f"No manifest.json in {source_dir}")
+    try:
+        raw = _json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, _json.JSONDecodeError) as exc:
+        raise ValueError(f"manifest.json unreadable: {exc}") from exc
+    if not isinstance(raw, dict) or not isinstance(raw.get("id"), str):
+        raise ManifestError(["manifest must have a string 'id' field"])
+    extension_id: str = raw["id"]
+
+    dest_root = extensions_root(root=root).resolve()
+    dest = (dest_root / extension_id).resolve()
+    if dest.parent != dest_root:
+        raise ValueError(f"Extension id '{extension_id}' would install outside extensions root")
+
+    dest_root.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        shutil.rmtree(dest)
+    shutil.copytree(source_dir, dest)
+    set_enabled(extension_id, True, root=root)
+    return extension_id
+
+
 # -- Bundled Quillins (Tier C) -------------------------------------------------
 
 

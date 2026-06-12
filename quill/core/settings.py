@@ -90,6 +90,11 @@ class Settings:
     assistant_enabled: bool = False
     assistant_prompt_style: str = "balanced"
     markdown_clipboard_format: str = "html"
+    auto_clean_html_paste: bool = False
+    abbreviation_expansion: bool = True
+    abbreviation_expansion_sound: bool = False
+    abbreviation_expansion_sound_file: str = ""
+    multi_press_window_ms: int = 400
     dictation_engine: str = "vosk"
     dictation_language: str = "en-US"
     dictation_model: str = "base"
@@ -165,6 +170,20 @@ class Settings:
     # host keys cause the connection to be rejected. When true, the first
     # time we see a key we silently cache it (paramiko.AutoAddPolicy).
     ssh_trust_first_use: bool = False
+    # AI chat (Phase 2): Ask AI dialog provider/model defaults.
+    ai_chat_default_provider: str = "openrouter"
+    ai_chat_default_model: str = ""
+    ollama_base_url: str = "http://localhost:11434"
+    # AI prompts (Phase 3): separate default model for prompt-library runs.
+    ai_prompt_default_model: str = ""
+    # I18N: BCP 47 language tag for the UI; empty string means "use OS default".
+    language: str = ""
+    # WIZARD: True once the first-run setup wizard has completed.
+    setup_wizard_completed: bool = False
+    # QDC: Developer Console settings.
+    console_enabled: bool = True
+    console_python_timeout: int = 30
+    console_typescript_timeout: int = 30
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Settings:
@@ -199,9 +218,8 @@ class Settings:
         word_open_mode = str(data.get("word_open_mode", "prompt")).strip().lower()
         if word_open_mode not in {"prompt", "text", "structured"}:
             word_open_mode = "prompt"
-        editor_surface = str(data.get("editor_surface", "plain")).strip().lower()
-        if editor_surface not in {"plain", "rich"}:
-            editor_surface = "plain"
+        # core.rich_text_lens is locked_off; always "plain" regardless of stored value.
+        editor_surface = "plain"
         save_as_surface_sync = str(data.get("save_as_surface_sync", "prompt")).strip().lower()
         if save_as_surface_sync not in {"prompt", "always", "never"}:
             save_as_surface_sync = "prompt"
@@ -471,6 +489,31 @@ class Settings:
         glow_pii_redaction_consent = bool(data.get("glow_pii_redaction_consent", False))
         glow_language_processing_consent = bool(data.get("glow_language_processing_consent", False))
         ssh_trust_first_use = bool(data.get("ssh_trust_first_use", False))
+        ai_chat_default_provider = (
+            str(data.get("ai_chat_default_provider", "openrouter")).strip() or "openrouter"
+        )
+        ai_chat_default_model = str(data.get("ai_chat_default_model", ""))
+        ollama_base_url = (
+            str(data.get("ollama_base_url", "http://localhost:11434")).strip()
+            or "http://localhost:11434"
+        )
+        ai_prompt_default_model = str(data.get("ai_prompt_default_model", ""))
+        language = str(data.get("language", "")).strip()
+        setup_wizard_completed = bool(data.get("setup_wizard_completed", False))
+        console_enabled = bool(data.get("console_enabled", True))
+        try:
+            console_python_timeout = int(data.get("console_python_timeout", 30))
+        except (TypeError, ValueError):
+            console_python_timeout = 30
+        try:
+            console_typescript_timeout = int(data.get("console_typescript_timeout", 30))
+        except (TypeError, ValueError):
+            console_typescript_timeout = 30
+        abbreviation_expansion = bool(data.get("abbreviation_expansion", True))
+        abbreviation_expansion_sound = bool(data.get("abbreviation_expansion_sound", False))
+        abbreviation_expansion_sound_file = str(data.get("abbreviation_expansion_sound_file", ""))
+        raw_mp = int(data.get("multi_press_window_ms", 400))
+        multi_press_window_ms = max(100, min(1000, raw_mp))
         if recent_files_limit < 1:
             recent_files_limit = 1
         if recent_files_limit > 50:
@@ -608,6 +651,19 @@ class Settings:
             glow_pii_redaction_consent=glow_pii_redaction_consent,
             glow_language_processing_consent=glow_language_processing_consent,
             ssh_trust_first_use=ssh_trust_first_use,
+            ai_chat_default_provider=ai_chat_default_provider,
+            ai_chat_default_model=ai_chat_default_model,
+            ollama_base_url=ollama_base_url,
+            ai_prompt_default_model=ai_prompt_default_model,
+            abbreviation_expansion=abbreviation_expansion,
+            abbreviation_expansion_sound=abbreviation_expansion_sound,
+            abbreviation_expansion_sound_file=abbreviation_expansion_sound_file,
+            multi_press_window_ms=multi_press_window_ms,
+            language=language,
+            setup_wizard_completed=setup_wizard_completed,
+            console_enabled=console_enabled,
+            console_python_timeout=console_python_timeout,
+            console_typescript_timeout=console_typescript_timeout,
         )
 
 

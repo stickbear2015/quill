@@ -1,0 +1,41 @@
+---
+schema: quill.skill/1
+name: Accessible Rewrite
+description: Rewrites selected text for plain-language accessibility. Analyses issues first, then produces a targeted rewrite that preserves all factual content.
+author: QUILL Project
+version: 1.0.0
+parameters:
+  - name: reading_level
+    label: Target reading level
+    type: choice
+    choices: [Grade 6, Grade 8, Grade 10, No target]
+    default: Grade 8
+---
+
+# Step 1: Analyse accessibility issues
+
+Review the following text for plain-language accessibility issues. List the problems as a numbered list. Focus on: sentence length (over 25 words), passive voice, unexplained jargon or acronyms, abstract nouns where concrete ones would serve better, and complex nested clauses. Be concise — one clear problem per line. If the text has no issues, say "No issues found."
+
+```input
+{selection}
+```
+
+# Step 2: Rewrite for accessibility
+
+Rewrite the text below to fix the issues identified in Step 1. Requirements:
+- Target reading level: {parameters.reading_level}
+- Preserve all factual content — do not add or remove information
+- Keep the same structure (paragraphs, lists) unless restructuring directly helps clarity
+- Do not add a preamble; return only the rewritten text
+
+Original text:
+{selection}
+
+Issues to fix:
+{step1.output}
+
+```output
+format: text
+label: Rewritten text
+accept_into: selection
+```

@@ -190,9 +190,13 @@ class CommandPaletteDialog:
             else:
                 self.status.SetLabel(msg)
             return
+        self._last_run_id: str | None = command.id
         self._registry.run(command.id)
         self._usage = record_palette_usage(self._usage, command.id)
         save_palette_usage(self._usage)
+
+    def last_run_command_id(self) -> str | None:
+        return getattr(self, "_last_run_id", None)
 
 
 class GoToAnythingDialog:

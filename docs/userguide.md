@@ -17,6 +17,7 @@ Quill is also in beta. Expect polish, depth, and real daily utility. Also expect
 - [Start Here](#start-here)
 - [What Quill Feels Like](#what-quill-feels-like)
 - [Your First Session](#your-first-session)
+- [Getting Around QUILL](#getting-around-quill)
 - [Command-Line Launching](#command-line-launching)
 - [The Main Window](#the-main-window)
 - [The Menu Bar Reference](#the-menu-bar-reference)
@@ -42,23 +43,33 @@ Quill is also in beta. Expect polish, depth, and real daily utility. Also expect
   - [Excel-style spreadsheets (.xlsx and .xls)](#excel-style-spreadsheets-xlsx-and-xls)
   - [PDF and OCR-derived text](#pdf-and-ocr-derived-text)
   - [Remote files (FTP, SFTP, HTTPS, WebDAV, S3)](#remote-files-ftp-sftp-https-webdav-s3)
+  - [GitHub Remote Files](#github-remote-files)
 - [Help, Learning, and Daily Confidence](#help-learning-and-daily-confidence)
+  - [Context-Sensitive Help (F1)](#context-sensitive-help-f1)
+  - [Personalising QUILL](#personalising-quill)
 - [Translation and Community Localization](#translation-and-community-localization)
+  - [How the Translation Pipeline Works](#how-the-translation-pipeline-works)
+  - [Contributing Translations](#contributing-translations)
+  - [Translation Roles and Responsibilities](#translation-roles-and-responsibilities)
+  - [Speech String Guidelines](#speech-string-guidelines)
+- [Checking for Updates](#checking-for-updates)
 - [Beta Feedback and Bug Reporting](#beta-feedback-and-bug-reporting)
 - [A Fast Shortcut Tour](#a-fast-shortcut-tour)
+- [Control Reference](#control-reference)
 
 ## Start Here
 
 If you only have five minutes, do this:
 
-1. Press `Ctrl+N` to create a new document, or press `Ctrl+O` to open one.
-2. Type a few lines.
-3. Press `Ctrl+Shift+P` to open the Command Palette.
-4. Type `guide`, `spell`, `compare`, or `glow` and notice how quickly Quill turns intent into action.
+1. The first time QUILL starts, the **Personalise QUILL** wizard offers to set up your keyboard layout, profile, and optional features in about two minutes. Complete it or dismiss it; you can re-run it from **Help → Personalise QUILL** at any time.
+2. Press `Ctrl+N` to create a new document, or press `Ctrl+O` to open one.
+3. Type a few lines.
+4. Press `Ctrl+Shift+P` to open the Command Palette. Type `guide`, `spell`, `compare`, or `glow` and notice how quickly Quill turns intent into action.
 5. Press `F6` to move into the status bar and hear how Quill treats even the bottom of the window as a working surface.
 6. Press `F7` for spell check, `Ctrl+F` to search, or `Ctrl+K` to insert a link.
+7. Press `F1` on any control to hear what it does and see its keyboard shortcuts.
 
-If you ever feel lost, use **Help → What Can I Do Here?**. Think of that command as the editor quietly putting a mentor beside you.
+If you ever feel lost, press `F1` for immediate help on the focused control, or use **Help → What Can I Do Here?** for document-context guidance. Think of those commands as the editor quietly putting a mentor beside you.
 
 ## What Quill Feels Like
 
@@ -88,6 +99,48 @@ From there, a natural first session looks like this:
 6. Open **Help → Open Keyboard Reference** to see the exact shortcuts that exist in your current configuration, including your keyboard pack and any custom bindings.
 
 That first session matters because it teaches the most important Quill habit: you do not need to hunt. If an action exists, Quill wants you to be able to reach it from where you already are.
+
+## Getting Around QUILL
+
+QUILL is designed so you never need to memorize an action to reach it.
+
+### F1 — help on the focused control
+
+Press `F1` on any focusable control — a dialog field, a button, a menu item, the editor itself — and a small help dialog opens. It tells you what the control does and what keyboard shortcuts apply to it. The full text lands in one read-only field so your screen reader announces everything in one pass when the dialog opens.
+
+- `F1` — help on the focused control
+- `Ctrl+F1` — open the full User Guide
+- `Shift+F1` — open "What Can I Do Here?" for the active document context
+
+See [Context-Sensitive Help (F1)](#context-sensitive-help-f1) for full details.
+
+### The QUILL key
+
+The **QUILL key** is `Ctrl+Shift+Grave` (the key above Tab). Press it once to arm a one-shot prefix, then follow with a second key to perform a command. Press it twice to lock QUILL Quick Nav mode until `Esc`.
+
+Common QUILL-key chords:
+
+| Chord | Command |
+|-------|---------|
+| QUILL key, then `N` | Enter Quick Nav browse mode |
+| QUILL key, then `G` | Open Go to Anything |
+| QUILL key, then `M` | Paste HTML clipboard as Markdown |
+| QUILL key, then `R` | Open file from remote |
+| QUILL key, then `A` | Selection actions |
+| QUILL key, then `?` | Show the QUILL key cheat sheet |
+| QUILL key, then `Esc` | Cancel the prefix |
+
+### Command Palette
+
+`Ctrl+Shift+P` opens the Command Palette — a searchable list of every registered command. Type any part of a command name to filter. Press Enter to run it. This is the fastest way to reach any action without memorizing its key or menu path. Searching `guide`, `spell`, `compare`, or `glow` from the palette is a good first practice.
+
+### Navigation anchors
+
+The status bar (`F6` to focus it) is a working surface, not decoration. Each cell announces meaningful information and most cells open a related dialog when you press Enter or click. `Shift+F6` moves focus back to the editor.
+
+Reach any menu from the keyboard: `Alt+F` for File, `Alt+E` for Edit, `Alt+V` for View, `Alt+T` for Tools, `Alt+H` for Help. All menu items have keyboard mnemonics.
+
+The Navigate menu groups document-level movement: go to line, go to heading, go to entry in notebook, heading organizer, outline navigator, back and forward location history, and structural next/previous. When you need to move across a large document, start there.
 
 ## Command-Line Launching
 
@@ -705,6 +758,139 @@ Use the familiar commands first:
 
 Quill adds two especially useful ideas on top of that.
 
+### Copy Tray
+
+Copy Tray is **twelve** independently addressable clipboard slots that survive application restarts. Each slot holds text you copy there explicitly. Unlike the system clipboard — shared across every application and reset on every copy — Copy Tray slots belong exclusively to QUILL and hold their contents until you replace or clear them.
+
+**Pasting from a slot is a single chord: hold `Ctrl+Shift` and press a number key.**
+
+| Key | What happens |
+| --- | --- |
+| `Ctrl+Shift+1` through `Ctrl+Shift+9` | Paste from slots 1–9 |
+| `Ctrl+Shift+0` | Paste from slot 10 |
+| `Ctrl+Shift+-` | Paste from slot 11 |
+| `Ctrl+Shift+=` | Paste from slot 12 |
+
+**Copying to a slot uses the QUILL key prefix followed by the same key with Shift:**
+
+| Key | What happens |
+| --- | --- |
+| `Ctrl+Shift+Grave, Shift+1` through `Shift+9` | Copy selection to slots 1–9 |
+| `Ctrl+Shift+Grave, Shift+0` | Copy selection to slot 10 |
+| `Ctrl+Shift+Grave, Shift+-` | Copy selection to slot 11 |
+| `Ctrl+Shift+Grave, Shift+=` | Copy selection to slot 12 |
+
+**Multi-press paste.** Press the paste chord multiple times quickly:
+
+- **Single press** — paste the slot's content at the cursor (standard behaviour).
+- **Double press** — peek: QUILL announces the slot's content without pasting it. Useful to check what a slot holds before committing to a paste.
+- **Triple press** — open the Copy Tray dialog directly, focused on that slot.
+
+**Copy to Next Empty Slot.** `Edit > Copy Tray > Copy to Next Empty Slot` copies the selection to the first unoccupied (and unpinned) slot in order 1–12 and announces which one: "Copied to slot 4 (first empty)." If all twelve slots are occupied, QUILL tells you rather than silently overwriting anything.
+
+**Search Tray Slots.** `Edit > Copy Tray > Search Tray Slots...` opens a small search dialog. Type any word or phrase; QUILL searches all slot text and labels and announces matching slots. Press the corresponding digit key to paste that slot directly, or Escape to cancel.
+
+**Pinned slots.** From the Copy Tray dialog, any slot can be marked Pinned. Pinned slots:
+
+- Are never overwritten by "Copy to Next Empty Slot" routing.
+- Are announced with a "pinned" prefix: "Slot 1 (pinned — signature)".
+- Persist the pin flag in `copy_tray.json` across restarts.
+
+To pin or unpin a slot, open the Copy Tray dialog (`Ctrl+Shift+Grave, X`), select the slot, and use the Pin/Unpin button.
+
+**Paste submenu slot labels.** The `Edit > Copy Tray > Paste from Tray` submenu shows the label and a text preview for every occupied slot: "1  signature — Hi, I wanted to follow..." Screen readers hear both the label and the preview when navigating the submenu.
+
+**Open the tray dialog:** `Ctrl+Shift+Grave, X` (or `Edit > Copy Tray > Open Copy Tray...`).
+
+The dialog lists all twelve slots. Each row shows the slot number, an optional label, and a preview of the stored text. Navigate with arrow keys. Buttons:
+
+- **Paste** — insert the selected slot's text at the cursor. Also activated by double-clicking or pressing Enter on a row.
+- **Paste from Clipboard** — store the system clipboard into the selected slot.
+- **Pin / Unpin** — toggle the pin state for the selected slot.
+- **Save Changes** — save edits made directly in the content area.
+- **Clear Slot** — empty the selected slot.
+- **Close** — close without pasting.
+
+**Status bar.** The `Slots: X/12` cell in the status bar shows how many of the twelve slots are occupied. Click the cell to open the Copy Tray dialog. Add the cell via `App > Preferences > Status Bar` if it is not visible.
+
+**Tray icon access.** The system tray icon menu also includes a Copy Tray submenu listing all occupied slots. Click any slot entry to paste its content into the active editor. This makes QUILL's clipboard available from the tray without bringing the window to the front.
+
+**Tips.**
+
+- Keep a signature, disclaimer, or standard heading in slot 1 and pin it. One chord pastes it anywhere and "Copy to Next Empty Slot" will never overwrite it.
+- Use labelled slots for a research session: slot 1 "intro quote", slot 2 "methodology note", slot 3 "source URL". Copy one fragment per slot as you read, then paste in order when drafting.
+- Double-press any paste chord to hear what is in that slot without pasting — useful when navigating your tray by memory.
+- Slots survive restarts. Build a small library of recurring fragments you reach for daily.
+- All bindings are reassignable in the Keymap Editor (`App > Preferences > Keyboard`).
+
+### Abbreviation Expansion
+
+Abbreviation Expansion is a TextExpander-style feature. You type a short trigger word followed by any delimiter character (space, period, comma, and so on) and QUILL silently replaces the trigger with the full text.
+
+**Example:** type `btw ` (note the trailing space) and QUILL replaces it with `by the way `.
+
+QUILL ships with fifteen built-in abbreviations covering common shorthand. You can add, edit, and disable any abbreviation, including the built-in ones.
+
+**Built-in abbreviations.**
+
+| Abbreviation | Expansion |
+| --- | --- |
+| `afaik` | as far as I know |
+| `afaict` | as far as I can tell |
+| `asap` | as soon as possible |
+| `atm` | at the moment |
+| `btw` | by the way |
+| `fwiw` | for what it's worth |
+| `imo` | in my opinion |
+| `imho` | in my humble opinion |
+| `irl` | in real life |
+| `omw` | on my way |
+| `tbh` | to be honest |
+| `tbc` | to be confirmed |
+| `tbd` | to be determined |
+| `ttyl` | talk to you later |
+| `wrt` | with regard to |
+
+**Enabling and disabling.** Abbreviation expansion is on by default. To toggle it:
+
+- Press `Ctrl+Shift+Grave, E` — or use `Insert > Toggle Abbreviation Expansion`.
+- Click the **ABR: On / ABR: Off** cell in the status bar (if visible; add it via status bar settings).
+- Change **Abbreviation expansion** in `App > Preferences > Editing`.
+
+**Managing abbreviations.** Open `Insert > Manage Abbreviations...` (or press `Ctrl+Shift+Grave, Shift+A`) to add, edit, and organise your abbreviations. Each abbreviation has:
+
+- **Abbreviation** — the short trigger word, e.g. `btw`.
+- **Expansion** — the full text to substitute, e.g. `by the way`.
+- **Description** — optional note for your own reference.
+- **Case sensitive** — when checked, only the exact-case trigger matches; otherwise any capitalisation of the trigger fires.
+- **Enabled** — toggle individual abbreviations without deleting them.
+
+The manager dialog includes a **Search** field at the top. Type any part of a trigger word or expansion text to filter the list in real time. Disabled abbreviations appear with a "(disabled)" suffix.
+
+The manager also has **Import** and **Export** buttons for JSON round-trips. Export saves your full library to a file. Import merges a file into your library; abbreviations with duplicate IDs are skipped. QUILL announces how many were added on import.
+
+**Manual trigger.** Press `Ctrl+Shift+Grave, A` (or `Insert > Expand Abbreviation`) to expand the word immediately before the cursor without typing a delimiter character. Useful when you want expansion mid-word or at end-of-document.
+
+**Variables in expansions.** Expansions support these placeholders:
+
+| Placeholder | Inserts |
+| --- | --- |
+| `${cursor}` | Places the cursor here after expansion |
+| `${date}` | Current date (e.g. June 11, 2026) |
+| `${time}` | Current time (e.g. 02:30 PM) |
+| `${clipboard}` | Current system clipboard text |
+
+**Multi-press window.** The double/triple press detection window is configurable in `App > Preferences > Editing` as **Multi-press window (ms)** (default 400 ms; range 100–1000 ms). A larger window helps if you press keys slowly; a smaller window prevents accidental double-fires for fast typists.
+
+**Sound feedback.** Optional: enable **Play sound on abbreviation expansion** in `App > Preferences > Editing` and optionally point **Abbreviation expansion sound file** to a `.wav` file. Leave the path blank for the default system beep.
+
+**Tips.**
+
+- Use `${cursor}` to drop the cursor inside a template. For example, the abbreviation `sig` expanding to `Best regards,${cursor}Jeff` positions the cursor right after the comma.
+- Use case-sensitive abbreviations sparingly — most triggers are lowercase and case sensitivity is rarely needed.
+- Abbreviations fire before snippet expansion. If a word matches both, the abbreviation wins.
+- Export your library regularly as a backup and to share abbreviations between machines.
+
 ### Copy With Source
 
 `Ctrl+Shift+C` copies the current selection, then appends a source reference that captures document context. If nothing is selected, Quill uses the current line. This is excellent for notes, review workflows, and evidence gathering.
@@ -1189,10 +1375,86 @@ Quill can open, save, and copy to remote hosts the same way it works with local 
 
 Default keys: **QUILL key, then `R`** opens from remote; **QUILL key, then `Shift+R`** saves to remote; **QUILL key, then `M`** opens the site manager. All are remappable from Preferences > Keyboard.
 
+### GitHub Remote Files
+
+QUILL can browse GitHub repositories, open files from them, and save changes back to GitHub — all without installing Git, the GitHub CLI, or GitHub Desktop.
+
+**Getting started**
+
+The first time you open a GitHub feature, QUILL asks you to confirm that it may connect to GitHub. This is a one-time prompt. After that, QUILL remembers your choice.
+
+You do not need a GitHub account to browse public repositories. For private repositories, you need a Personal Access Token (PAT).
+
+**Creating a Personal Access Token**
+
+1. Go to github.com and sign in.
+2. Open Settings > Developer settings > Personal access tokens > Tokens (classic).
+3. Click Generate new token.
+4. Give it a name such as "QUILL" and select the `repo` scope (or `public_repo` if you only need public repositories).
+5. Copy the token. You will only see it once.
+
+QUILL stores your token securely in **Windows Credential Manager**. It is never saved in a text file.
+
+**Opening the repository browser**
+
+Open **File > Open from Remote > GitHub Repository...**
+
+The browser has these parts:
+
+- **Account** — shows your GitHub username, or "Anonymous" if no token is stored.
+- **Repository** — type an owner/repo name such as `microsoft/vscode` and press Enter or click Load.
+- **Branch or tag** — choose which version of the repository to browse. Defaults to the repository's default branch.
+- **Current path** — shows where you are in the folder tree.
+- **File list** — lists folders and files. Folders appear first.
+- **Status** — shows progress messages and item counts.
+
+Navigation:
+- Press Enter on a folder to open it.
+- Press Enter on a file to open it (same as clicking Open File).
+- Press Backspace to go up one level.
+- Press F5 to refresh the current folder.
+- Tab through the buttons: **Open File**, **Go Up**, **Refresh**, **Copy URL**, **Cancel**.
+
+**Opening a file by URL**
+
+If you have a GitHub file URL (for example from a colleague), use **File > Open from Remote > GitHub File URL...**
+
+Paste a URL in the form `https://github.com/owner/repo/blob/branch/path/to/file` and press Enter. QUILL fetches the file directly.
+
+**Saving back to GitHub**
+
+After you have opened a file from GitHub and made edits, use **File > Open from Remote > Save to GitHub...**
+
+QUILL will ask for a commit message. Type a short description of your changes and press Enter. QUILL commits your changes to the same repository, branch, and file path using the GitHub API.
+
+Notes:
+- You need a token with write permission (`repo` scope) to save back.
+- If the file was changed on GitHub since you opened it, QUILL will tell you to refresh and try again.
+- This command does not run automatically when you press Save. You must choose it deliberately.
+
+**Managing your GitHub account**
+
+Use **File > Open from Remote > Manage GitHub Accounts...** to:
+
+- See your current GitHub identity.
+- Add or replace a token.
+- Sign out and clear your stored token.
+
+**File size limit**
+
+GitHub's file API is limited to 1 MB. Files larger than that must be downloaded manually from github.com.
+
+**Enabling the feature**
+
+GitHub remote access is controlled by the feature flag `core.github_remote`. If it is not visible, open **File > Open from Remote** and check whether the GitHub items appear. If PyGithub is not installed, QUILL shows a message explaining how to install it: `pip install "quill[github]"`.
+
 ## Help, Learning, and Daily Confidence
 
 Quill includes several layers of help because confidence does not come from memorizing everything.
 
+- **F1** — context-sensitive help for the focused control. Works anywhere in the application.
+- **Ctrl+F1** — opens this User Guide.
+- **Shift+F1** — opens the document-context "What Can I Do Here?" panel.
 - **Open Welcome Guide** when you want a lighter orientation.
 - **Open User Guide** when you want the full map.
 - **Open Keyboard Reference** when you want exact current bindings.
@@ -1201,15 +1463,157 @@ Quill includes several layers of help because confidence does not come from memo
 
 That last command matters more than it first appears. It turns feature visibility from a mystery into an explanation.
 
+### Context-Sensitive Help (F1)
+
+Press `F1` on any focusable control in QUILL and a small dialog opens that describes:
+
+1. **The dialog you are in** (when you are inside a dialog box) — the dialog name and a plain-language summary of what it does, so you always know your context.
+2. **The focused control** — what the control is, how it works, and what keyboard shortcuts apply to it.
+
+The entire text is in one read-only field so your screen reader announces everything in a single pass when the dialog opens, without you having to navigate past heading elements.
+
+From the help dialog you can:
+
+- Press **Escape** or **Enter on Close** to dismiss and return to where you were.
+- Press **Tab to Open User Guide** to jump to the full documentation section for this control.
+
+**How the three Help keys work together:**
+
+| Key | What it does |
+|-----|--------------|
+| `F1` | Help on the currently focused control (context-sensitive) |
+| `Ctrl+F1` | Open the full User Guide |
+| `Shift+F1` | Open "What Can I Do Here?" for the active document context |
+
+**Tips:**
+
+- In the main editor, F1 shows editor shortcuts and writing tips.
+- In dialogs (Preferences, Find/Replace, Spell Check, etc.), F1 identifies both the dialog and the specific setting.
+- In the Personalise QUILL wizard, F1 on each control explains what each setting does and what you can change later.
+- After using a menu and returning to the editor, QUILL remembers which control had focus last, so F1 still refers to the right control.
+
+### Personalising QUILL
+
+The **Personalise QUILL** wizard runs automatically the first time QUILL starts. You can re-run it at any time from **Help → Personalise QUILL**.
+
+The wizard walks you through eight short pages:
+
+1. **Welcome** — an introduction to what the wizard covers.
+2. **Keyboard and Sound** — choose a keyboard pack and whether QUILL plays audio cues. QUILL auto-detects your screen reader and sets accessible defaults.
+3. **Feature Profile** — choose a starting profile: Essential (minimal), Standard (recommended for most users), Power User (all features on), or Accessibility Focus (screen-reader optimised). You can switch profiles later.
+4. **Remote Access** — enable or hide FTP, SFTP, WebDAV, and S3 remote file commands. Disabling this removes the remote-site menu items entirely, keeping the File menu clean.
+5. **AI Assistance** — turn the AI writing assistant on or off. You can add an API key later; QUILL will prompt you when you first use an AI feature.
+6. **Reading and Accessibility** — configure read-aloud behaviour and screen-reader announcement style.
+7. **Writing Tools** — enable or disable spell-check-as-you-type, abbreviation expansion, and the Copy Tray.
+8. **Startup Behaviour** — choose what QUILL opens when it starts and whether to check for updates automatically.
+9. **Summary** — review all your choices before they are applied. Use Back to revise any page. Nothing changes in QUILL until you press Finish.
+
+**Important:** The wizard is transactional. Your choices are held in memory until you press Finish. If you close or cancel the wizard, no settings are changed.
+
+**Profiles explained:**
+
+| Profile | Best for |
+|---------|----------|
+| Essential | New users, light daily writing, low-distraction setup |
+| Standard | Most users — balanced feature set with AI and tools available |
+| Power User | All features on; suited to advanced writing, extraction, and GLOW workflows |
+| Accessibility Focus | Screen-reader primary; maximises keyboard coverage and announcements |
+
+You can switch profiles at any time from **Tools → Customize & Support → Profiles and Features...** or by pressing `Alt+Shift+P`.
+
 ## Translation and Community Localization
 
-QUILL is building localization as a community effort with a gettext catalog workflow (`POT -> PO -> MO`) and contributor-first onboarding. Translation contributions are welcomed during beta and reviewed with the same quality mindset as code and accessibility changes.
+QUILL uses a standard GNU gettext pipeline (`POT → PO → MO`) for all user-visible strings, aligned with the model used by NV Access for NVDA. This means QUILL translation work feels familiar to anyone who has contributed to NVDA, JAWS scripts, or other accessibility-focused open-source software.
 
-If you want to help translate QUILL or review language quality, use the contributor plan:
+### How the Translation Pipeline Works
 
-- [QUILL Translation Contributor Plan](localization/translation-contributor-plan.md)
+1. **Source strings are marked in code** with `_()` for regular strings, `ngettext()` for plural forms, and `lazy_gettext()` for strings that must be translated at display time rather than at import time.
+2. **The POT file** (`quill/locale/quill.pot`) is the master template, generated automatically by `pybabel extract`. It contains every translatable string in the application.
+3. **PO files** (`quill/locale/<lang>/LC_MESSAGES/quill.po`) contain the actual translations for each language. Translators work in PO files.
+4. **MO files** are compiled from PO files by `pybabel compile` and are the binary files QUILL loads at runtime.
+5. **QUILL selects the active language** at startup from your `language` setting (BCP 47 tag, e.g., `fr`, `es`, `pt-BR`). If blank, QUILL follows the operating-system language.
 
-The plan documents how to contribute translations, what is and is not translated, how string freeze works, and how translator contributions are credited in releases.
+Speech strings — text that will be read aloud by a screen reader rather than displayed visually — are marked with a `# SPEECH:` comment in the source code. Translators should preserve the natural spoken rhythm of these strings, not just their semantic meaning.
+
+### Contributing Translations
+
+To contribute a translation:
+
+1. **Fork the QUILL repository** and create a branch named `l10n/<lang>` (e.g., `l10n/fr`).
+2. **Copy `quill.pot` to your language folder:** `quill/locale/fr/LC_MESSAGES/quill.po`
+3. **Translate each `msgid` into a `msgstr`.** Leave `msgstr` empty for strings you have not yet translated; the English fallback will be used.
+4. **Run the CI translation check** to verify placeholder integrity and completeness: `python -m quill.tools.check_translation`
+5. **Open a pull request.** The Translation Coordinator reviews and merges approved translations.
+
+**Tools that help:**
+
+- [Poedit](https://poedit.net/) — free, accessible PO file editor with spell check.
+- [Virtaal](https://virtaal.translatehouse.org/) — lightweight alternative.
+- Crowdin (when QUILL's project is live) — browser-based collaborative translation with a review queue.
+
+**Do not translate:**
+
+- Placeholder tokens: `{name}`, `%(count)s`, `{path}` — leave these exactly as they are in the `msgid`.
+- ARIA role names: `"dialog"`, `"button"`, `"listbox"` — these are passed to platform accessibility APIs unchanged.
+- Internal command identifiers: `"file.open"`, `"glow.audit"` — these are not user-visible.
+- File extensions and format names: `.docx`, `EPUB`, `PDF`.
+
+### Translation Roles and Responsibilities
+
+QUILL follows a four-tier model aligned with NV Access community practice:
+
+| Role | Responsibilities |
+|------|----------------|
+| **Translator** | Translate strings from English into the target language. |
+| **Proofreader** | Review translations for accuracy, tone, and natural language flow. |
+| **Language Coordinator** | Own quality for one language; approve or request changes from translators and proofreaders. |
+| **Translation Coordinator** | Oversee the whole translation project, manage Crowdin, coordinate string freeze, credit contributors. |
+
+To become a translator or proofreader: open a GitHub issue with the label `translation` and state the language you want to work on.
+
+### Speech String Guidelines
+
+QUILL marks screen-reader-targeted strings with `# SPEECH:` in the source code. When translating these strings:
+
+- **Prioritise spoken clarity over literal accuracy.** A string that reads well when spoken aloud is more important than a string that is grammatically perfect but awkward when heard.
+- **Match the rhythm.** Short speech strings should stay short. QUILL's screen-reader users hear these strings dozens of times per session; brevity is a form of accessibility.
+- **Preserve emphasis signals.** Where the English string uses word order or phrasing to signal importance (e.g., the key word comes first), try to mirror that in translation.
+- **Test with a screen reader.** If possible, test your translated strings with NVDA or JAWS before submitting.
+- **Ask if unsure.** Open a GitHub issue tagged `translation` and `speech` if you are uncertain how a speech string should be adapted.
+
+String freeze happens before each release candidate. No new strings are added after freeze, and translators have a two-week window to complete their language before the release is built.
+
+## Checking for Updates
+
+Quill can check for and install updates automatically while you work.
+
+### Manual update check
+
+To check for updates now:
+
+1. Press Alt+H to open the **Help** menu.
+2. Press U for **Check for Updates**.
+3. If a newer version is available, Quill will announce it and ask for permission to download.
+4. If you accept, Quill downloads the update in the background and announces when it is ready.
+5. The next time you close and reopen Quill, the update is applied automatically.
+
+### Automatic update checks
+
+You can enable Quill to check for updates on startup:
+
+1. Press Alt+E to open the **Edit** menu.
+2. Press Shift+S for **Settings**.
+3. In the **Updates** section, enable **Check for updates on startup**.
+
+When automatic checks are on, Quill will notify you quietly if a new version is available, and you can choose to download it when you are ready.
+
+### Update size and speed
+
+Quill uses incremental updates ("micro-updates"), which are much smaller than full reinstalls. Patches often download in seconds rather than minutes, and your settings, documents, and preferences are preserved.
+
+### Staying on a release channel
+
+By default, Quill checks the stable update channel and only offers released versions. To opt into beta versions and test new features early, enable **Beta channel** in **Settings → Updates**.
 
 ## Beta Feedback and Bug Reporting
 
@@ -1281,11 +1685,166 @@ Quill ships with several trusted, first-party Quillins enabled by default. These
 - **Insert Tools**: Provides smart placeholders for quick insertion, such as the current **Date** and **Date/Time**.
 
 ### The Quillins Manager
-You can discover, review, and manage all installed Quillins via **Tools $\rightarrow$ Quillins**.
-The Manager allows you to:
-- See a list of all installed Quillins.
-- Review the manifest of a selected Quillin (name, version, author, and capabilities).
-- Verify the security permissions (capabilities) a Quillin has declared (e.g., filesystem or network access).
+
+Open via **Tools > Quillins**. The Manager lets you:
+
+- See every installed Quillin and its current status (enabled or disabled).
+- Select a Quillin to review its manifest: name, version, author, description, and declared capabilities.
+- Enable or disable a Quillin without removing it.
+- Remove a Quillin entirely (confirmation required).
+- **Install from Folder** — press this button to select a local folder containing a Quillin. QUILL reads its `manifest.json`, validates it, copies the folder into your per-user extensions directory, and enables it immediately. If a Quillin with the same id is already installed it is replaced. This is the supported path for installing third-party Quillins.
+
+When you select a Quillin, the panel shows all declared capabilities (for example `fs.read` or `net`). Review these before enabling an extension from an unknown source.
 
 ### Authoring Quillins
 For developers, Quillins are designed to be "screen-reader-first." They follow a strict capability model: a Quillin must declare the minimum set of permissions it needs, and any sensitive action (like writing to a file) is consent-gated at runtime.
+
+---
+
+## AI Assistant
+
+QUILL includes a built-in AI assistant that works with OpenRouter, OpenAI, and Ollama. All three are optional; QUILL detects which keys you have configured and only shows providers that are available. API keys are stored in the Windows Credential Manager by default and never written to disk in plain text.
+
+### Setting up an AI provider
+
+Open **App > Preferences > AI** to configure your provider.
+
+- **OpenRouter** — paste your API key into the OpenRouter API Key field. OpenRouter gives you access to many models (Claude, GPT-4o, Gemini, and more) with a single key.
+- **OpenAI** — paste your OpenAI API key.
+- **Ollama** — no key needed. Install Ollama on your machine (`ollama serve`) and QUILL detects it automatically at `http://localhost:11434`. Change the Ollama Base URL setting if you run Ollama on a different port or machine.
+
+### Portable mode and key storage
+
+By default QUILL stores AI provider keys in the **Windows Credential Manager**, which ties them to your Windows user account. If you run QUILL from a self-contained folder — for example on a network share or an external drive — you can switch to **portable mode** so all keys live in that same folder alongside your other QUILL data.
+
+**Activating portable mode.** Set the environment variable `QUILL_PORTABLE=1` before starting QUILL. You can do this for the current session:
+
+```powershell
+$env:QUILL_PORTABLE = "1"
+python -m quill
+```
+
+Or add it permanently to your user environment via System Properties > Environment Variables.
+
+When portable mode is on, keys are stored in a file called `keys.enc` inside the QUILL data directory. The file is encrypted with Windows DPAPI, so it is protected by your Windows user-account key.
+
+**Limitations.** The encrypted file is tied to the Windows account that created it. Moving it to a different machine or a different Windows account will fail to decrypt; you will need to re-enter your keys there. Portable mode gives you a self-contained folder on the same machine — it does not give you cross-machine portability.
+
+**Environment-variable overrides (for CI and developers).** You can supply keys directly via environment variables regardless of which mode is active. These always win and are never stored to disk:
+
+| Provider | Environment variable |
+| --- | --- |
+| OpenRouter | `QUILL_OPENROUTER_KEY` |
+| OpenAI | `QUILL_OPENAI_KEY` |
+| Ollama Cloud | `QUILL_OLLAMA_KEY` |
+| AI Assistant | `QUILL_ASSISTANT_KEY` |
+
+You can also set a **Default model for prompt runs** (`ai_prompt_default_model`). Leave it blank to share the same model across Ask AI and the Prompt Library, or set a different model here if you want a more capable model for prompt-library work.
+
+### Ask AI (Alt+Q)
+
+`Tools > AI Assistant > Ask AI...` opens a dialog where you type a question and read the answer without leaving QUILL.
+
+- **Provider** and **Model** choices are pre-filled with the last values you used.
+- If a provider and model are already configured, focus lands directly in the Prompt field so you can start typing immediately. If not yet configured, focus starts on the Provider choice to guide you through setup.
+- Press **Ctrl+Enter** or the **Send** button to submit. QUILL announces "Sending..." and disables the button while the request is in flight.
+- The response opens in a read-only dialog. Use cursor keys to read it, and **Copy to Clipboard** to copy the full text. Closing the response returns you to the Ask AI dialog so you can ask a follow-up.
+- **Clear** resets the prompt field and refocuses it.
+
+### Check Grammar with AI
+
+`Edit > Grammar > Check Grammar with AI` sends the selected text (or the full document if nothing is selected) to your AI model with a grammar-review prompt. The response dialog lists corrections in the form "original phrase → corrected phrase — reason". No changes are applied automatically; you apply corrections yourself.
+
+The default grammar instruction is: review the text and list only the corrections needed; do not rewrite the passage. If you want a different instruction, open the Prompt Library, find the "Check Grammar" built-in prompt, and edit its text — the command picks up your version automatically.
+
+### Prompt Library
+
+`Tools > AI Assistant > Prompt Library...` opens the full prompt management dialog.
+
+**What it shows.** A searchable list of all prompts on the left (type in the search field to filter by name or category). The selected prompt's instruction text on the right. An optional input text field where you can type or paste text to use as the selection context.
+
+**Running a prompt.**
+1. Select a prompt from the list (or type in the search field to find it).
+2. Optionally paste text into the input field. If blank, QUILL uses the current editor selection or full document.
+3. Press **Run with AI**. The result opens in the AI Response dialog.
+
+**Managing prompts.**
+
+- **New Prompt** — opens a small dialog: enter a name, choose a category, and write the instruction text. Use `{selection}` where you want QUILL to insert the text.
+- **Edit** — modify the name, category, or instruction of a selected user prompt. Built-in prompts can have their text overridden (the override is saved; the original is never deleted).
+- **Disable/Enable** — hides or shows a prompt in the list without deleting it. Useful for built-ins you never use.
+- **Delete** — removes a user-created prompt. Built-in prompts cannot be deleted.
+
+**Importing and exporting prompt packs.**
+
+QUILL uses `.pqp` (Prompt Quill Pack) files to share prompt collections.
+
+- **Import .pqp** — opens a file picker; imports all prompts from the file. Prompts whose names already exist in your library are skipped.
+- **Export .pqp** — saves all your user-defined prompts to a `.pqp` file you can share or back up.
+
+A `.pqp` file is plain JSON with a human-readable structure:
+
+```json
+{
+  "schema": "quill.prompt-pack/1",
+  "name": "My Writing Prompts",
+  "prompts": [
+    {
+      "name": "Make Punchy",
+      "text": "Rewrite this as a punchy one-liner: {selection}",
+      "category": "Editing"
+    }
+  ]
+}
+```
+
+**Built-in prompts.** QUILL ships 12 built-in prompts across five categories. These are always present and fully editable; they cannot be deleted.
+
+| Category | Prompt names |
+| --- | --- |
+| Editing | Check Grammar, Improve Clarity, Fix Grammar, Make Concise, Active Voice, Formal Tone, Conversational Tone |
+| Writing | Continue from Here |
+| Structure | Convert to Bullet Points |
+| Research | Define This Term, Find Counterarguments |
+
+**Quillin-contributed prompts.** Quillins can ship a `prompts.json` file that adds prompts to the library. The bundled `ai-writing-prompts` Quillin contributes 7 additional prompts (Expand This, Vary Sentence Rhythm, Make More Vivid, Write a Title, Generate Outline, Suggest Supporting Evidence, Plain Language). These appear in the list and can be run like any other prompt; they are not persisted to your library file.
+
+### Skill Library (.sqp skills)
+
+Skills are multi-step AI workflows. Where a prompt is one instruction, a skill is a sequence of steps where each step can use the output of the step before it.
+
+`Tools > AI Assistant > Skill Library...` opens the Skill Library dialog.
+
+**What a skill looks like.** A skill has a name, a description, and a list of steps. Before running, QUILL shows a parameter dialog if the skill declares any parameters (such as tone, target reading level, or output format). Each step runs in order, sends its prompt to the AI, and stores the response for the next step to use.
+
+**Bundled skills.** QUILL ships four skills in the `ai-writing-skills` Quillin:
+
+- **Accessible Rewrite** — Analyses your text for plain-language issues (long sentences, passive voice, jargon), then produces a targeted rewrite. You choose the target reading level (Grade 6, 8, or 10). The rewritten text replaces the selection when you Accept.
+- **Research and Draft** — Extracts the central topic from your selection, gathers five supporting facts, then drafts a paragraph at your chosen tone and length.
+- **Meeting Notes to Action Items** — Reads meeting notes, extracts every action item with owner and deadline, checks for missed items, and produces a clean follow-up summary. Output goes to clipboard.
+- **Argument Strengthener** — Identifies your argument's logical structure, finds weaknesses and counterarguments, then produces a strengthened version tailored to your chosen audience.
+
+**Running a skill.**
+1. Open `Tools > AI Assistant > Skill Library...`
+2. Select a skill from the list.
+3. Press **Run**. If the skill has parameters, a small dialog appears — fill in the choices and press OK.
+4. QUILL announces "Running step 1 of N..." as each step executes.
+5. When complete, the result dialog appears. Read the output, then press **Accept** to apply it (if the skill places output in the document) or **Copy** to copy to clipboard.
+
+**No streaming.** Each step sends a complete prompt and waits for the full response before the next step begins. This makes step outputs reliable and readable between steps.
+
+**Authoring and sharing skills.** A skill is a `.sqp` (Skill Quill Pack) file — a plain Markdown document with YAML front matter. Open any `.sqp` file in QUILL to read and edit it. Share skills by sharing the file. See `docs/scripting.md` §20 for the full authoring reference, and `docs/skills-tutorial.md` for a guided walkthrough.
+
+**Validating a skill file.** Run `python -m quill.tools.sqp_validator yourskill.sqp` to check for errors before sharing or shipping.
+
+## Control Reference
+
+The Control Reference is a full listing of every focusable control in QUILL, organized by section. For each control it shows: what the control does, what keyboard shortcuts apply to it, and which section of this guide covers it in depth.
+
+See [docs/CONTROL_REFERENCE.md](CONTROL_REFERENCE.md) for the full reference.
+
+The reference is auto-generated from `quill/core/help/topics.json`. To regenerate it after adding new topics:
+
+```powershell
+python -m quill.tools.build_docs
+```

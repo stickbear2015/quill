@@ -116,6 +116,17 @@ FEATURE_DEFINITIONS: dict[str, FeatureDefinition] = {
         category="accessibility",
         dependencies=("core.dictation",),
     ),
+    "core.rich_text_lens": FeatureDefinition(
+        "core.rich_text_lens",
+        "Rich Text Lens",
+        description=(
+            "Native wxPython rich-text editing surface for .rtf files. Locked off "
+            "pending fuller screen-reader testing; RTF files continue to open as "
+            "plain text in the meantime. Remove locked_off to re-enable."
+        ),
+        category="editor",
+        locked_off=True,
+    ),
     "core.bw_whisperer": FeatureDefinition(
         "core.bw_whisperer",
         "BITS Whisperer",
@@ -212,6 +223,14 @@ FEATURE_DEFINITIONS: dict[str, FeatureDefinition] = {
         category="safety",
         locked_on=True,
     ),
+    "core.notes": FeatureDefinition(
+        "core.notes",
+        "Sticky Notes",
+        aliases=("notes", "sticky", "sticky notes"),
+        description="Inline sticky notes attached to document positions.",
+        dependencies=("core.editor",),
+        category="core",
+    ),
     "core.notebook": FeatureDefinition(
         "core.notebook",
         "Notebook (Workspace)",
@@ -219,6 +238,54 @@ FEATURE_DEFINITIONS: dict[str, FeatureDefinition] = {
         description="Multi-document workspace with entries, goals, and snapshots (§10.4).",
         dependencies=("core.file",),
         category="core",
+    ),
+    "core.remote": FeatureDefinition(
+        "core.remote",
+        "Remote Access",
+        aliases=("remote", "ftp", "sftp", "webdav", "s3", "remote sites"),
+        description=(
+            "Open, save, and manage files over FTP, SFTP, WebDAV, and S3 "
+            "remote sites (issues #154-#157). Disabling this hides the "
+            "remote-sites file menu and the Manage Remote Sites dialog."
+        ),
+        category="core",
+        dependencies=("core.file",),
+    ),
+    "core.github_remote": FeatureDefinition(
+        "core.github_remote",
+        "GitHub Remote Access",
+        aliases=("github", "github remote", "open from github"),
+        description=(
+            "Browse GitHub repositories, open remote files, and commit changes "
+            "back to GitHub (File > Open Remote > GitHub). Requires PyGithub "
+            "(pip install quill[github]). Disabling this hides the GitHub items "
+            "in the Open from Remote submenu."
+        ),
+        category="core",
+        privacy="network after confirmation",
+        dependencies=("core.remote",),
+    ),
+    "core.developer_console": FeatureDefinition(
+        "core.developer_console",
+        "Developer Console",
+        aliases=("developer console", "qdc", "scripting", "python console", "automation"),
+        description=(
+            "Embedded Python and TypeScript consoles for developers, power users, "
+            "and accessibility professionals. Exposes the q scripting API. "
+            "Gated by profile; hidden for Essential and Writer profiles."
+        ),
+        category="developer",
+        dependencies=("core.app",),
+    ),
+    "core.developer_console.typescript": FeatureDefinition(
+        "core.developer_console.typescript",
+        "Developer Console TypeScript",
+        aliases=("typescript console", "ts console"),
+        description=(
+            "TypeScript console via a Node.js subprocess bridge. Requires Node.js on PATH."
+        ),
+        category="developer",
+        dependencies=("core.developer_console",),
     ),
     "core.ocr": FeatureDefinition(
         "core.ocr", "OCR", category="accessibility", dependencies=("core.file",)

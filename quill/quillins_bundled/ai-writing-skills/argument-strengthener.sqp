@@ -1,0 +1,54 @@
+---
+schema: quill.skill/1
+name: Argument Strengthener
+description: Analyses the logical structure of a selected argument, identifies weaknesses, generates counterarguments, and produces a strengthened version. Useful for essays, proposals, and persuasive writing.
+author: QUILL Project
+version: 1.0.0
+parameters:
+  - name: audience
+    label: Target audience
+    type: choice
+    choices: [general public, academic, professional, skeptical expert]
+    default: general public
+---
+
+# Step 1: Identify the claim and structure
+
+Read the following text and identify:
+1. The central claim or thesis (one sentence)
+2. The main supporting points (numbered list)
+3. Any evidence cited (or note if none is cited)
+
+Be analytical, not evaluative at this stage.
+
+```input
+{selection}
+```
+
+# Step 2: Find weaknesses and counterarguments
+
+Given the claim and structure from Step 1, identify:
+1. The two weakest points in the argument (explain why each is weak)
+2. The two strongest counterarguments a {parameters.audience} reader would raise
+3. Any logical fallacies present (or "None identified")
+
+# Step 3: Strengthen the argument
+
+Rewrite the original argument to address the weaknesses and counterarguments from Step 2. Requirements:
+- Maintain the original position and intent
+- Add evidence or reasoning where the original was thin
+- Acknowledge and rebut the strongest counterargument
+- Target audience: {parameters.audience}
+- Length: similar to the original (do not pad)
+
+Original argument for reference:
+{selection}
+
+Weaknesses and counterarguments to address:
+{step2.output}
+
+```output
+format: text
+label: Strengthened argument
+accept_into: selection
+```

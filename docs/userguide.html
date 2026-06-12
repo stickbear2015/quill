@@ -1,3 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>userguide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
 <h1 id="quill-user-guide">Quill User Guide</h1>
 <p><strong>QUILL</strong> stands for <strong>Quality, Usable, Inclusive,
 Lightweight, Literate</strong>.</p>
@@ -26,6 +269,7 @@ work.</p>
 <li><a href="#start-here">Start Here</a></li>
 <li><a href="#what-quill-feels-like">What Quill Feels Like</a></li>
 <li><a href="#your-first-session">Your First Session</a></li>
+<li><a href="#getting-around-quill">Getting Around QUILL</a></li>
 <li><a href="#command-line-launching">Command-Line Launching</a></li>
 <li><a href="#the-main-window">The Main Window</a></li>
 <li><a href="#the-menu-bar-reference">The Menu Bar Reference</a></li>
@@ -64,33 +308,58 @@ spreadsheets (.xlsx and .xls)</a></li>
 text</a></li>
 <li><a href="#remote-files-ftp-sftp-https-webdav-s3">Remote files (FTP,
 SFTP, HTTPS, WebDAV, S3)</a></li>
+<li><a href="#github-remote-files">GitHub Remote Files</a></li>
 </ul></li>
 <li><a href="#help-learning-and-daily-confidence">Help, Learning, and
-Daily Confidence</a></li>
+Daily Confidence</a>
+<ul>
+<li><a href="#context-sensitive-help-f1">Context-Sensitive Help
+(F1)</a></li>
+<li><a href="#personalising-quill">Personalising QUILL</a></li>
+</ul></li>
 <li><a href="#translation-and-community-localization">Translation and
-Community Localization</a></li>
+Community Localization</a>
+<ul>
+<li><a href="#how-the-translation-pipeline-works">How the Translation
+Pipeline Works</a></li>
+<li><a href="#contributing-translations">Contributing
+Translations</a></li>
+<li><a href="#translation-roles-and-responsibilities">Translation Roles
+and Responsibilities</a></li>
+<li><a href="#speech-string-guidelines">Speech String
+Guidelines</a></li>
+</ul></li>
+<li><a href="#checking-for-updates">Checking for Updates</a></li>
 <li><a href="#beta-feedback-and-bug-reporting">Beta Feedback and Bug
 Reporting</a></li>
 <li><a href="#a-fast-shortcut-tour">A Fast Shortcut Tour</a></li>
+<li><a href="#control-reference">Control Reference</a></li>
 </ul>
 <h2 id="start-here">Start Here</h2>
 <p>If you only have five minutes, do this:</p>
 <ol type="1">
+<li>The first time QUILL starts, the <strong>Personalise QUILL</strong>
+wizard offers to set up your keyboard layout, profile, and optional
+features in about two minutes. Complete it or dismiss it; you can re-run
+it from <strong>Help → Personalise QUILL</strong> at any time.</li>
 <li>Press <code>Ctrl+N</code> to create a new document, or press
 <code>Ctrl+O</code> to open one.</li>
 <li>Type a few lines.</li>
-<li>Press <code>Ctrl+Shift+P</code> to open the Command Palette.</li>
-<li>Type <code>guide</code>, <code>spell</code>, <code>compare</code>,
-or <code>glow</code> and notice how quickly Quill turns intent into
+<li>Press <code>Ctrl+Shift+P</code> to open the Command Palette. Type
+<code>guide</code>, <code>spell</code>, <code>compare</code>, or
+<code>glow</code> and notice how quickly Quill turns intent into
 action.</li>
 <li>Press <code>F6</code> to move into the status bar and hear how Quill
 treats even the bottom of the window as a working surface.</li>
 <li>Press <code>F7</code> for spell check, <code>Ctrl+F</code> to
 search, or <code>Ctrl+K</code> to insert a link.</li>
+<li>Press <code>F1</code> on any control to hear what it does and see
+its keyboard shortcuts.</li>
 </ol>
-<p>If you ever feel lost, use <strong>Help → What Can I Do
-Here?</strong>. Think of that command as the editor quietly putting a
-mentor beside you.</p>
+<p>If you ever feel lost, press <code>F1</code> for immediate help on
+the focused control, or use <strong>Help → What Can I Do Here?</strong>
+for document-context guidance. Think of those commands as the editor
+quietly putting a mentor beside you.</p>
 <h2 id="what-quill-feels-like">What Quill Feels Like</h2>
 <p>Quill is built around a few promises.</p>
 <ul>
@@ -134,6 +403,88 @@ keyboard pack and any custom bindings.</li>
 <p>That first session matters because it teaches the most important
 Quill habit: you do not need to hunt. If an action exists, Quill wants
 you to be able to reach it from where you already are.</p>
+<h2 id="getting-around-quill">Getting Around QUILL</h2>
+<p>QUILL is designed so you never need to memorize an action to reach
+it.</p>
+<h3 id="f1--help-on-the-focused-control">F1 — help on the focused
+control</h3>
+<p>Press <code>F1</code> on any focusable control — a dialog field, a
+button, a menu item, the editor itself — and a small help dialog opens.
+It tells you what the control does and what keyboard shortcuts apply to
+it. The full text lands in one read-only field so your screen reader
+announces everything in one pass when the dialog opens.</p>
+<ul>
+<li><code>F1</code> — help on the focused control</li>
+<li><code>Ctrl+F1</code> — open the full User Guide</li>
+<li><code>Shift+F1</code> — open "What Can I Do Here?" for the active
+document context</li>
+</ul>
+<p>See <a href="#context-sensitive-help-f1">Context-Sensitive Help
+(F1)</a> for full details.</p>
+<h3 id="the-quill-key">The QUILL key</h3>
+<p>The <strong>QUILL key</strong> is <code>Ctrl+Shift+Grave</code> (the
+key above Tab). Press it once to arm a one-shot prefix, then follow with
+a second key to perform a command. Press it twice to lock QUILL Quick
+Nav mode until <code>Esc</code>.</p>
+<p>Common QUILL-key chords:</p>
+<table>
+<thead>
+<tr>
+<th>Chord</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QUILL key, then <code>N</code></td>
+<td>Enter Quick Nav browse mode</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>G</code></td>
+<td>Open Go to Anything</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>M</code></td>
+<td>Paste HTML clipboard as Markdown</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>R</code></td>
+<td>Open file from remote</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>A</code></td>
+<td>Selection actions</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>?</code></td>
+<td>Show the QUILL key cheat sheet</td>
+</tr>
+<tr>
+<td>QUILL key, then <code>Esc</code></td>
+<td>Cancel the prefix</td>
+</tr>
+</tbody>
+</table>
+<h3 id="command-palette">Command Palette</h3>
+<p><code>Ctrl+Shift+P</code> opens the Command Palette — a searchable
+list of every registered command. Type any part of a command name to
+filter. Press Enter to run it. This is the fastest way to reach any
+action without memorizing its key or menu path. Searching
+<code>guide</code>, <code>spell</code>, <code>compare</code>, or
+<code>glow</code> from the palette is a good first practice.</p>
+<h3 id="navigation-anchors">Navigation anchors</h3>
+<p>The status bar (<code>F6</code> to focus it) is a working surface,
+not decoration. Each cell announces meaningful information and most
+cells open a related dialog when you press Enter or click.
+<code>Shift+F6</code> moves focus back to the editor.</p>
+<p>Reach any menu from the keyboard: <code>Alt+F</code> for File,
+<code>Alt+E</code> for Edit, <code>Alt+V</code> for View,
+<code>Alt+T</code> for Tools, <code>Alt+H</code> for Help. All menu
+items have keyboard mnemonics.</p>
+<p>The Navigate menu groups document-level movement: go to line, go to
+heading, go to entry in notebook, heading organizer, outline navigator,
+back and forward location history, and structural next/previous. When
+you need to move across a large document, start there.</p>
 <h2 id="command-line-launching">Command-Line Launching</h2>
 <p>Quill supports command-line startup options for scripted workflows
 and direct navigation.</p>
@@ -237,9 +588,9 @@ status bar can surface:</p>
 <li>file path or unsaved state</li>
 </ul>
 <p>You can reorder or hide status items through <strong>Tools →
-Customize &amp; Support → Status Bar Layout…</strong>. Right-click a
+Customize &amp; Support → Status Bar Layout...</strong>. Right-click a
 focused status cell to <strong>Activate</strong>, <strong>Hide this
-item</strong>, or open <strong>Status bar settings…</strong>. Use
+item</strong>, or open <strong>Status bar settings...</strong>. Use
 <strong>Restore Defaults</strong> in status bar settings to reset
 visibility and order. When title mode is set to full path, Quill
 automatically hides the duplicate file-path status cell.</p>
@@ -255,15 +606,15 @@ encounter it.</p>
 <p>The <strong>File</strong> menu is the full document lifecycle.</p>
 <ul>
 <li><strong>New</strong> creates a blank document.</li>
-<li><strong>Open…</strong> opens a document from disk.</li>
+<li><strong>Open...</strong> opens a document from disk.</li>
 <li><strong>Open Recent</strong> returns quickly to recently used
 files.</li>
-<li><strong>Open from URL…</strong> downloads a document or text
+<li><strong>Open from URL...</strong> downloads a document or text
 resource through an explicit safety flow that confirms host and expected
 size.</li>
 <li><strong>Open from Remote</strong>, <strong>Save to Remote</strong>,
 <strong>Save Copy to Remote</strong>, and <strong>Manage Remote
-Sites…</strong> (in the <em>Open from Remote</em> submenu) open, save,
+Sites...</strong> (in the <em>Open from Remote</em> submenu) open, save,
 and administer saved sites over <strong>FTP, SFTP, HTTPS, WebDAV, and
 Amazon S3 (or any S3-compatible service)</strong>. Each remote operation
 is explicit, runs over a verified TLS context, announces host and
@@ -274,13 +625,13 @@ workspaces in Visual Studio Code.</li>
 <li><strong>New from Clipboard</strong> opens a new document seeded with
 the current clipboard text.</li>
 <li><strong>Save</strong> writes the current document.</li>
-<li><strong>Save As…</strong> writes to a new path, converting the
+<li><strong>Save As...</strong> writes to a new path, converting the
 document to the file type you choose in the dialog. Quill keeps your
 text as portable Markdown-style markup, so picking <strong>Rich Text
 Format (*.rtf)</strong> writes real RTF, <strong>HTML (*.html)</strong>
 writes a standalone web page, and <strong>Text (*.txt)</strong> writes
 clean prose with the markup removed. Choosing <strong>Markdown
-(*.md)</strong> keeps the markup verbatim. The file’s extension always
+(*.md)</strong> keeps the markup verbatim. The file's extension always
 decides the format; if you type a name without an extension, the
 selected type supplies one. When Save As changes the format, Quill can
 reload the file so the editing surface matches it — for example, opening
@@ -290,7 +641,7 @@ with the saved file); set <strong>Settings → Editing → Reload after Save
 As to match the format</strong> to <em>Reload automatically</em> or
 <em>Keep current surface</em> to skip the prompt.</li>
 <li><strong>Save All</strong> writes every modified open document.</li>
-<li><strong>Save As Plain Text…</strong> exports a clean plain-text
+<li><strong>Save As Plain Text...</strong> exports a clean plain-text
 version. Because plain text has no links, <strong>Settings → Editing →
 Links in plain-text export</strong> controls how Markdown links are
 written: keep the link text and its URL (the default, so you never lose
@@ -299,15 +650,15 @@ Markdown link. This setting also applies whenever Save As writes a
 <code>.txt</code> file.</li>
 <li><strong>Reload from Disk</strong> throws away in-memory edits and
 reloads the file from storage after confirmation.</li>
-<li><strong>Restore Backup…</strong> lets you restore a saved backup
+<li><strong>Restore Backup...</strong> lets you restore a saved backup
 version.</li>
-<li><strong>Page Setup…</strong> and <strong>Print…</strong> support
+<li><strong>Page Setup...</strong> and <strong>Print...</strong> support
 paper and print workflows.</li>
 <li><strong>Run Current File</strong> executes the saved file with its
 associated tool, and <strong>Open Target at Cursor</strong> opens the
 path or link under the caret.</li>
-<li><strong>Rename Current File…</strong> and <strong>Delete Current
-File…</strong> manage the file on disk from inside the editor.</li>
+<li><strong>Rename Current File...</strong> and <strong>Delete Current
+File...</strong> manage the file on disk from inside the editor.</li>
 <li><strong>Close Document</strong> closes the current tab.</li>
 <li><strong>Exit</strong> closes the application.</li>
 </ul>
@@ -329,12 +680,12 @@ explicit. Nothing important is hidden behind a side effect.</p>
 <p>Quill then goes further with selection- and navigation-aware
 editing:</p>
 <ul>
-<li><strong>Find…</strong>, <strong>Replace…</strong>, <strong>Find
+<li><strong>Find...</strong>, <strong>Replace...</strong>, <strong>Find
 Next</strong>, <strong>Find Previous</strong>, and <strong>Find All
 Matches</strong> all live here. Replace includes a <strong>Replace
 All</strong> action in its dialog, so bulk replacement stays in one
 place.</li>
-<li><strong>Word Prediction…</strong> opens inline word and tag
+<li><strong>Word Prediction...</strong> opens inline word and tag
 suggestions.</li>
 <li><strong>Extend Selection Mode</strong> turns selection growth into a
 dedicated mode.</li>
@@ -353,9 +704,9 @@ Top</strong>, <strong>Delete to Document Bottom</strong>, and
 <strong>Delete Paragraph</strong> — removes text relative to the
 cursor.</li>
 </ul>
-<p><strong>Preferences…</strong> and <strong>Customize Menus…</strong>
-live with the rest of Quill’s configuration under <strong>Tools -&gt;
-Customize &amp; Support</strong>.</p>
+<p><strong>Preferences...</strong> and <strong>Customize
+Menus...</strong> live with the rest of Quill's configuration under
+<strong>Tools -&gt; Customize &amp; Support</strong>.</p>
 <h3 id="view">View</h3>
 <p>The <strong>View</strong> menu controls how Quill presents your
 document on screen without changing your content.</p>
@@ -370,8 +721,8 @@ strip.</li>
 the end of the document.</li>
 <li><strong>Start With No Document Open</strong> makes Quill open into
 an empty workspace instead of a starter document.</li>
-<li><strong>Preview…</strong>, <strong>Preview Side by Side</strong>,
-<strong>Focus Preview</strong>, and <strong>Browser Preview…</strong>
+<li><strong>Preview...</strong>, <strong>Preview Side by Side</strong>,
+<strong>Focus Preview</strong>, and <strong>Browser Preview...</strong>
 open rendered views of the current document.</li>
 </ul>
 <p>Preference-style toggles that used to live here — theme/dark mode,
@@ -379,28 +730,28 @@ system-tray mode, title-bar path style, dirty-title style, persistent
 undo, spell-check-as-you-type, and word-prediction-as-you-type — now
 live in the registry-driven <strong>Settings</strong> dialog
 (<strong>Tools -&gt; Customize &amp; Support -&gt;
-Preferences…</strong>), where they are persisted in one place.</p>
+Preferences...</strong>), where they are persisted in one place.</p>
 <h3 id="insert">Insert</h3>
 <p>The <strong>Insert</strong> menu adds structured content at the
 cursor.</p>
 <ul>
-<li><strong>Insert Link…</strong> creates a format-aware link.</li>
+<li><strong>Insert Link...</strong> creates a format-aware link.</li>
 <li><strong>Heading</strong> submenu: insert Heading 1 through 6,
 <strong>Decrease Level</strong> / <strong>Increase Level</strong>, and
-<strong>Style Headings…</strong> (font, size, alignment) for the current
-level or all levels.</li>
+<strong>Style Headings...</strong> (font, size, alignment) for the
+current level or all levels.</li>
 <li><strong>List</strong> submenu: <strong>Bullet</strong>,
 <strong>Numbered</strong>, <strong>Task</strong>, and <strong>List
-Manager…</strong>.</li>
+Manager...</strong>.</li>
 <li><strong>Insert Code Block</strong>, <strong>Insert
-Footnote</strong>, <strong>Insert Table…</strong>, <strong>Insert HTML
-Tag…</strong>, and <strong>Insert Markdown Tag…</strong>.</li>
-<li><strong>Insert Snippet…</strong> and <strong>Manage
-Snippets…</strong> for reusable text with placeholders.</li>
-<li><strong>Special Character…</strong>, <strong>Date and Time</strong>,
-<strong>Calculated Date…</strong>, and <strong>File Content…</strong>
-insert symbols, timestamps, computed dates, and the contents of another
-file.</li>
+Footnote</strong>, <strong>Insert Table...</strong>, <strong>Insert HTML
+Tag...</strong>, and <strong>Insert Markdown Tag...</strong>.</li>
+<li><strong>Insert Snippet...</strong> and <strong>Manage
+Snippets...</strong> for reusable text with placeholders.</li>
+<li><strong>Special Character...</strong>, <strong>Date and
+Time</strong>, <strong>Calculated Date...</strong>, and <strong>File
+Content...</strong> insert symbols, timestamps, computed dates, and the
+contents of another file.</li>
 </ul>
 <p>Quill treats Markdown and HTML as working surfaces, not
 special-purpose export formats, so tag insertion lives here beside the
@@ -411,7 +762,7 @@ feel like a modern editor:</p>
 <ol type="1">
 <li>Press <code>Ctrl+Space</code> to open <strong>Word
 Prediction</strong> (also on <strong>Edit -&gt; Word
-Prediction…</strong>).</li>
+Prediction...</strong>).</li>
 <li>Type to surface matching document words, HTML tags, and Markdown
 tags.</li>
 <li>Use arrow keys to choose a result and press Enter to insert it.</li>
@@ -465,21 +816,21 @@ markup-aware editing of existing text.</p>
 <li>Italic</li>
 </ul>
 <p>The <strong>Transform Lines</strong> submenu gathers every line and
-text transform in one place: <strong>Number Lines…</strong>,
-<strong>Hard-Wrap Lines…</strong>, <strong>Sort Lines
+text transform in one place: <strong>Number Lines...</strong>,
+<strong>Hard-Wrap Lines...</strong>, <strong>Sort Lines
 Ascending</strong>, <strong>Sort Lines Descending</strong>,
 <strong>Reverse Lines</strong>, <strong>Remove Duplicate Lines</strong>,
 <strong>Trim Trailing Whitespace</strong>, <strong>Normalize
 Whitespace</strong>, <strong>Convert Indentation to Spaces</strong>, and
 <strong>Convert Indentation to Tabs</strong>.</p>
 <h3 id="navigate">Navigate</h3>
-<p>The <strong>Navigate</strong> menu is one of Quill’s strongest
+<p>The <strong>Navigate</strong> menu is one of Quill's strongest
 differentiators. It assumes you may need to move through large, dense,
 or extracted material without visual scanning.</p>
 <p>Core location commands:</p>
 <ul>
-<li><strong>Go To Line…</strong></li>
-<li><strong>Go To Page…</strong></li>
+<li><strong>Go To Line...</strong></li>
+<li><strong>Go To Page...</strong></li>
 <li><strong>Back Location</strong></li>
 <li><strong>Forward Location</strong></li>
 </ul>
@@ -489,9 +840,10 @@ or extracted material without visual scanning.</p>
 <li><strong>Previous Heading</strong></li>
 <li><strong>Next Block</strong></li>
 <li><strong>Previous Block</strong></li>
-<li><strong>Outline Navigator…</strong></li>
-<li><strong>Heading Organizer…</strong> (<code>Ctrl+Alt+Shift+H</code>)
-for heading-level edits, section reorder, and heading validation</li>
+<li><strong>Outline Navigator...</strong></li>
+<li><strong>Heading Organizer...</strong>
+(<code>Ctrl+Alt+Shift+H</code>) for heading-level edits, section
+reorder, and heading validation</li>
 <li><strong>Match Bracket</strong></li>
 <li><strong>Next Structure</strong></li>
 <li><strong>Previous Structure</strong></li>
@@ -500,10 +852,10 @@ for heading-level edits, section reorder, and heading validation</li>
 </ul>
 <p>Bookmark and position commands:</p>
 <ul>
-<li><strong>Set Bookmark…</strong></li>
-<li><strong>Go To Bookmark…</strong></li>
-<li><strong>List Bookmarks…</strong></li>
-<li><strong>Go to Percent…</strong></li>
+<li><strong>Set Bookmark...</strong></li>
+<li><strong>Go To Bookmark...</strong></li>
+<li><strong>List Bookmarks...</strong></li>
+<li><strong>Go to Percent...</strong></li>
 <li><strong>First Non-Blank</strong></li>
 <li><strong>Last Non-Blank</strong></li>
 </ul>
@@ -517,21 +869,21 @@ Find and Replace.)</p>
 In-document Find and Replace live in <strong>Edit</strong>; this menu
 covers multi-file and regular-expression work.</p>
 <ul>
-<li><strong>Search in Files…</strong> and <strong>Replace Across
-Files…</strong> search and replace across a folder of documents.</li>
-<li><strong>Count Regex Matches…</strong> and <strong>Extract Regex
-Matches…</strong> report or pull out every match of a regular
+<li><strong>Search in Files...</strong> and <strong>Replace Across
+Files...</strong> search and replace across a folder of documents.</li>
+<li><strong>Count Regex Matches...</strong> and <strong>Extract Regex
+Matches...</strong> report or pull out every match of a regular
 expression.</li>
 <li><strong>Lines in First Block Only</strong> and <strong>Lines Common
 to Both Blocks</strong> filter lines by block membership (set operations
 between two marked blocks).</li>
 </ul>
 <h3 id="tools">Tools</h3>
-<p>The <strong>Tools</strong> menu is Quill’s workshop. It contains
+<p>The <strong>Tools</strong> menu is Quill's workshop. It contains
 high-value actions that are not best understood as raw editing.</p>
 <h4 id="discovery-and-command-access">Discovery and command access</h4>
 <ul>
-<li><strong>Command Palette…</strong></li>
+<li><strong>Command Palette...</strong></li>
 </ul>
 <p>The palette is one of the fastest ways to learn Quill. It supports
 query modes:</p>
@@ -545,20 +897,20 @@ query modes:</p>
 naturally.</p>
 <h4 id="writing-and-language">Writing and language</h4>
 <ul>
-<li><strong>Word Count…</strong></li>
-<li><strong>Spell Check…</strong></li>
+<li><strong>Word Count...</strong></li>
+<li><strong>Spell Check...</strong></li>
 <li><strong>Next Misspelling</strong></li>
-<li><strong>Thesaurus…</strong></li>
-<li><strong>Dictionary Status…</strong></li>
-<li><strong>AI Hub…</strong></li>
-<li><strong>Writing Assistant…</strong></li>
-<li><strong>Prompt Studio…</strong></li>
-<li><strong>Agent Center…</strong></li>
+<li><strong>Thesaurus...</strong></li>
+<li><strong>Dictionary Status...</strong></li>
+<li><strong>AI Hub...</strong></li>
+<li><strong>Writing Assistant...</strong></li>
+<li><strong>Prompt Studio...</strong></li>
+<li><strong>Agent Center...</strong></li>
 <li><strong>Rewrite Selection</strong></li>
 <li><strong>Summarize Selection</strong></li>
 <li><strong>Continue Writing</strong></li>
 <li><strong>Fix Grammar</strong></li>
-<li><strong>Run Python…</strong></li>
+<li><strong>Run Python...</strong></li>
 </ul>
 <p>The Writing Assistant shell ranks Quill commands from your prompt,
 offers preset prompts for rewrite/summarize/continue/grammar flows, and
@@ -575,15 +927,15 @@ at the cursor.</li>
 have one; otherwise it summarizes the whole document.</li>
 <li><strong>Continue Writing</strong> uses your selection as the lead-in
 if you have one; otherwise it continues from the full document.</li>
-<li>Quill announces the scope it chose, for example “Rewrite paragraph
-(42 words)”, so you always know what the action will change.</li>
-<li>If there is nothing to act on, Quill says so (for example “Nothing
-to rewrite”) instead of sending an empty request.</li>
-<li>If AI is turned off, these actions announce “AI is turned off.
-Enable ‘Use Artificial Intelligence’ in Tools &gt; AI Assistant.” and do
+<li>Quill announces the scope it chose, for example "Rewrite paragraph
+(42 words)", so you always know what the action will change.</li>
+<li>If there is nothing to act on, Quill says so (for example "Nothing
+to rewrite") instead of sending an empty request.</li>
+<li>If AI is turned off, these actions announce "AI is turned off.
+Enable 'Use Artificial Intelligence' in Tools &gt; AI Assistant." and do
 nothing else.</li>
 </ul>
-<p>Use <strong>Tools -&gt; AI Assistant -&gt; AI Hub…</strong> for a
+<p>Use <strong>Tools -&gt; AI Assistant -&gt; AI Hub...</strong> for a
 single control surface that links provider verification, model
 discovery, Prompt Studio, Agent Center, and Writing Assistant.</p>
 <p>Trust and privacy baseline:</p>
@@ -622,26 +974,26 @@ DPAPI-encrypted file as a fallback, and announces the verification
 result in plain language for immediate screen-reader feedback.</p>
 <p>Connection status messages tell you exactly what to do next:</p>
 <ul>
-<li>“Authentication failed. Check your API key.” means the key was
+<li>"Authentication failed. Check your API key." means the key was
 rejected (HTTP 401). Re-enter the key.</li>
-<li>“Access denied. Your API key is valid but lacks permission for this
-model or region.” means the key works but is not allowed for that model,
-region, or billing tier (HTTP 403). Check the provider’s model access,
+<li>"Access denied. Your API key is valid but lacks permission for this
+model or region." means the key works but is not allowed for that model,
+region, or billing tier (HTTP 403). Check the provider's model access,
 billing, or quota.</li>
-<li>“The AI provider is warming up. Try again in a moment.” means the
+<li>"The AI provider is warming up. Try again in a moment." means the
 model is still loading. Quill retries briefly on its own before
 reporting this.</li>
-<li>“The local AI server is not running. Start Ollama and try again.”
+<li>"The local AI server is not running. Start Ollama and try again."
 means Quill could not reach your local endpoint.</li>
-<li>“Rate limited by the AI provider. Wait a moment and try again.”
+<li>"Rate limited by the AI provider. Wait a moment and try again."
 means you sent requests too quickly.</li>
-<li>“Your saved API key could not be unlocked on this device. Open AI
-Connection and enter the key again.” appears in the AI status line when
+<li>"Your saved API key could not be unlocked on this device. Open AI
+Connection and enter the key again." appears in the AI status line when
 a saved key cannot be decrypted, which can happen after moving a
 portable install to a different Windows account or machine. Open AI
 Connection and re-enter the key.</li>
 </ul>
-<p>For policy details, see the repository’s <code>PRIVACY.md</code> and
+<p>For policy details, see the repository's <code>PRIVACY.md</code> and
 <code>RESPONSIBLE_AI_USE.md</code>.</p>
 <p>These help you stay inside the editor instead of breaking flow for
 small writing chores.</p>
@@ -723,7 +1075,7 @@ API keys can use the free personal-use tier, which has lower usage
 limits.</p>
 <p>After save, Quill announces plain-language verification feedback (for
 example, ready, auth failure, timeout, or endpoint unreachable).</p>
-<h4 id="reading-dictation">Reading &amp; Dictation</h4>
+<h4 id="reading--dictation">Reading &amp; Dictation</h4>
 <ul>
 <li><strong>Read Aloud</strong> submenu for start or pause, stop, and
 voice selection</li>
@@ -735,18 +1087,18 @@ document</li>
 <li><strong>Dictation</strong> submenu for Windows dictation, plus an
 opt-in <strong>Hey QUILL Commands</strong> toggle that lets dictation
 phrases trigger Quill commands instead of inserting text.</li>
-<li><strong>OCR Image…</strong> converts an image to text via optical
+<li><strong>OCR Image...</strong> converts an image to text via optical
 character recognition.</li>
 </ul>
 <h4 id="watch-folder">Watch Folder</h4>
 <ul>
-<li><strong>Watch Folder Monitoring (in Settings)…</strong> toggles
+<li><strong>Watch Folder Monitoring (in Settings)...</strong> toggles
 automatic opening of supported files dropped into a configured
 folder.</li>
-<li><strong>Watch Folder Profiles…</strong> configures folder path,
+<li><strong>Watch Folder Profiles...</strong> configures folder path,
 subfolders, startup behavior, and polling behavior.</li>
-<li><strong>Watch Folder Queue…</strong> shows current runtime state and
-active configuration.</li>
+<li><strong>Watch Folder Queue...</strong> shows current runtime state
+and active configuration.</li>
 </ul>
 <p>When BITS Whisperer is enabled (QUILL 2.0), Watch Folder also appears
 in the BITS Whisperer submenu alongside Dictation.</p>
@@ -793,10 +1145,10 @@ keeping status and onboarding surfaces available.</li>
 applies safe defaults without enabling runtime routing changes.</p>
 <p>Read Aloud is particularly useful for proofreading by ear. OCR Image
 handles image-to-text work with an explicit consent and progress flow.
-Dictation uses Windows’ own speech input. When Hey QUILL Commands is
+Dictation uses Windows' own speech input. When Hey QUILL Commands is
 enabled, Quill stays silent and only listens while dictation is active,
 then runs the matching action after the wake phrase. Watch Folder
-automation is best for “drop and open” workflows: copy supported files
+automation is best for "drop and open" workflows: copy supported files
 into one folder and let Quill open them in the background.</p>
 <p>BITS Whisperer phased rollout note:</p>
 <ul>
@@ -834,19 +1186,19 @@ paragraph, or line. That keeps GLOW close to the writing experience
 instead of making it feel like a detached compliance tool.</p>
 <h4 id="comparison">Comparison</h4>
 <ul>
-<li><strong>Compare with File…</strong></li>
+<li><strong>Compare with File...</strong></li>
 <li><strong>Compare Open Documents</strong></li>
 <li><strong>Next Difference</strong> / <strong>Previous
 Difference</strong></li>
 <li><strong>Announce Current Difference</strong></li>
-<li><strong>Difference List…</strong></li>
+<li><strong>Difference List...</strong></li>
 <li><strong>Toggle Synchronized Navigation</strong></li>
-<li><strong>Compare Options…</strong></li>
+<li><strong>Compare Options...</strong></li>
 <li><strong>Create Difference Summary</strong></li>
 <li><strong>Copy Current Difference</strong> / <strong>Copy All
 Differences</strong></li>
 </ul>
-<p>Quill’s compare model is practical and local. It supports
+<p>Quill's compare model is practical and local. It supports
 file-to-file review, multi-document review, summary generation, and
 synchronized movement through differences.</p>
 <h4 id="power-tools">Power Tools</h4>
@@ -862,7 +1214,7 @@ log.</li>
 <li><strong>Toggle Key Describer</strong> — announces key names instead
 of performing actions; useful for documenting keystrokes.</li>
 <li><strong>Toggle Indentation Announcements</strong> / <strong>Infer
-Indentation…</strong> — announces indentation level changes as you
+Indentation...</strong> — announces indentation level changes as you
 navigate.</li>
 </ul>
 <p><strong>Macros:</strong></p>
@@ -871,33 +1223,34 @@ navigate.</li>
 capture a sequence of editing commands.</li>
 <li><strong>Play Last Macro</strong> — replay the last recorded
 sequence.</li>
-<li><strong>Manage Macros…</strong> — name, edit, and organize saved
+<li><strong>Manage Macros...</strong> — name, edit, and organize saved
 macros.</li>
 </ul>
 <p>Macros are ideal for repetitive cleanup: record once, replay as many
 times as needed.</p>
 <p><strong>Authoring utilities:</strong></p>
 <ul>
-<li><strong>Regex Helper…</strong> — full accessible dialog with recipe
-presets, plain-language pattern explanations, editable sample text,
-match previews with offsets, and one-step copy-to-Find-Replace.</li>
-<li><strong>Pandoc Conversion Wizard…</strong> — converts supported
+<li><strong>Regex Helper...</strong> — full accessible dialog with
+recipe presets, plain-language pattern explanations, editable sample
+text, match previews with offsets, and one-step
+copy-to-Find-Replace.</li>
+<li><strong>Pandoc Conversion Wizard...</strong> — converts supported
 source files into Markdown, HTML, or plain text that opens directly as a
 Quill tab.</li>
-<li><strong>External Tools and Format Support…</strong> — explains what
-each supported helper unlocks, whether Quill can already see it, and the
-best first-touch setup path.</li>
-<li><strong>YAML Structure Editor…</strong> — inspects and edits YAML
+<li><strong>External Tools and Format Support...</strong> — explains
+what each supported helper unlocks, whether Quill can already see it,
+and the best first-touch setup path.</li>
+<li><strong>YAML Structure Editor...</strong> — inspects and edits YAML
 front matter and structure files.</li>
 </ul>
 <p><strong>Document Intake:</strong></p>
 <ul>
-<li><strong>Document Intake Report…</strong> — answers how good an
+<li><strong>Document Intake Report...</strong> — answers how good an
 extraction was and whether the source likely contained structure that
 did not survive.</li>
-<li><strong>Review Extraction Quality…</strong> — walks through
+<li><strong>Review Extraction Quality...</strong> — walks through
 extraction quality signals interactively.</li>
-<li><strong>Report Bad Extraction…</strong> — escalates a source for
+<li><strong>Report Bad Extraction...</strong> — escalates a source for
 manual cleanup or re-extraction.</li>
 </ul>
 <p>These commands matter when Quill is acting as a trusted reader for
@@ -905,37 +1258,38 @@ imported formats. They help answer questions like: Is this document safe
 to quote from directly? Do I need to escalate for manual cleanup?</p>
 <p><strong>Shell Integration:</strong></p>
 <ul>
-<li><strong>Install Shell Integration…</strong> — registers Quill as a
+<li><strong>Install Shell Integration...</strong> — registers Quill as a
 shell context-menu handler and protocol handler.</li>
 <li><strong>Remove Shell Integration</strong> — unregisters shell
 extensions.</li>
 </ul>
 <h4 id="accessibility">Accessibility</h4>
 <ul>
-<li><strong>Accessibility Audit…</strong></li>
-<li><strong>Keyboard Trap &amp; Tab-Order Snapshot…</strong></li>
-<li><strong>Validate Contrast…</strong></li>
-<li><strong>Link Inventory &amp; Alt-Text Catalog…</strong></li>
+<li><strong>Accessibility Audit...</strong></li>
+<li><strong>Keyboard Trap &amp; Tab-Order Snapshot...</strong></li>
+<li><strong>Validate Contrast...</strong></li>
+<li><strong>Link Inventory &amp; Alt-Text Catalog...</strong></li>
 <li><strong>Speak Cursor Address</strong>, <strong>Speak Document
 Status</strong>, and <strong>Speak Selection Length</strong> announce
 the caret position, document state, and selection size to your screen
 reader.</li>
 </ul>
 <p>These tools help review the editor experience itself, the current
-document’s link surface, and low-vision presentation issues.</p>
-<h4 id="customize-support">Customize &amp; Support</h4>
+document's link surface, and low-vision presentation issues.</p>
+<h4 id="customize--support">Customize &amp; Support</h4>
 <ul>
-<li><strong>Preferences…</strong></li>
-<li><strong>Customize Menus…</strong></li>
-<li><strong>Profiles and Features…</strong></li>
-<li><strong>Status Bar Layout…</strong></li>
-<li><strong>Export and Back Up…</strong> / <strong>Import or
-Restore…</strong></li>
-<li><strong>Keymap Editor…</strong> / <strong>Export Keymap…</strong> /
-<strong>Import Keymap…</strong> / <strong>Reset Keymap</strong></li>
+<li><strong>Preferences...</strong></li>
+<li><strong>Customize Menus...</strong></li>
+<li><strong>Profiles and Features...</strong></li>
+<li><strong>Status Bar Layout...</strong></li>
+<li><strong>Export and Back Up...</strong> / <strong>Import or
+Restore...</strong></li>
+<li><strong>Keymap Editor...</strong> / <strong>Export
+Keymap...</strong> / <strong>Import Keymap...</strong> / <strong>Reset
+Keymap</strong></li>
 <li><strong>Show Notifications</strong></li>
-<li><strong>Report a Bug…</strong></li>
-<li><strong>Save Diagnostics…</strong></li>
+<li><strong>Report a Bug...</strong></li>
+<li><strong>Save Diagnostics...</strong></li>
 <li><strong>Open Logs Folder</strong> / <strong>Open Diagnostics
 Folder</strong></li>
 <li><strong>Check for Updates</strong></li>
@@ -962,21 +1316,21 @@ document.</li>
 getting-started document.</li>
 <li><strong>Open Keyboard Reference</strong> generates the current live
 shortcut reference from the active command registry.</li>
-<li><strong>Save Diagnostics…</strong> writes a local diagnostics bundle
-you can review before sharing.</li>
-<li><strong>Report a Bug…</strong> opens an in-app review screen, copies
-the environment summary to the clipboard, and then opens the Community
-Access support-hub issue form.</li>
+<li><strong>Save Diagnostics...</strong> writes a local diagnostics
+bundle you can review before sharing.</li>
+<li><strong>Report a Bug...</strong> opens an in-app review screen,
+copies the environment summary to the clipboard, and then opens the
+Community Access support-hub issue form.</li>
 <li><strong>What Can I Do Here?</strong> gives context-aware
 assistance.</li>
-<li><strong>Why Don’t I See a Feature?</strong> explains profile-driven
+<li><strong>Why Don't I See a Feature?</strong> explains profile-driven
 feature visibility.</li>
 <li><strong>Feature Profiles</strong> commands let you switch profile,
 run health checks, undo the last profile change, reset to Essential, and
 run onboarding.</li>
-<li><strong>Startup Wizard…</strong> can be rerun at any time and now
+<li><strong>Startup Wizard...</strong> can be rerun at any time and now
 includes watch-folder setup.</li>
-<li><strong>Check for Updates…</strong> verifies the signed update
+<li><strong>Check for Updates...</strong> verifies the signed update
 manifest, opens the installer download page, and can close Quill so
 setup can run immediately.</li>
 <li><strong>About Quill</strong> shows version, publisher details, and
@@ -1000,7 +1354,7 @@ problem from inside Quill</h3>
 <p>Use this path when Quill is behaving unexpectedly or when you want to
 send the team a feature request.</p>
 <ol type="1">
-<li>Open <strong>Help -&gt; Report a Bug…</strong>.</li>
+<li>Open <strong>Help -&gt; Report a Bug...</strong>.</li>
 <li>Read the in-app report summary Quill prepares for you.</li>
 <li>Choose whether to include diagnostics, and whether to include plain
 file paths.</li>
@@ -1012,10 +1366,10 @@ what you expected, and what actually happened.</li>
 <li>Attach the diagnostics zip if it is relevant to the issue.</li>
 </ol>
 <p>This unified flow keeps support reporting in one place. If you only
-need diagnostics, <strong>Help -&gt; Save Diagnostics…</strong> remains
-available as a standalone export command.</p>
+need diagnostics, <strong>Help -&gt; Save Diagnostics...</strong>
+remains available as a standalone export command.</p>
 <h2 id="writing-and-editing">Writing and Editing</h2>
-<p>Quill’s editing model is fast once you stop thinking of it as only a
+<p>Quill's editing model is fast once you stop thinking of it as only a
 textbox.</p>
 <h3 id="everyday-editing">Everyday editing</h3>
 <p>Use the familiar commands first:</p>
@@ -1027,6 +1381,327 @@ move text</li>
 <li><code>Ctrl+A</code> to select everything</li>
 </ul>
 <p>Quill adds two especially useful ideas on top of that.</p>
+<h3 id="copy-tray">Copy Tray</h3>
+<p>Copy Tray is <strong>twelve</strong> independently addressable
+clipboard slots that survive application restarts. Each slot holds text
+you copy there explicitly. Unlike the system clipboard — shared across
+every application and reset on every copy — Copy Tray slots belong
+exclusively to QUILL and hold their contents until you replace or clear
+them.</p>
+<p><strong>Pasting from a slot is a single chord: hold
+<code>Ctrl+Shift</code> and press a number key.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ctrl+Shift+1</code> through <code>Ctrl+Shift+9</code></td>
+<td>Paste from slots 1–9</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+0</code></td>
+<td>Paste from slot 10</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+-</code></td>
+<td>Paste from slot 11</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+=</code></td>
+<td>Paste from slot 12</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Copying to a slot uses the QUILL key prefix followed by the
+same key with Shift:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ctrl+Shift+Grave, Shift+1</code> through
+<code>Shift+9</code></td>
+<td>Copy selection to slots 1–9</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+Grave, Shift+0</code></td>
+<td>Copy selection to slot 10</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+Grave, Shift+-</code></td>
+<td>Copy selection to slot 11</td>
+</tr>
+<tr>
+<td><code>Ctrl+Shift+Grave, Shift+=</code></td>
+<td>Copy selection to slot 12</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Multi-press paste.</strong> Press the paste chord multiple
+times quickly:</p>
+<ul>
+<li><strong>Single press</strong> — paste the slot's content at the
+cursor (standard behaviour).</li>
+<li><strong>Double press</strong> — peek: QUILL announces the slot's
+content without pasting it. Useful to check what a slot holds before
+committing to a paste.</li>
+<li><strong>Triple press</strong> — open the Copy Tray dialog directly,
+focused on that slot.</li>
+</ul>
+<p><strong>Copy to Next Empty Slot.</strong>
+<code>Edit &gt; Copy Tray &gt; Copy to Next Empty Slot</code> copies the
+selection to the first unoccupied (and unpinned) slot in order 1–12 and
+announces which one: "Copied to slot 4 (first empty)." If all twelve
+slots are occupied, QUILL tells you rather than silently overwriting
+anything.</p>
+<p><strong>Search Tray Slots.</strong>
+<code>Edit &gt; Copy Tray &gt; Search Tray Slots...</code> opens a small
+search dialog. Type any word or phrase; QUILL searches all slot text and
+labels and announces matching slots. Press the corresponding digit key
+to paste that slot directly, or Escape to cancel.</p>
+<p><strong>Pinned slots.</strong> From the Copy Tray dialog, any slot
+can be marked Pinned. Pinned slots:</p>
+<ul>
+<li>Are never overwritten by "Copy to Next Empty Slot" routing.</li>
+<li>Are announced with a "pinned" prefix: "Slot 1 (pinned —
+signature)".</li>
+<li>Persist the pin flag in <code>copy_tray.json</code> across
+restarts.</li>
+</ul>
+<p>To pin or unpin a slot, open the Copy Tray dialog
+(<code>Ctrl+Shift+Grave, X</code>), select the slot, and use the
+Pin/Unpin button.</p>
+<p><strong>Paste submenu slot labels.</strong> The
+<code>Edit &gt; Copy Tray &gt; Paste from Tray</code> submenu shows the
+label and a text preview for every occupied slot: "1 signature — Hi, I
+wanted to follow..." Screen readers hear both the label and the preview
+when navigating the submenu.</p>
+<p><strong>Open the tray dialog:</strong>
+<code>Ctrl+Shift+Grave, X</code> (or
+<code>Edit &gt; Copy Tray &gt; Open Copy Tray...</code>).</p>
+<p>The dialog lists all twelve slots. Each row shows the slot number, an
+optional label, and a preview of the stored text. Navigate with arrow
+keys. Buttons:</p>
+<ul>
+<li><strong>Paste</strong> — insert the selected slot's text at the
+cursor. Also activated by double-clicking or pressing Enter on a
+row.</li>
+<li><strong>Paste from Clipboard</strong> — store the system clipboard
+into the selected slot.</li>
+<li><strong>Pin / Unpin</strong> — toggle the pin state for the selected
+slot.</li>
+<li><strong>Save Changes</strong> — save edits made directly in the
+content area.</li>
+<li><strong>Clear Slot</strong> — empty the selected slot.</li>
+<li><strong>Close</strong> — close without pasting.</li>
+</ul>
+<p><strong>Status bar.</strong> The <code>Slots: X/12</code> cell in the
+status bar shows how many of the twelve slots are occupied. Click the
+cell to open the Copy Tray dialog. Add the cell via
+<code>App &gt; Preferences &gt; Status Bar</code> if it is not
+visible.</p>
+<p><strong>Tray icon access.</strong> The system tray icon menu also
+includes a Copy Tray submenu listing all occupied slots. Click any slot
+entry to paste its content into the active editor. This makes QUILL's
+clipboard available from the tray without bringing the window to the
+front.</p>
+<p><strong>Tips.</strong></p>
+<ul>
+<li>Keep a signature, disclaimer, or standard heading in slot 1 and pin
+it. One chord pastes it anywhere and "Copy to Next Empty Slot" will
+never overwrite it.</li>
+<li>Use labelled slots for a research session: slot 1 "intro quote",
+slot 2 "methodology note", slot 3 "source URL". Copy one fragment per
+slot as you read, then paste in order when drafting.</li>
+<li>Double-press any paste chord to hear what is in that slot without
+pasting — useful when navigating your tray by memory.</li>
+<li>Slots survive restarts. Build a small library of recurring fragments
+you reach for daily.</li>
+<li>All bindings are reassignable in the Keymap Editor
+(<code>App &gt; Preferences &gt; Keyboard</code>).</li>
+</ul>
+<h3 id="abbreviation-expansion">Abbreviation Expansion</h3>
+<p>Abbreviation Expansion is a TextExpander-style feature. You type a
+short trigger word followed by any delimiter character (space, period,
+comma, and so on) and QUILL silently replaces the trigger with the full
+text.</p>
+<p><strong>Example:</strong> type <code>btw </code> (note the trailing
+space) and QUILL replaces it with <code>by the way </code>.</p>
+<p>QUILL ships with fifteen built-in abbreviations covering common
+shorthand. You can add, edit, and disable any abbreviation, including
+the built-in ones.</p>
+<p><strong>Built-in abbreviations.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Abbreviation</th>
+<th>Expansion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>afaik</code></td>
+<td>as far as I know</td>
+</tr>
+<tr>
+<td><code>afaict</code></td>
+<td>as far as I can tell</td>
+</tr>
+<tr>
+<td><code>asap</code></td>
+<td>as soon as possible</td>
+</tr>
+<tr>
+<td><code>atm</code></td>
+<td>at the moment</td>
+</tr>
+<tr>
+<td><code>btw</code></td>
+<td>by the way</td>
+</tr>
+<tr>
+<td><code>fwiw</code></td>
+<td>for what it's worth</td>
+</tr>
+<tr>
+<td><code>imo</code></td>
+<td>in my opinion</td>
+</tr>
+<tr>
+<td><code>imho</code></td>
+<td>in my humble opinion</td>
+</tr>
+<tr>
+<td><code>irl</code></td>
+<td>in real life</td>
+</tr>
+<tr>
+<td><code>omw</code></td>
+<td>on my way</td>
+</tr>
+<tr>
+<td><code>tbh</code></td>
+<td>to be honest</td>
+</tr>
+<tr>
+<td><code>tbc</code></td>
+<td>to be confirmed</td>
+</tr>
+<tr>
+<td><code>tbd</code></td>
+<td>to be determined</td>
+</tr>
+<tr>
+<td><code>ttyl</code></td>
+<td>talk to you later</td>
+</tr>
+<tr>
+<td><code>wrt</code></td>
+<td>with regard to</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Enabling and disabling.</strong> Abbreviation expansion is on
+by default. To toggle it:</p>
+<ul>
+<li>Press <code>Ctrl+Shift+Grave, E</code> — or use
+<code>Insert &gt; Toggle Abbreviation Expansion</code>.</li>
+<li>Click the <strong>ABR: On / ABR: Off</strong> cell in the status bar
+(if visible; add it via status bar settings).</li>
+<li>Change <strong>Abbreviation expansion</strong> in
+<code>App &gt; Preferences &gt; Editing</code>.</li>
+</ul>
+<p><strong>Managing abbreviations.</strong> Open
+<code>Insert &gt; Manage Abbreviations...</code> (or press
+<code>Ctrl+Shift+Grave, Shift+A</code>) to add, edit, and organise your
+abbreviations. Each abbreviation has:</p>
+<ul>
+<li><strong>Abbreviation</strong> — the short trigger word, e.g.
+<code>btw</code>.</li>
+<li><strong>Expansion</strong> — the full text to substitute, e.g.
+<code>by the way</code>.</li>
+<li><strong>Description</strong> — optional note for your own
+reference.</li>
+<li><strong>Case sensitive</strong> — when checked, only the exact-case
+trigger matches; otherwise any capitalisation of the trigger fires.</li>
+<li><strong>Enabled</strong> — toggle individual abbreviations without
+deleting them.</li>
+</ul>
+<p>The manager dialog includes a <strong>Search</strong> field at the
+top. Type any part of a trigger word or expansion text to filter the
+list in real time. Disabled abbreviations appear with a "(disabled)"
+suffix.</p>
+<p>The manager also has <strong>Import</strong> and
+<strong>Export</strong> buttons for JSON round-trips. Export saves your
+full library to a file. Import merges a file into your library;
+abbreviations with duplicate IDs are skipped. QUILL announces how many
+were added on import.</p>
+<p><strong>Manual trigger.</strong> Press
+<code>Ctrl+Shift+Grave, A</code> (or
+<code>Insert &gt; Expand Abbreviation</code>) to expand the word
+immediately before the cursor without typing a delimiter character.
+Useful when you want expansion mid-word or at end-of-document.</p>
+<p><strong>Variables in expansions.</strong> Expansions support these
+placeholders:</p>
+<table>
+<thead>
+<tr>
+<th>Placeholder</th>
+<th>Inserts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${cursor}</code></td>
+<td>Places the cursor here after expansion</td>
+</tr>
+<tr>
+<td><code>${date}</code></td>
+<td>Current date (e.g. June 11, 2026)</td>
+</tr>
+<tr>
+<td><code>${time}</code></td>
+<td>Current time (e.g. 02:30 PM)</td>
+</tr>
+<tr>
+<td><code>${clipboard}</code></td>
+<td>Current system clipboard text</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Multi-press window.</strong> The double/triple press
+detection window is configurable in
+<code>App &gt; Preferences &gt; Editing</code> as <strong>Multi-press
+window (ms)</strong> (default 400 ms; range 100–1000 ms). A larger
+window helps if you press keys slowly; a smaller window prevents
+accidental double-fires for fast typists.</p>
+<p><strong>Sound feedback.</strong> Optional: enable <strong>Play sound
+on abbreviation expansion</strong> in
+<code>App &gt; Preferences &gt; Editing</code> and optionally point
+<strong>Abbreviation expansion sound file</strong> to a
+<code>.wav</code> file. Leave the path blank for the default system
+beep.</p>
+<p><strong>Tips.</strong></p>
+<ul>
+<li>Use <code>${cursor}</code> to drop the cursor inside a template. For
+example, the abbreviation <code>sig</code> expanding to
+<code>Best regards,${cursor}Jeff</code> positions the cursor right after
+the comma.</li>
+<li>Use case-sensitive abbreviations sparingly — most triggers are
+lowercase and case sensitivity is rarely needed.</li>
+<li>Abbreviations fire before snippet expansion. If a word matches both,
+the abbreviation wins.</li>
+<li>Export your library regularly as a backup and to share abbreviations
+between machines.</li>
+</ul>
 <h3 id="copy-with-source">Copy With Source</h3>
 <p><code>Ctrl+Shift+C</code> copies the current selection, then appends
 a source reference that captures document context. If nothing is
@@ -1037,11 +1712,6 @@ review workflows, and evidence gathering.</p>
 <p>Quill uses an anchor-based selection model compatible with
 EdSharp:</p>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>Key</th>
@@ -1089,11 +1759,6 @@ EdSharp:</p>
 </table>
 <p><strong>Structural selection</strong></p>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>Key</th>
@@ -1135,11 +1800,6 @@ default key; assign one in Preferences &gt; Keyboard). When active, an
 <p>The mark ring is a rolling stack of temporary jump points for
 in-session back-and-forth navigation:</p>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>Key</th>
@@ -1177,7 +1837,7 @@ in-session back-and-forth navigation:</p>
 <li><strong>Set Named Mark</strong>: names and stores the current cursor
 position; announces line and column.</li>
 <li><strong>Jump to Named Mark</strong>: choose from a list showing each
-mark’s name and position; jumps on selection.</li>
+mark's name and position; jumps on selection.</li>
 <li><strong>Open Review Buffer</strong>: opens the active selection in a
 read-only dialog for non-destructive screen-reader paging. Requires a
 selection.</li>
@@ -1191,7 +1851,7 @@ and HTML, this makes citation and cross-referencing much less
 tedious.</p>
 <h2 id="search-replace-and-deep-navigation">Search, Replace, and Deep
 Navigation</h2>
-<p>Quill’s search tools are both straightforward and layered.</p>
+<p>Quill's search tools are both straightforward and layered.</p>
 <h3 id="standard-search">Standard search</h3>
 <ul>
 <li><code>Ctrl+F</code> opens search.</li>
@@ -1299,7 +1959,7 @@ short prefix. Follow it with:</p>
 again to lock it until <code>Esc</code>).</li>
 <li><code>G</code> to open Go to Anything (Quick Nav search).</li>
 <li><code>M</code> to <strong>paste HTML clipboard content as
-Markdown</strong> at the cursor. Quill reads the clipboard’s rich HTML
+Markdown</strong> at the cursor. Quill reads the clipboard's rich HTML
 (the <code>HTML Format</code> flavour copied from web pages and word
 processors), converts headings, lists, links, bold/italic, code, and
 block quotes to Markdown, and inserts the result. If no rich HTML is
@@ -1326,20 +1986,20 @@ patterns without forcing you into a separate composer.</p>
 <code>Enter</code> on an empty list marker exits the list. When the
 caret is on a list item, <code>Tab</code> nests it and
 <code>Shift+Tab</code> promotes it. For larger reorganizations, use
-<strong>Format -&gt; List -&gt; List Manager…</strong>
+<strong>Format -&gt; List -&gt; List Manager...</strong>
 (<code>Ctrl+Alt+L</code>) to move, promote/demote, add, edit, and delete
 list items from a tree view.</p>
 <p>For heading presentation control, open <strong>Insert -&gt; Heading
--&gt; Style Headings…</strong>. You can style either all heading levels
-or the current heading level, then set font family, point size, and
-alignment. In Markdown documents, styled headings are written as HTML
-heading tags so the formatting is preserved.</p>
+-&gt; Style Headings...</strong>. You can style either all heading
+levels or the current heading level, then set font family, point size,
+and alignment. In Markdown documents, styled headings are written as
+HTML heading tags so the formatting is preserved.</p>
 <p>For structure editing, open <strong>Navigate -&gt; Heading
-Organizer…</strong> (<code>Ctrl+Alt+Shift+H</code>). The organizer lists
-each heading as level + title, supports keyboard promotion/demotion
-(<code>Tab</code> and <code>Shift+Tab</code>), lets you move sections
-up/down, rename headings, and validates heading order (start level,
-skipped levels, empty headings) before apply.</p>
+Organizer...</strong> (<code>Ctrl+Alt+Shift+H</code>). The organizer
+lists each heading as level + title, supports keyboard
+promotion/demotion (<code>Tab</code> and <code>Shift+Tab</code>), lets
+you move sections up/down, rename headings, and validates heading order
+(start level, skipped levels, empty headings) before apply.</p>
 <h3 id="tables-code-blocks-and-tags">Tables, code blocks, and tags</h3>
 <p>Quill includes guided insertion for tables, code blocks, HTML tags,
 and Markdown snippets. This is especially useful for users who want
@@ -1425,7 +2085,7 @@ behavior. This matters for users who need a predictable low-vision
 experience rather than a single visual theme.</p>
 <h3 id="status-bar-as-an-accessible-control-surface">Status bar as an
 accessible control surface</h3>
-<p>Quill’s status bar is navigable and interactive. This is a subtle but
+<p>Quill's status bar is navigable and interactive. This is a subtle but
 important design decision. It keeps useful information close while still
 making it reachable from the keyboard.</p>
 <h2 id="quill-on-macos">Quill on macOS</h2>
@@ -1439,7 +2099,7 @@ with NVDA/JAWS.</li>
 <li><strong>On-device AI.</strong> Ask Quill uses <strong>Apple
 Foundation Models</strong> (Apple Intelligence) on a supported Mac — no
 model download and no cloud. The on-device GGUF/llama.cpp picker is
-hidden on macOS because Apple’s model is used instead; you can still
+hidden on macOS because Apple's model is used instead; you can still
 connect Ollama or a cloud endpoint if you prefer.</li>
 <li><strong>Standard Mac behaviors.</strong> Preferences and About use
 the standard macOS menu locations (<code>Quill -&gt; Settings</code>,
@@ -1461,7 +2121,7 @@ coherent.</p>
 <p>Profiles shape which feature clusters are on, quiet, or off. This
 helps Quill stay calm for new users without stripping power from
 advanced users.</p>
-<p>Use <strong>Profiles and Features…</strong> to:</p>
+<p>Use <strong>Profiles and Features...</strong> to:</p>
 <ul>
 <li>switch profiles</li>
 <li>quick-switch profiles from anywhere with
@@ -1495,7 +2155,7 @@ familiar from day one. Available packs include:</p>
 <li>VS Code</li>
 <li>Microsoft Word</li>
 </ul>
-<p>Choose a pack in <strong>Profiles and Features…</strong>. If you
+<p>Choose a pack in <strong>Profiles and Features...</strong>. If you
 later hand-edit shortcuts or import a custom keymap, Quill automatically
 switches the pack label to <strong>Custom</strong>.</p>
 <h3 id="keymap-editor">Keymap editor</h3>
@@ -1541,7 +2201,7 @@ active.</li>
 change it. You can reorder items and choose which ones stay visible.</p>
 <h3 id="settings-you-can-change-today">Settings you can change
 today</h3>
-<p>Quill’s current settings and customization surface covers the things
+<p>Quill's current settings and customization surface covers the things
 you are most likely to want to tune every day.</p>
 <ul>
 <li>theme behavior, including dark mode</li>
@@ -1561,17 +2221,17 @@ you are most likely to want to tune every day.</p>
 <p>Some of these live in the View menu for quick toggling; the
 preference-style toggles now live in the <strong>Settings</strong>
 dialog (<strong>Tools -&gt; Customize &amp; Support -&gt;
-Preferences…</strong>). Others live in <strong>Profiles and
-Features…</strong>, <strong>Status Bar Layout…</strong>, <strong>Keymap
-Editor…</strong>, and the related customization commands under
-<strong>Tools -&gt; Customize &amp; Support</strong>.</p>
+Preferences...</strong>). Others live in <strong>Profiles and
+Features...</strong>, <strong>Status Bar Layout...</strong>,
+<strong>Keymap Editor...</strong>, and the related customization
+commands under <strong>Tools -&gt; Customize &amp; Support</strong>.</p>
 <h2 id="trust-recovery-sessions-and-safety">Trust, Recovery, Sessions,
 and Safety</h2>
 <p>Quill is serious about recovery and user control.</p>
 <h3 id="notebooks">Notebooks</h3>
 <p>A <strong>Notebook</strong> is a named collection of documents that
-belong together — a novel’s chapters, a research project’s notes, a
-software project’s specs. Notebooks live in a single
+belong together — a novel's chapters, a research project's notes, a
+software project's specs. Notebooks live in a single
 <code>.quillnotebook</code> file and keep track of which files are
 entries, where you left each caret, any goals you have set, and saved
 snapshots of which entries were open.</p>
@@ -1584,19 +2244,19 @@ default set covers Markdown, plain text, HTML, and source code).</p>
 <p><strong>Opening and navigating entries.</strong> Once a Notebook is
 open, <strong>Navigate &gt; Go to Entry in Notebook</strong> opens the
 tree navigator, which groups entries by subdirectory. Select an entry
-and press Enter (or click “Open Entry”) to open that file. For headings,
+and press Enter (or click "Open Entry") to open that file. For headings,
 <strong>Navigate &gt; Go to Heading in Notebook</strong> scans every
 entry file and presents a two-level tree.</p>
 <p><strong>Entries panel.</strong> Toggle <strong>View &gt; Show Entries
 Panel</strong> to slide a docked panel into the left side of the window.
-The panel shows the notebook name, today’s goal progress, a live filter
+The panel shows the notebook name, today's goal progress, a live filter
 field, and the full entries list. Type in the filter field to narrow by
 title.</p>
 <p><strong>Goals.</strong> Each Notebook can carry a daily word-count
 goal stored in its <code>.quillnotebook</code> file. When the goal is
 enabled, the <strong>Notebook Goal</strong> status-bar cell shows
-progress (for example, “1,234 / 500 words”). Reaching the target changes
-the label to “Goal reached.”</p>
+progress (for example, "1,234 / 500 words"). Reaching the target changes
+the label to "Goal reached."</p>
 <p><strong>Snapshots.</strong> A Snapshot is a named point-in-time
 record of which entries were open. Use <strong>File &gt; Notebook &gt;
 Save Snapshot</strong> to save one, and <strong>File &gt; Notebook &gt;
@@ -1604,7 +2264,7 @@ Manage Snapshots</strong> to rename or delete saved snapshots. Snapshots
 are different from autosave recovery — they are explicit saves you make
 yourself, like commit checkpoints for your writing session.</p>
 <p><strong>Snapshots vs Sessions.</strong> The <strong>File &gt;
-Snapshots</strong> menu (formerly “Workspace Snapshots”) saves and
+Snapshots</strong> menu (formerly "Workspace Snapshots") saves and
 restores the set of open documents in the editor — a lightweight
 workspace for any files, not tied to a Notebook. Notebook Snapshots
 store the open-entry state within a single Notebook.</p>
@@ -1675,11 +2335,11 @@ helpers, links, code blocks, and GLOW review.</p>
 and GLOW review focused on language metadata, image alt text, heading
 order, and table headers.</p>
 <h3 id="rtf">RTF</h3>
-<p>RTF documents can use Quill’s optional <strong>Rich text
+<p>RTF documents can use Quill's optional <strong>Rich text
 lens</strong>, a screen-reader-first rich editing surface. It is
 <strong>off by default</strong>: the standard plain-text editor stays
-Quill’s writing path unless you opt in under Settings, Editing (the
-“Editor surface” choice). Turn it on and <code>.rtf</code> files open in
+Quill's writing path unless you opt in under Settings, Editing (the
+"Editor surface" choice). Turn it on and <code>.rtf</code> files open in
 the Rich text lens, which renders bold, italic, headings, bullets, and
 links natively. Your document text stays Quill Markdown underneath, so
 search, outline, metrics, autosave, and persistent undo keep working
@@ -1696,7 +2356,7 @@ or normal text editor mode. You can remember your preferred default and
 still switch modes from inside the tab at any time. Grid mode is
 keyboard-friendly and designed for screen-reader users who need
 cell-level table editing without leaving Quill.</p>
-<h3 id="word-.docx-and-.doc">Word (.docx and .doc)</h3>
+<h3 id="word-docx-and-doc">Word (.docx and .doc)</h3>
 <p>Word documents open through a choice flow: structured Word view or
 normal text editor mode. You can remember your preferred default and
 still switch modes inside the tab.</p>
@@ -1706,41 +2366,41 @@ screen readers. Normal text mode keeps full Quill editing behavior for
 direct edits.</p>
 <h3 id="epub">EPUB</h3>
 <p>EPUB gets navigator support and chapter-oriented reading.</p>
-<h3 id="powerpoint-.pptx-and-.ppt">PowerPoint (.pptx and .ppt)</h3>
+<h3 id="powerpoint-pptx-and-ppt">PowerPoint (.pptx and .ppt)</h3>
 <p>PowerPoint imports are structure-aware: slide titles become headings,
 slide bullets become nested list items, tables are rendered into
 tab-friendly text tables, and speaker notes are included when
 present.</p>
-<h3 id="excel-style-spreadsheets-.xlsx-and-.xls">Excel-style
-spreadsheets (.xlsx and .xls)</h3>
+<h3 id="excel-style-spreadsheets-xlsx-and-xls">Excel-style spreadsheets
+(.xlsx and .xls)</h3>
 <p>Spreadsheet intake is text-first and structure-aware. Quill extracts
 sheets into readable table-oriented text so you can inspect and review
 content quickly. If optional converters are installed, extraction
 quality improves for legacy and mixed-format files.</p>
 <h3 id="pdf-and-ocr-derived-text">PDF and OCR-derived text</h3>
-<p>PDF and OCR work are where Quill’s extraction review commands matter
+<p>PDF and OCR work are where Quill's extraction review commands matter
 most. Treat those commands as quality checks, not optional extras.</p>
 <h3 id="remote-files-ftp-sftp-https-webdav-s3">Remote files (FTP, SFTP,
 HTTPS, WebDAV, S3)</h3>
 <p>Quill can open, save, and copy to remote hosts the same way it works
 with local files. Remote I/O is explicit, audible, and reversible:</p>
 <ul>
-<li><strong>Open from Remote…</strong> lists every site you have saved,
-lets you browse a remote directory, and downloads a file you choose. The
-download is announced with the host and expected size, lands in a temp
-file, and opens in a normal tab titled with a
+<li><strong>Open from Remote...</strong> lists every site you have
+saved, lets you browse a remote directory, and downloads a file you
+choose. The download is announced with the host and expected size, lands
+in a temp file, and opens in a normal tab titled with a
 <code>(from site:path)</code> suffix. The document is
 <strong>read-only</strong> until you save it back through <strong>Save
-Copy to Remote…</strong> or copy it to local storage.</li>
+Copy to Remote...</strong> or copy it to local storage.</li>
 <li><strong>Save to Remote</strong> writes the active document to a
 remote path you choose, on a site you have configured, with a
-tilde-backup next to the original. <strong>Save Copy to Remote…</strong>
-lets you keep the local file and write a copy without changing the
-source.</li>
-<li><strong>Manage Remote Sites…</strong> adds, edits, and deletes saved
-sites for the five supported protocols. Each site’s password is stored
-in <strong>Windows Credential Manager</strong> when available, then in a
-DPAPI-protected JSON file, with a macOS Keychain facade for
+tilde-backup next to the original. <strong>Save Copy to
+Remote...</strong> lets you keep the local file and write a copy without
+changing the source.</li>
+<li><strong>Manage Remote Sites...</strong> adds, edits, and deletes
+saved sites for the five supported protocols. Each site's password is
+stored in <strong>Windows Credential Manager</strong> when available,
+then in a DPAPI-protected JSON file, with a macOS Keychain facade for
 cross-platform parity.</li>
 <li>All remote traffic uses a <strong>verified TLS context</strong>.
 Cloud endpoints (S3, HTTPS, WebDAV over HTTPS) must be HTTPS; FTP is
@@ -1755,11 +2415,105 @@ an external-entity expansion through a crafted listing.</li>
 from remote; <strong>QUILL key, then <code>Shift+R</code></strong> saves
 to remote; <strong>QUILL key, then <code>M</code></strong> opens the
 site manager. All are remappable from Preferences &gt; Keyboard.</p>
+<h3 id="github-remote-files">GitHub Remote Files</h3>
+<p>QUILL can browse GitHub repositories, open files from them, and save
+changes back to GitHub — all without installing Git, the GitHub CLI, or
+GitHub Desktop.</p>
+<p><strong>Getting started</strong></p>
+<p>The first time you open a GitHub feature, QUILL asks you to confirm
+that it may connect to GitHub. This is a one-time prompt. After that,
+QUILL remembers your choice.</p>
+<p>You do not need a GitHub account to browse public repositories. For
+private repositories, you need a Personal Access Token (PAT).</p>
+<p><strong>Creating a Personal Access Token</strong></p>
+<ol type="1">
+<li>Go to github.com and sign in.</li>
+<li>Open Settings &gt; Developer settings &gt; Personal access tokens
+&gt; Tokens (classic).</li>
+<li>Click Generate new token.</li>
+<li>Give it a name such as "QUILL" and select the <code>repo</code>
+scope (or <code>public_repo</code> if you only need public
+repositories).</li>
+<li>Copy the token. You will only see it once.</li>
+</ol>
+<p>QUILL stores your token securely in <strong>Windows Credential
+Manager</strong>. It is never saved in a text file.</p>
+<p><strong>Opening the repository browser</strong></p>
+<p>Open <strong>File &gt; Open from Remote &gt; GitHub
+Repository...</strong></p>
+<p>The browser has these parts:</p>
+<ul>
+<li><strong>Account</strong> — shows your GitHub username, or
+"Anonymous" if no token is stored.</li>
+<li><strong>Repository</strong> — type an owner/repo name such as
+<code>microsoft/vscode</code> and press Enter or click Load.</li>
+<li><strong>Branch or tag</strong> — choose which version of the
+repository to browse. Defaults to the repository's default branch.</li>
+<li><strong>Current path</strong> — shows where you are in the folder
+tree.</li>
+<li><strong>File list</strong> — lists folders and files. Folders appear
+first.</li>
+<li><strong>Status</strong> — shows progress messages and item
+counts.</li>
+</ul>
+<p>Navigation:</p>
+<ul>
+<li>Press Enter on a folder to open it.</li>
+<li>Press Enter on a file to open it (same as clicking Open File).</li>
+<li>Press Backspace to go up one level.</li>
+<li>Press F5 to refresh the current folder.</li>
+<li>Tab through the buttons: <strong>Open File</strong>, <strong>Go
+Up</strong>, <strong>Refresh</strong>, <strong>Copy URL</strong>,
+<strong>Cancel</strong>.</li>
+</ul>
+<p><strong>Opening a file by URL</strong></p>
+<p>If you have a GitHub file URL (for example from a colleague), use
+<strong>File &gt; Open from Remote &gt; GitHub File URL...</strong></p>
+<p>Paste a URL in the form
+<code>https://github.com/owner/repo/blob/branch/path/to/file</code> and
+press Enter. QUILL fetches the file directly.</p>
+<p><strong>Saving back to GitHub</strong></p>
+<p>After you have opened a file from GitHub and made edits, use
+<strong>File &gt; Open from Remote &gt; Save to GitHub...</strong></p>
+<p>QUILL will ask for a commit message. Type a short description of your
+changes and press Enter. QUILL commits your changes to the same
+repository, branch, and file path using the GitHub API.</p>
+<p>Notes:</p>
+<ul>
+<li>You need a token with write permission (<code>repo</code> scope) to
+save back.</li>
+<li>If the file was changed on GitHub since you opened it, QUILL will
+tell you to refresh and try again.</li>
+<li>This command does not run automatically when you press Save. You
+must choose it deliberately.</li>
+</ul>
+<p><strong>Managing your GitHub account</strong></p>
+<p>Use <strong>File &gt; Open from Remote &gt; Manage GitHub
+Accounts...</strong> to:</p>
+<ul>
+<li>See your current GitHub identity.</li>
+<li>Add or replace a token.</li>
+<li>Sign out and clear your stored token.</li>
+</ul>
+<p><strong>File size limit</strong></p>
+<p>GitHub's file API is limited to 1 MB. Files larger than that must be
+downloaded manually from github.com.</p>
+<p><strong>Enabling the feature</strong></p>
+<p>GitHub remote access is controlled by the feature flag
+<code>core.github_remote</code>. If it is not visible, open <strong>File
+&gt; Open from Remote</strong> and check whether the GitHub items
+appear. If PyGithub is not installed, QUILL shows a message explaining
+how to install it: <code>pip install "quill[github]"</code>.</p>
 <h2 id="help-learning-and-daily-confidence">Help, Learning, and Daily
 Confidence</h2>
 <p>Quill includes several layers of help because confidence does not
 come from memorizing everything.</p>
 <ul>
+<li><strong>F1</strong> — context-sensitive help for the focused
+control. Works anywhere in the application.</li>
+<li><strong>Ctrl+F1</strong> — opens this User Guide.</li>
+<li><strong>Shift+F1</strong> — opens the document-context "What Can I
+Do Here?" panel.</li>
 <li><strong>Open Welcome Guide</strong> when you want a lighter
 orientation.</li>
 <li><strong>Open User Guide</strong> when you want the full map.</li>
@@ -1767,27 +2521,300 @@ orientation.</li>
 bindings.</li>
 <li><strong>What Can I Do Here?</strong> when you need immediate,
 contextual guidance.</li>
-<li><strong>Why Don’t I See a Feature?</strong> when a command seems to
+<li><strong>Why Don't I See a Feature?</strong> when a command seems to
 have disappeared.</li>
 </ul>
 <p>That last command matters more than it first appears. It turns
 feature visibility from a mystery into an explanation.</p>
+<h3 id="context-sensitive-help-f1">Context-Sensitive Help (F1)</h3>
+<p>Press <code>F1</code> on any focusable control in QUILL and a small
+dialog opens that describes:</p>
+<ol type="1">
+<li><strong>The dialog you are in</strong> (when you are inside a dialog
+box) — the dialog name and a plain-language summary of what it does, so
+you always know your context.</li>
+<li><strong>The focused control</strong> — what the control is, how it
+works, and what keyboard shortcuts apply to it.</li>
+</ol>
+<p>The entire text is in one read-only field so your screen reader
+announces everything in a single pass when the dialog opens, without you
+having to navigate past heading elements.</p>
+<p>From the help dialog you can:</p>
+<ul>
+<li>Press <strong>Escape</strong> or <strong>Enter on Close</strong> to
+dismiss and return to where you were.</li>
+<li>Press <strong>Tab to Open User Guide</strong> to jump to the full
+documentation section for this control.</li>
+</ul>
+<p><strong>How the three Help keys work together:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>F1</code></td>
+<td>Help on the currently focused control (context-sensitive)</td>
+</tr>
+<tr>
+<td><code>Ctrl+F1</code></td>
+<td>Open the full User Guide</td>
+</tr>
+<tr>
+<td><code>Shift+F1</code></td>
+<td>Open "What Can I Do Here?" for the active document context</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tips:</strong></p>
+<ul>
+<li>In the main editor, F1 shows editor shortcuts and writing tips.</li>
+<li>In dialogs (Preferences, Find/Replace, Spell Check, etc.), F1
+identifies both the dialog and the specific setting.</li>
+<li>In the Personalise QUILL wizard, F1 on each control explains what
+each setting does and what you can change later.</li>
+<li>After using a menu and returning to the editor, QUILL remembers
+which control had focus last, so F1 still refers to the right
+control.</li>
+</ul>
+<h3 id="personalising-quill">Personalising QUILL</h3>
+<p>The <strong>Personalise QUILL</strong> wizard runs automatically the
+first time QUILL starts. You can re-run it at any time from <strong>Help
+→ Personalise QUILL</strong>.</p>
+<p>The wizard walks you through eight short pages:</p>
+<ol type="1">
+<li><strong>Welcome</strong> — an introduction to what the wizard
+covers.</li>
+<li><strong>Keyboard and Sound</strong> — choose a keyboard pack and
+whether QUILL plays audio cues. QUILL auto-detects your screen reader
+and sets accessible defaults.</li>
+<li><strong>Feature Profile</strong> — choose a starting profile:
+Essential (minimal), Standard (recommended for most users), Power User
+(all features on), or Accessibility Focus (screen-reader optimised). You
+can switch profiles later.</li>
+<li><strong>Remote Access</strong> — enable or hide FTP, SFTP, WebDAV,
+and S3 remote file commands. Disabling this removes the remote-site menu
+items entirely, keeping the File menu clean.</li>
+<li><strong>AI Assistance</strong> — turn the AI writing assistant on or
+off. You can add an API key later; QUILL will prompt you when you first
+use an AI feature.</li>
+<li><strong>Reading and Accessibility</strong> — configure read-aloud
+behaviour and screen-reader announcement style.</li>
+<li><strong>Writing Tools</strong> — enable or disable
+spell-check-as-you-type, abbreviation expansion, and the Copy Tray.</li>
+<li><strong>Startup Behaviour</strong> — choose what QUILL opens when it
+starts and whether to check for updates automatically.</li>
+<li><strong>Summary</strong> — review all your choices before they are
+applied. Use Back to revise any page. Nothing changes in QUILL until you
+press Finish.</li>
+</ol>
+<p><strong>Important:</strong> The wizard is transactional. Your choices
+are held in memory until you press Finish. If you close or cancel the
+wizard, no settings are changed.</p>
+<p><strong>Profiles explained:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Best for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Essential</td>
+<td>New users, light daily writing, low-distraction setup</td>
+</tr>
+<tr>
+<td>Standard</td>
+<td>Most users — balanced feature set with AI and tools available</td>
+</tr>
+<tr>
+<td>Power User</td>
+<td>All features on; suited to advanced writing, extraction, and GLOW
+workflows</td>
+</tr>
+<tr>
+<td>Accessibility Focus</td>
+<td>Screen-reader primary; maximises keyboard coverage and
+announcements</td>
+</tr>
+</tbody>
+</table>
+<p>You can switch profiles at any time from <strong>Tools → Customize
+&amp; Support → Profiles and Features...</strong> or by pressing
+<code>Alt+Shift+P</code>.</p>
 <h2 id="translation-and-community-localization">Translation and
 Community Localization</h2>
-<p>QUILL is building localization as a community effort with a gettext
-catalog workflow (<code>POT -&gt; PO -&gt; MO</code>) and
-contributor-first onboarding. Translation contributions are welcomed
-during beta and reviewed with the same quality mindset as code and
-accessibility changes.</p>
-<p>If you want to help translate QUILL or review language quality, use
-the contributor plan:</p>
+<p>QUILL uses a standard GNU gettext pipeline
+(<code>POT → PO → MO</code>) for all user-visible strings, aligned with
+the model used by NV Access for NVDA. This means QUILL translation work
+feels familiar to anyone who has contributed to NVDA, JAWS scripts, or
+other accessibility-focused open-source software.</p>
+<h3 id="how-the-translation-pipeline-works">How the Translation Pipeline
+Works</h3>
+<ol type="1">
+<li><strong>Source strings are marked in code</strong> with
+<code>_()</code> for regular strings, <code>ngettext()</code> for plural
+forms, and <code>lazy_gettext()</code> for strings that must be
+translated at display time rather than at import time.</li>
+<li><strong>The POT file</strong> (<code>quill/locale/quill.pot</code>)
+is the master template, generated automatically by
+<code>pybabel extract</code>. It contains every translatable string in
+the application.</li>
+<li><strong>PO files</strong>
+(<code>quill/locale/&lt;lang&gt;/LC_MESSAGES/quill.po</code>) contain
+the actual translations for each language. Translators work in PO
+files.</li>
+<li><strong>MO files</strong> are compiled from PO files by
+<code>pybabel compile</code> and are the binary files QUILL loads at
+runtime.</li>
+<li><strong>QUILL selects the active language</strong> at startup from
+your <code>language</code> setting (BCP 47 tag, e.g., <code>fr</code>,
+<code>es</code>, <code>pt-BR</code>). If blank, QUILL follows the
+operating-system language.</li>
+</ol>
+<p>Speech strings — text that will be read aloud by a screen reader
+rather than displayed visually — are marked with a
+<code># SPEECH:</code> comment in the source code. Translators should
+preserve the natural spoken rhythm of these strings, not just their
+semantic meaning.</p>
+<h3 id="contributing-translations">Contributing Translations</h3>
+<p>To contribute a translation:</p>
+<ol type="1">
+<li><strong>Fork the QUILL repository</strong> and create a branch named
+<code>l10n/&lt;lang&gt;</code> (e.g., <code>l10n/fr</code>).</li>
+<li><strong>Copy <code>quill.pot</code> to your language
+folder:</strong> <code>quill/locale/fr/LC_MESSAGES/quill.po</code></li>
+<li><strong>Translate each <code>msgid</code> into a
+<code>msgstr</code>.</strong> Leave <code>msgstr</code> empty for
+strings you have not yet translated; the English fallback will be
+used.</li>
+<li><strong>Run the CI translation check</strong> to verify placeholder
+integrity and completeness:
+<code>python -m quill.tools.check_translation</code></li>
+<li><strong>Open a pull request.</strong> The Translation Coordinator
+reviews and merges approved translations.</li>
+</ol>
+<p><strong>Tools that help:</strong></p>
 <ul>
-<li><a href="localization/translation-contributor-plan.md">QUILL
-Translation Contributor Plan</a></li>
+<li><a href="https://poedit.net/">Poedit</a> — free, accessible PO file
+editor with spell check.</li>
+<li><a href="https://virtaal.translatehouse.org/">Virtaal</a> —
+lightweight alternative.</li>
+<li>Crowdin (when QUILL's project is live) — browser-based collaborative
+translation with a review queue.</li>
 </ul>
-<p>The plan documents how to contribute translations, what is and is not
-translated, how string freeze works, and how translator contributions
-are credited in releases.</p>
+<p><strong>Do not translate:</strong></p>
+<ul>
+<li>Placeholder tokens: <code>{name}</code>, <code>%(count)s</code>,
+<code>{path}</code> — leave these exactly as they are in the
+<code>msgid</code>.</li>
+<li>ARIA role names: <code>"dialog"</code>, <code>"button"</code>,
+<code>"listbox"</code> — these are passed to platform accessibility APIs
+unchanged.</li>
+<li>Internal command identifiers: <code>"file.open"</code>,
+<code>"glow.audit"</code> — these are not user-visible.</li>
+<li>File extensions and format names: <code>.docx</code>,
+<code>EPUB</code>, <code>PDF</code>.</li>
+</ul>
+<h3 id="translation-roles-and-responsibilities">Translation Roles and
+Responsibilities</h3>
+<p>QUILL follows a four-tier model aligned with NV Access community
+practice:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Translator</strong></td>
+<td>Translate strings from English into the target language.</td>
+</tr>
+<tr>
+<td><strong>Proofreader</strong></td>
+<td>Review translations for accuracy, tone, and natural language
+flow.</td>
+</tr>
+<tr>
+<td><strong>Language Coordinator</strong></td>
+<td>Own quality for one language; approve or request changes from
+translators and proofreaders.</td>
+</tr>
+<tr>
+<td><strong>Translation Coordinator</strong></td>
+<td>Oversee the whole translation project, manage Crowdin, coordinate
+string freeze, credit contributors.</td>
+</tr>
+</tbody>
+</table>
+<p>To become a translator or proofreader: open a GitHub issue with the
+label <code>translation</code> and state the language you want to work
+on.</p>
+<h3 id="speech-string-guidelines">Speech String Guidelines</h3>
+<p>QUILL marks screen-reader-targeted strings with
+<code># SPEECH:</code> in the source code. When translating these
+strings:</p>
+<ul>
+<li><strong>Prioritise spoken clarity over literal accuracy.</strong> A
+string that reads well when spoken aloud is more important than a string
+that is grammatically perfect but awkward when heard.</li>
+<li><strong>Match the rhythm.</strong> Short speech strings should stay
+short. QUILL's screen-reader users hear these strings dozens of times
+per session; brevity is a form of accessibility.</li>
+<li><strong>Preserve emphasis signals.</strong> Where the English string
+uses word order or phrasing to signal importance (e.g., the key word
+comes first), try to mirror that in translation.</li>
+<li><strong>Test with a screen reader.</strong> If possible, test your
+translated strings with NVDA or JAWS before submitting.</li>
+<li><strong>Ask if unsure.</strong> Open a GitHub issue tagged
+<code>translation</code> and <code>speech</code> if you are uncertain
+how a speech string should be adapted.</li>
+</ul>
+<p>String freeze happens before each release candidate. No new strings
+are added after freeze, and translators have a two-week window to
+complete their language before the release is built.</p>
+<h2 id="checking-for-updates">Checking for Updates</h2>
+<p>Quill can check for and install updates automatically while you
+work.</p>
+<h3 id="manual-update-check">Manual update check</h3>
+<p>To check for updates now:</p>
+<ol type="1">
+<li>Press Alt+H to open the <strong>Help</strong> menu.</li>
+<li>Press U for <strong>Check for Updates</strong>.</li>
+<li>If a newer version is available, Quill will announce it and ask for
+permission to download.</li>
+<li>If you accept, Quill downloads the update in the background and
+announces when it is ready.</li>
+<li>The next time you close and reopen Quill, the update is applied
+automatically.</li>
+</ol>
+<h3 id="automatic-update-checks">Automatic update checks</h3>
+<p>You can enable Quill to check for updates on startup:</p>
+<ol type="1">
+<li>Press Alt+E to open the <strong>Edit</strong> menu.</li>
+<li>Press Shift+S for <strong>Settings</strong>.</li>
+<li>In the <strong>Updates</strong> section, enable <strong>Check for
+updates on startup</strong>.</li>
+</ol>
+<p>When automatic checks are on, Quill will notify you quietly if a new
+version is available, and you can choose to download it when you are
+ready.</p>
+<h3 id="update-size-and-speed">Update size and speed</h3>
+<p>Quill uses incremental updates ("micro-updates"), which are much
+smaller than full reinstalls. Patches often download in seconds rather
+than minutes, and your settings, documents, and preferences are
+preserved.</p>
+<h3 id="staying-on-a-release-channel">Staying on a release channel</h3>
+<p>By default, Quill checks the stable update channel and only offers
+released versions. To opt into beta versions and test new features
+early, enable <strong>Beta channel</strong> in <strong>Settings →
+Updates</strong>.</p>
 <h2 id="beta-feedback-and-bug-reporting">Beta Feedback and Bug
 Reporting</h2>
 <p>Quill is ready for serious beta use, and Quill 0.1.5 Beta now ships a
@@ -1800,9 +2827,9 @@ work:</p>
 <li>notifications</li>
 <li>extraction review</li>
 <li>bad-extraction package export for extraction-related issues</li>
-<li>a general-purpose <strong>Save Diagnostics…</strong> command that
+<li>a general-purpose <strong>Save Diagnostics...</strong> command that
 writes a local bundle</li>
-<li>a <strong>Report a Bug…</strong> command that lets you review the
+<li>a <strong>Report a Bug...</strong> command that lets you review the
 report in-app and then opens the Community Access support-hub form with
 environment context</li>
 <li>a diagnostics runbook and PRD-backed support model in the
@@ -1823,7 +2850,7 @@ still:</p>
 <li>optional upload of a user-reviewed diagnostics bundle</li>
 <li>a plain-language bug template with environment summary and
 reproduction steps</li>
-<li>the current <strong>Help -&gt; Report a Bug…</strong> handoff kept
+<li>the current <strong>Help -&gt; Report a Bug...</strong> handoff kept
 as the guided in-app bridge until the fuller route is live</li>
 </ol>
 <p>Until that exists, use the current Help-menu path as the practical
@@ -1887,14 +2914,298 @@ insertion, such as the current <strong>Date</strong> and
 <strong>Date/Time</strong>.</li>
 </ul>
 <h3 id="the-quillins-manager">The Quillins Manager</h3>
-<p>You can discover, review, and manage all installed Quillins via
-<strong>Tools <span class="math inline">→</span> Quillins</strong>. The
-Manager allows you to: - See a list of all installed Quillins. - Review
-the manifest of a selected Quillin (name, version, author, and
-capabilities). - Verify the security permissions (capabilities) a
-Quillin has declared (e.g., filesystem or network access).</p>
+<p>Open via <strong>Tools &gt; Quillins</strong>. The Manager lets
+you:</p>
+<ul>
+<li>See every installed Quillin and its current status (enabled or
+disabled).</li>
+<li>Select a Quillin to review its manifest: name, version, author,
+description, and declared capabilities.</li>
+<li>Enable or disable a Quillin without removing it.</li>
+<li>Remove a Quillin entirely (confirmation required).</li>
+<li><strong>Install from Folder</strong> — press this button to select a
+local folder containing a Quillin. QUILL reads its
+<code>manifest.json</code>, validates it, copies the folder into your
+per-user extensions directory, and enables it immediately. If a Quillin
+with the same id is already installed it is replaced. This is the
+supported path for installing third-party Quillins.</li>
+</ul>
+<p>When you select a Quillin, the panel shows all declared capabilities
+(for example <code>fs.read</code> or <code>net</code>). Review these
+before enabling an extension from an unknown source.</p>
 <h3 id="authoring-quillins">Authoring Quillins</h3>
-<p>For developers, Quillins are designed to be “screen-reader-first.”
+<p>For developers, Quillins are designed to be "screen-reader-first."
 They follow a strict capability model: a Quillin must declare the
 minimum set of permissions it needs, and any sensitive action (like
 writing to a file) is consent-gated at runtime.</p>
+<hr />
+<h2 id="ai-assistant">AI Assistant</h2>
+<p>QUILL includes a built-in AI assistant that works with OpenRouter,
+OpenAI, and Ollama. All three are optional; QUILL detects which keys you
+have configured and only shows providers that are available. API keys
+are stored in the Windows Credential Manager by default and never
+written to disk in plain text.</p>
+<h3 id="setting-up-an-ai-provider">Setting up an AI provider</h3>
+<p>Open <strong>App &gt; Preferences &gt; AI</strong> to configure your
+provider.</p>
+<ul>
+<li><strong>OpenRouter</strong> — paste your API key into the OpenRouter
+API Key field. OpenRouter gives you access to many models (Claude,
+GPT-4o, Gemini, and more) with a single key.</li>
+<li><strong>OpenAI</strong> — paste your OpenAI API key.</li>
+<li><strong>Ollama</strong> — no key needed. Install Ollama on your
+machine (<code>ollama serve</code>) and QUILL detects it automatically
+at <code>http://localhost:11434</code>. Change the Ollama Base URL
+setting if you run Ollama on a different port or machine.</li>
+</ul>
+<h3 id="portable-mode-and-key-storage">Portable mode and key
+storage</h3>
+<p>By default QUILL stores AI provider keys in the <strong>Windows
+Credential Manager</strong>, which ties them to your Windows user
+account. If you run QUILL from a self-contained folder — for example on
+a network share or an external drive — you can switch to
+<strong>portable mode</strong> so all keys live in that same folder
+alongside your other QUILL data.</p>
+<p><strong>Activating portable mode.</strong> Set the environment
+variable <code>QUILL_PORTABLE=1</code> before starting QUILL. You can do
+this for the current session:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">QUILL_PORTABLE</span> <span class="op">=</span> <span class="st">&quot;1&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill</span></code></pre></div>
+<p>Or add it permanently to your user environment via System Properties
+&gt; Environment Variables.</p>
+<p>When portable mode is on, keys are stored in a file called
+<code>keys.enc</code> inside the QUILL data directory. The file is
+encrypted with Windows DPAPI, so it is protected by your Windows
+user-account key.</p>
+<p><strong>Limitations.</strong> The encrypted file is tied to the
+Windows account that created it. Moving it to a different machine or a
+different Windows account will fail to decrypt; you will need to
+re-enter your keys there. Portable mode gives you a self-contained
+folder on the same machine — it does not give you cross-machine
+portability.</p>
+<p><strong>Environment-variable overrides (for CI and
+developers).</strong> You can supply keys directly via environment
+variables regardless of which mode is active. These always win and are
+never stored to disk:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Environment variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenRouter</td>
+<td><code>QUILL_OPENROUTER_KEY</code></td>
+</tr>
+<tr>
+<td>OpenAI</td>
+<td><code>QUILL_OPENAI_KEY</code></td>
+</tr>
+<tr>
+<td>Ollama Cloud</td>
+<td><code>QUILL_OLLAMA_KEY</code></td>
+</tr>
+<tr>
+<td>AI Assistant</td>
+<td><code>QUILL_ASSISTANT_KEY</code></td>
+</tr>
+</tbody>
+</table>
+<p>You can also set a <strong>Default model for prompt runs</strong>
+(<code>ai_prompt_default_model</code>). Leave it blank to share the same
+model across Ask AI and the Prompt Library, or set a different model
+here if you want a more capable model for prompt-library work.</p>
+<h3 id="ask-ai-altq">Ask AI (Alt+Q)</h3>
+<p><code>Tools &gt; AI Assistant &gt; Ask AI...</code> opens a dialog
+where you type a question and read the answer without leaving QUILL.</p>
+<ul>
+<li><strong>Provider</strong> and <strong>Model</strong> choices are
+pre-filled with the last values you used.</li>
+<li>If a provider and model are already configured, focus lands directly
+in the Prompt field so you can start typing immediately. If not yet
+configured, focus starts on the Provider choice to guide you through
+setup.</li>
+<li>Press <strong>Ctrl+Enter</strong> or the <strong>Send</strong>
+button to submit. QUILL announces "Sending..." and disables the button
+while the request is in flight.</li>
+<li>The response opens in a read-only dialog. Use cursor keys to read
+it, and <strong>Copy to Clipboard</strong> to copy the full text.
+Closing the response returns you to the Ask AI dialog so you can ask a
+follow-up.</li>
+<li><strong>Clear</strong> resets the prompt field and refocuses
+it.</li>
+</ul>
+<h3 id="check-grammar-with-ai">Check Grammar with AI</h3>
+<p><code>Edit &gt; Grammar &gt; Check Grammar with AI</code> sends the
+selected text (or the full document if nothing is selected) to your AI
+model with a grammar-review prompt. The response dialog lists
+corrections in the form "original phrase → corrected phrase — reason".
+No changes are applied automatically; you apply corrections
+yourself.</p>
+<p>The default grammar instruction is: review the text and list only the
+corrections needed; do not rewrite the passage. If you want a different
+instruction, open the Prompt Library, find the "Check Grammar" built-in
+prompt, and edit its text — the command picks up your version
+automatically.</p>
+<h3 id="prompt-library">Prompt Library</h3>
+<p><code>Tools &gt; AI Assistant &gt; Prompt Library...</code> opens the
+full prompt management dialog.</p>
+<p><strong>What it shows.</strong> A searchable list of all prompts on
+the left (type in the search field to filter by name or category). The
+selected prompt's instruction text on the right. An optional input text
+field where you can type or paste text to use as the selection
+context.</p>
+<p><strong>Running a prompt.</strong></p>
+<ol type="1">
+<li>Select a prompt from the list (or type in the search field to find
+it).</li>
+<li>Optionally paste text into the input field. If blank, QUILL uses the
+current editor selection or full document.</li>
+<li>Press <strong>Run with AI</strong>. The result opens in the AI
+Response dialog.</li>
+</ol>
+<p><strong>Managing prompts.</strong></p>
+<ul>
+<li><strong>New Prompt</strong> — opens a small dialog: enter a name,
+choose a category, and write the instruction text. Use
+<code>{selection}</code> where you want QUILL to insert the text.</li>
+<li><strong>Edit</strong> — modify the name, category, or instruction of
+a selected user prompt. Built-in prompts can have their text overridden
+(the override is saved; the original is never deleted).</li>
+<li><strong>Disable/Enable</strong> — hides or shows a prompt in the
+list without deleting it. Useful for built-ins you never use.</li>
+<li><strong>Delete</strong> — removes a user-created prompt. Built-in
+prompts cannot be deleted.</li>
+</ul>
+<p><strong>Importing and exporting prompt packs.</strong></p>
+<p>QUILL uses <code>.pqp</code> (Prompt Quill Pack) files to share
+prompt collections.</p>
+<ul>
+<li><strong>Import .pqp</strong> — opens a file picker; imports all
+prompts from the file. Prompts whose names already exist in your library
+are skipped.</li>
+<li><strong>Export .pqp</strong> — saves all your user-defined prompts
+to a <code>.pqp</code> file you can share or back up.</li>
+</ul>
+<p>A <code>.pqp</code> file is plain JSON with a human-readable
+structure:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;schema&quot;</span><span class="fu">:</span> <span class="st">&quot;quill.prompt-pack/1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;My Writing Prompts&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;prompts&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Make Punchy&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;Rewrite this as a punchy one-liner: {selection}&quot;</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;category&quot;</span><span class="fu">:</span> <span class="st">&quot;Editing&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Built-in prompts.</strong> QUILL ships 12 built-in prompts
+across five categories. These are always present and fully editable;
+they cannot be deleted.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Prompt names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Editing</td>
+<td>Check Grammar, Improve Clarity, Fix Grammar, Make Concise, Active
+Voice, Formal Tone, Conversational Tone</td>
+</tr>
+<tr>
+<td>Writing</td>
+<td>Continue from Here</td>
+</tr>
+<tr>
+<td>Structure</td>
+<td>Convert to Bullet Points</td>
+</tr>
+<tr>
+<td>Research</td>
+<td>Define This Term, Find Counterarguments</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quillin-contributed prompts.</strong> Quillins can ship a
+<code>prompts.json</code> file that adds prompts to the library. The
+bundled <code>ai-writing-prompts</code> Quillin contributes 7 additional
+prompts (Expand This, Vary Sentence Rhythm, Make More Vivid, Write a
+Title, Generate Outline, Suggest Supporting Evidence, Plain Language).
+These appear in the list and can be run like any other prompt; they are
+not persisted to your library file.</p>
+<h3 id="skill-library-sqp-skills">Skill Library (.sqp skills)</h3>
+<p>Skills are multi-step AI workflows. Where a prompt is one
+instruction, a skill is a sequence of steps where each step can use the
+output of the step before it.</p>
+<p><code>Tools &gt; AI Assistant &gt; Skill Library...</code> opens the
+Skill Library dialog.</p>
+<p><strong>What a skill looks like.</strong> A skill has a name, a
+description, and a list of steps. Before running, QUILL shows a
+parameter dialog if the skill declares any parameters (such as tone,
+target reading level, or output format). Each step runs in order, sends
+its prompt to the AI, and stores the response for the next step to
+use.</p>
+<p><strong>Bundled skills.</strong> QUILL ships four skills in the
+<code>ai-writing-skills</code> Quillin:</p>
+<ul>
+<li><strong>Accessible Rewrite</strong> — Analyses your text for
+plain-language issues (long sentences, passive voice, jargon), then
+produces a targeted rewrite. You choose the target reading level (Grade
+6, 8, or 10). The rewritten text replaces the selection when you
+Accept.</li>
+<li><strong>Research and Draft</strong> — Extracts the central topic
+from your selection, gathers five supporting facts, then drafts a
+paragraph at your chosen tone and length.</li>
+<li><strong>Meeting Notes to Action Items</strong> — Reads meeting
+notes, extracts every action item with owner and deadline, checks for
+missed items, and produces a clean follow-up summary. Output goes to
+clipboard.</li>
+<li><strong>Argument Strengthener</strong> — Identifies your argument's
+logical structure, finds weaknesses and counterarguments, then produces
+a strengthened version tailored to your chosen audience.</li>
+</ul>
+<p><strong>Running a skill.</strong></p>
+<ol type="1">
+<li>Open <code>Tools &gt; AI Assistant &gt; Skill Library...</code></li>
+<li>Select a skill from the list.</li>
+<li>Press <strong>Run</strong>. If the skill has parameters, a small
+dialog appears — fill in the choices and press OK.</li>
+<li>QUILL announces "Running step 1 of N..." as each step executes.</li>
+<li>When complete, the result dialog appears. Read the output, then
+press <strong>Accept</strong> to apply it (if the skill places output in
+the document) or <strong>Copy</strong> to copy to clipboard.</li>
+</ol>
+<p><strong>No streaming.</strong> Each step sends a complete prompt and
+waits for the full response before the next step begins. This makes step
+outputs reliable and readable between steps.</p>
+<p><strong>Authoring and sharing skills.</strong> A skill is a
+<code>.sqp</code> (Skill Quill Pack) file — a plain Markdown document
+with YAML front matter. Open any <code>.sqp</code> file in QUILL to read
+and edit it. Share skills by sharing the file. See
+<code>docs/scripting.md</code> §20 for the full authoring reference, and
+<code>docs/skills-tutorial.md</code> for a guided walkthrough.</p>
+<p><strong>Validating a skill file.</strong> Run
+<code>python -m quill.tools.sqp_validator yourskill.sqp</code> to check
+for errors before sharing or shipping.</p>
+<h2 id="control-reference">Control Reference</h2>
+<p>The Control Reference is a full listing of every focusable control in
+QUILL, organized by section. For each control it shows: what the control
+does, what keyboard shortcuts apply to it, and which section of this
+guide covers it in depth.</p>
+<p>See <a href="CONTROL_REFERENCE.md">docs/CONTROL_REFERENCE.md</a> for
+the full reference.</p>
+<p>The reference is auto-generated from
+<code>quill/core/help/topics.json</code>. To regenerate it after adding
+new topics:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m quill<span class="op">.</span><span class="fu">tools</span><span class="op">.</span><span class="fu">build_docs</span></span></code></pre></div>
+</body>
+</html>

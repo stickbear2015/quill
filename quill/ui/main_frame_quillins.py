@@ -41,6 +41,7 @@ from quill.core.quillins.host import ExtensionHost
 from quill.core.quillins.loader import (
     discover_bundled_extensions,
     discover_extensions,
+    install_extension,
     load_enabled_bundled_manifests,
     load_enabled_manifests,
     remove_extension,
@@ -366,10 +367,11 @@ class QuillinsMenuMixin:
         disable_button = wx.Button(panel, label="&Disable")
         reload_button = wx.Button(panel, label="&Reload")
         remove_button = wx.Button(panel, label="Re&move...")
+        install_button = wx.Button(panel, label="&Install from Folder...")
         close_button = wx.Button(panel, id=wx.ID_OK, label="&Close")
 
         actions = wx.BoxSizer(wx.HORIZONTAL)
-        for button in (enable_button, disable_button, reload_button, remove_button):
+        for button in (enable_button, disable_button, reload_button, remove_button, install_button):
             actions.Add(button, 0, wx.RIGHT, 6)
         body.Add(actions, 0, wx.ALL, 8)
 
@@ -460,11 +462,43 @@ class QuillinsMenuMixin:
                 self._register_quillin_contributions()
                 self._announce(f"Removed {item.id}.")
 
+        def on_install(_event: object) -> None:
+            with wx.DirDialog(
+                dialog,
+                "Select a Quillin folder to install",
+                style=wx.DD_DEFAULT_STYLE,
+            ) as ddlg:
+                if ddlg.ShowModal() != wx.ID_OK:
+                    return
+                src_path = ddlg.GetPath()
+            from pathlib import Path
+
+            try:
+                ext_id = install_extension(Path(src_path))
+                self._register_quillin_contributions()
+                installed[:] = list(self._installed_quillins())
+                labels = [self._quillin_list_label(item) for item in installed] or [
+                    "(no Quillins installed)"
+                ]
+                chooser.Set(labels)
+                if installed:
+                    chooser.SetSelection(0)
+                refresh_details()
+                self._announce(f"Installed {ext_id}.")
+            except Exception as exc:
+                wx.MessageBox(
+                    f"Install failed: {exc}",
+                    "Install Quillin",
+                    wx.OK | wx.ICON_ERROR,
+                    dialog,
+                )
+
         chooser.Bind(wx.EVT_LISTBOX, on_select)
         enable_button.Bind(wx.EVT_BUTTON, on_enable)
         disable_button.Bind(wx.EVT_BUTTON, on_disable)
         reload_button.Bind(wx.EVT_BUTTON, on_reload)
         remove_button.Bind(wx.EVT_BUTTON, on_remove)
+        install_button.Bind(wx.EVT_BUTTON, on_install)
 
         close_button.SetDefault()
         from quill.ui.dialog_contract import apply_modal_ids

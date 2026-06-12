@@ -542,7 +542,7 @@ class AccessibilityAgentDialog:
             wx.LEFT | wx.RIGHT,
             8,
         )
-        self.step_list = wx.CheckListBox(
+        self.step_list = wx.CheckListBox(  # A11Y-SR-1-OK: GLOW steps; pending CheckBox conversion
             panel,
             choices=[self._step_label(step) for step in self.plan.steps],
         )
@@ -710,7 +710,7 @@ class DiffReviewDialog:
         root.Add(self.summary, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         root.Add(wx.StaticText(panel, label="Changes"), 0, wx.LEFT | wx.RIGHT, 8)
-        self.hunk_list = wx.CheckListBox(
+        self.hunk_list = wx.CheckListBox(  # A11Y-SR-1-OK: diff hunks; pending CheckBox conversion
             panel,
             choices=[hunk.describe() for hunk in self.review.hunks],
         )
@@ -1584,6 +1584,8 @@ class AssistantConnectionDialog:
         self.list_models_button.Bind(wx.EVT_BUTTON, self._on_list_models)
         self.recommend_button.Bind(wx.EVT_BUTTON, self._on_recommend_model)
         self.reveal_api_key.Bind(wx.EVT_BUTTON, self._on_toggle_api_key_reveal)
+        self._per_provider_models: dict[str, str] = {}
+        self._current_provider = self._provider_value()
         self._on_provider_changed(None)
 
     def _provider_choice_index(self, provider: str) -> int:
@@ -1639,8 +1641,21 @@ class AssistantConnectionDialog:
         else:
             self.model.SetValue("")
 
-    def _on_provider_changed(self, _event: object | None) -> None:
+    def _on_provider_changed(self, event: object | None) -> None:
         provider = self._provider_value()
+        if event is not None:
+            self._per_provider_models[self._current_provider] = self.model.GetValue().strip()
+            self._current_provider = provider
+            saved = self._per_provider_models.get(provider)
+            model_value = saved if saved else default_model_for_provider(provider)
+        else:
+            model_value = self.model.GetValue().strip()
+            known_models = {
+                default_model_for_provider(name) for name, _label in self._PROVIDER_CHOICES
+            }
+            fallback_model = default_model_for_provider(provider)
+            if not model_value or model_value in known_models:
+                model_value = fallback_model
         host_value = self.host.GetValue().strip()
         known_hosts = {
             default_host_for_provider(name)
@@ -1649,11 +1664,6 @@ class AssistantConnectionDialog:
         }
         if not host_value or host_value in known_hosts:
             self.host.SetValue(default_host_for_provider(provider))
-        model_value = self.model.GetValue().strip()
-        known_models = {default_model_for_provider(name) for name, _label in self._PROVIDER_CHOICES}
-        fallback_model = default_model_for_provider(provider)
-        if not model_value or model_value in known_models:
-            model_value = fallback_model
         self._set_model_choices(self._model_choices_for_provider(provider), preferred=model_value)
         requires_key = provider_requires_api_key(provider)
         self.api_key_label.SetLabel(provider_api_key_label(provider))
@@ -1663,6 +1673,8 @@ class AssistantConnectionDialog:
         if not requires_key and self._api_key_revealed:
             self._set_api_key_revealed(False)
         self.dialog.Layout()
+        if event is not None:
+            self.model.SetFocus()
 
     def _on_toggle_api_key_reveal(self, _event: object) -> None:
         self._set_api_key_revealed(not self._api_key_revealed)

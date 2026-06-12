@@ -1,5 +1,60 @@
 # Codex Review Log
 
+## 2026-06-12 17:27:38 -04:00
+
+Main resync + publishing integration audit:
+
+- reviewed current handoff, review log, readiness memory, and publishing plan before syncing
+- fetched current `origin/main` and found local `main` was behind by 29 commits
+- fast-forwarded local `main` to `97d04f6`
+- pushed synced `main` to `fork/main`
+- merged updated `main` into `features/publishing-providers-framework`
+
+High-impact upstream themes pulled in:
+
+- developer console / QDC work
+- GitHub remote file access under `File > Open from Remote`
+- autoupdate and release/deployment infrastructure
+- new help, translation, setup-wizard, copy-tray, abbreviation, and prompt-library surfaces
+- expanded dialog inventory, menu linting, and accessibility gates
+
+Publishing integration review:
+
+- preserved publishing command mappings alongside new developer-console mappings
+- preserved `File > Publish` submenu while keeping newer `File > Open from Remote` GitHub items from `main`
+- regenerated:
+  - `tests/unit/ui/fixtures/dialog_inventory.json`
+  - `tests/unit/ui/fixtures/main_frame_public_surface.json`
+- updated `quill/tools/module_size_budgets.json` to reflect the merged branch truth, including explicit tracking for `quill/ui/publishing_tools.py`
+- current PRD/menu read stays coherent:
+  - GitHub Remote belongs under `File > Open from Remote`
+  - publishing still fits cleanly as its own `File > Publish` workflow
+
+Validation result:
+
+- reran publishing-owned plus merge-sensitive validation slice against the new upstream baseline
+- result: `129 passed in 19.12s`
+
+Validation slice:
+
+- `tests/unit/core/test_publishing.py`
+- `tests/unit/core/test_publishing_browse.py`
+- `tests/unit/core/test_publishing_framework.py`
+- `tests/unit/core/test_features.py`
+- `tests/unit/core/test_remote_sites.py`
+- `tests/unit/ui/test_main_frame.py`
+- `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+- `tests/unit/ui/test_remote_sites_dialog.py`
+- `tests/unit/ui/test_main_frame_characterization.py`
+- `tests/unit/ui/test_main_frame_menu_contract.py`
+- `tests/unit/ui/test_dialog_inventory.py`
+- `tests/performance/test_budgets.py`
+- `tests/unit/ui/test_main_frame_share_dialogs.py`
+- `tests/unit/ui/test_power_tools_command_wiring.py`
+- `tests/unit/ui/test_status_bar_layout_contract.py`
+- `tests/unit/tools/test_menu_lint.py`
+- `tests/unit/tools/test_check_banned_patterns.py`
+
 ## 2026-06-10 23:09:01 -04:00
 
 Final documentation sync:

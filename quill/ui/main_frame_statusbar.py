@@ -186,6 +186,14 @@ class StatusBarMixin:
             return "Off"
         if item == "extend_mode":
             return "EXT" if getattr(self, "_extend_selection_mode", False) else "Off"
+        if item == "abbreviations":
+            enabled = getattr(self.settings, "abbreviation_expansion", True)
+            return "ABR: On" if enabled else "ABR: Off"
+        if item == "copy_tray_slots":
+            if not hasattr(self, "_copy_tray_instance"):
+                return "Slots: ?/12"
+            count = sum(1 for _, s in self._tray().all_slots() if not s.is_empty())
+            return f"Slots: {count}/12"
         if item == "sr_name":
             # A11Y live indicator (§8.3): show the detected screen reader name.
             # Cache the result on the instance to avoid re-running tasklist on
@@ -272,6 +280,8 @@ class StatusBarMixin:
             "file_path": "Open containing folder",
             "quill_key_mode": "QUILL key mode state",
             "extend_mode": "Extend selection mode active. Press F7 to toggle.",
+            "abbreviations": "Abbreviation expansion. Press Enter to toggle on/off.",
+            "copy_tray_slots": "Copy tray slots in use. Press Enter to open Copy Tray.",
             "sr_name": "Detected screen reader. Press Enter to re-detect.",
             "suggestion": "Frequently used command. Press Enter to run it.",
         }
@@ -431,6 +441,12 @@ class StatusBarMixin:
             self._set_status(
                 f"{self._STATUS_BAR_LABELS.get(item, item)} is unavailable in this profile"
             )
+            return
+        if item == "abbreviations":
+            self.toggle_abbreviation_expansion()
+            return
+        if item == "copy_tray_slots":
+            self.open_copy_tray()
             return
         actions: dict[str, Callable[[], None]] = {
             "message": self.open_notifications,

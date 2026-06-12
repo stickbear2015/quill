@@ -58,20 +58,31 @@ or the command palette (`Ctrl+Shift+P`).
 - [ ] Restore Backup: via File menu
 - [ ] Choose Encoding: via File menu
 - [ ] Open from URL: via File menu
-- [ ] Open from Remote...: QUILL key, then `R` (issues #154, #155, #156, #157)
+- [ ] Open from Remote...: QUILL key, then `Shift+O` (issues #154, #155, #156, #157)
   - [ ] Site list (saved FTP, SFTP, WebDAV, S3 sites) and directory browser
   - [ ] New site / Edit site / Delete site buttons
   - [ ] Open button enabled only when a file is selected
-- [ ] Save to Remote...: QUILL key, then `Shift+R` (issues #154, #155, #156, #157)
+- [ ] Save to Remote...: QUILL key, then `W` (issues #154, #155, #156, #157)
   - [ ] Site list and remote directory browser
   - [ ] Save button enabled only when a target file is selected
 - [ ] Save Copy to Remote...: via File menu
-- [ ] Manage Remote Sites...: QUILL key, then `M` (issues #154, #155, #156, #157)
+- [ ] Manage Remote Sites...: QUILL key, then `Shift+M` (issues #154, #155, #156, #157)
   - [ ] Add / Edit / Delete saved sites
   - [ ] Site editor sub-dialog with protocol-specific fields (FTP, SFTP, WebDAV, S3)
   - [ ] Site editor Save button disabled until the required fields are filled
 - [ ] Save Session: via File menu
 - [ ] Open Session: via File menu
+
+### A.1. Edit over SSH (issue #139)
+
+- [ ] SSH Quick Connect: File > Open over SSH > Quick Connect... (no default key; command palette `Ctrl+Shift+P`)
+  - [ ] Host / port / username / authentication / password / key file path / start directory
+  - [ ] Private key file field has a Browse button and a tooltip explaining supported formats (OpenSSH, PEM, PuTTY .ppk)
+- [ ] SSH Site Manager: File > Open over SSH > Site Manager... (no default key; command palette)
+  - [ ] Saved-sites list with New / Edit / Delete / Connect / Close
+  - [ ] Site editor sub-dialog: friendly name, host, port, username, authentication, private key file path, default directory
+  - [ ] Site editor Save button disabled until the required fields are filled
+  - [ ] Private key file field has a Browse button and a tooltip explaining supported formats
 
 ## B. Application settings
 

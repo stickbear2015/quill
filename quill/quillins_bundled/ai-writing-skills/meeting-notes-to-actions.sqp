@@ -1,0 +1,48 @@
+---
+schema: quill.skill/1
+name: Meeting Notes to Action Items
+description: Reads meeting notes and extracts a clean list of action items with owners and deadlines. Then drafts a follow-up summary suitable for sharing.
+author: QUILL Project
+version: 1.0.0
+parameters:
+  - name: format
+    label: Output format
+    type: choice
+    choices: [bullet list, numbered list, table]
+    default: bullet list
+---
+
+# Step 1: Extract action items
+
+Read the following meeting notes. Extract every action item mentioned. For each one, identify: (1) the task, (2) the owner (person or role responsible), and (3) the deadline or timeframe if stated. If any of these are unclear, mark it as "unclear".
+
+Return the action items in this exact format:
+- Task: [task description] | Owner: [name/role] | Due: [date or timeframe or unclear]
+
+Notes:
+{selection}
+
+# Step 2: Check for missed items
+
+Review the original meeting notes again and the action items list from Step 1. Are there any commitments, decisions, or follow-ups that were not captured? If yes, list them. If no, say "All items captured."
+
+Notes:
+{selection}
+
+Action items already captured:
+{step1.output}
+
+# Step 3: Format the final summary
+
+Produce a clean, shareable follow-up summary of the meeting. Include:
+1. A one-sentence meeting purpose (inferred from the notes)
+2. All action items from Steps 1 and 2 in {parameters.format} format, deduplicated
+3. Any key decisions made (separate from action items)
+
+Keep it concise and professional. Return only the formatted summary.
+
+```output
+format: text
+label: Meeting summary with action items
+accept_into: clipboard
+```

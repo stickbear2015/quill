@@ -128,6 +128,17 @@ _REVIEWED_EGRESS: dict[str, str] = {
         "WebDAV file download. Same gating and TLS guarantees as _request; "
         "streams the response body to a temp file with a visible progress callback."
     ),
+    "core/ai_chat.py::_post_json": (
+        "AI chat request. Triggered only by an explicit user action in the Ask AI "
+        "dialog (Tools > Ask AI or Alt+Q). The provider, model, and prompt are "
+        "chosen by the user in the dialog before sending. HTTPS enforced for cloud "
+        "providers; local Ollama uses HTTP on localhost only. No silent background calls."
+    ),
+    "core/ai_chat.py::_get_json": (
+        "AI model list fetch. Triggered when the Ask AI dialog opens or when the "
+        "user changes the provider selector, to populate the model list. Same HTTPS "
+        "guarantee as _post_json."
+    ),
 }
 
 

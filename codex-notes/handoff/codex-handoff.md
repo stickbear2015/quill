@@ -1,5 +1,30 @@
 # Codex Handoff
 
+## 2026-06-12 17:27:38 -04:00 Current Merge State
+
+- local `main` has been resynced to current `origin/main`
+- synced `main` has been pushed to `fork/main`
+- publishing branch has been updated with the latest upstream changes as of `97d04f6`
+
+Current integration read:
+
+- publishing still fits cleanly on top of new upstream shell changes
+- new GitHub Remote work lives under `File > Open from Remote`
+- publishing remains separate under `File > Publish`
+- dialog inventory and MainFrame public-surface snapshots have been regenerated from merged source
+- module-size budgets have been refreshed to acknowledge the integrated publishing branch state
+
+## 2026-06-12 17:27:38 -04:00 Latest Verification
+
+- maintained publishing plus merge-sensitive slice passed against the new upstream baseline
+- result: `129 passed in 19.12s`
+
+## 2026-06-12 17:27:38 -04:00 Next Read
+
+- branch is current with upstream again
+- publishing foundation still looks healthy after the sync
+- next product slice remains the explicit `Update Remote Content...` workflow unless product direction changes
+
 ## 2026-06-10 23:09:01 -04:00 Final Stop State
 
 - this branch is being left in a documentation-synced stopping state
