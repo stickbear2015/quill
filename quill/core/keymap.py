@@ -616,8 +616,10 @@ def export_keyboard_pack(
 def import_keyboard_pack(source: Path) -> tuple[str, str, dict[str, str]]:
     """Read a .kqp file. Return (name, description, merged_keymap).
 
-    Raises ValueError if the file is missing, malformed, or uses an
-    unsupported kqp_version.  The merged keymap is persisted via save_keymap.
+    Raises ValueError if the file is missing, malformed, uses an unsupported
+    kqp_version, or fails the kqp validator.  The merged keymap is persisted
+    via save_keymap *only* after validation succeeds (finding #42: a bad
+    pack must never silently overwrite the user's bindings).
     """
     raw = read_json(source, default=None)
     if not isinstance(raw, dict):
@@ -633,6 +635,15 @@ def import_keyboard_pack(source: Path) -> tuple[str, str, dict[str, str]]:
     bindings = raw.get("bindings", {})
     if not isinstance(bindings, dict):
         raise ValueError(f"{source.name}: 'bindings' must be a JSON object")
+    # Re-write the parsed payload to a temp buffer and run the same validator
+    # the standalone ``quill.tools.kqp_validator`` runs, so the import path
+    # uses the same rules as the CLI.
+    from quill.tools.kqp_validator import _validate_file  # local import: avoid cycles
+
+    issues = _validate_file(source, strict=False)
+    if issues:
+        joined = "; ".join(issues)
+        raise ValueError(f"{source.name} failed keyboard pack validation: {joined}")
     merged = merge_keymaps(bindings)
     save_keymap(merged)
     return name, description, merged

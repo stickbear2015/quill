@@ -13,6 +13,7 @@ from quill.core.keymap import (
     export_keyboard_pack,
     import_keyboard_pack,
 )
+from quill.tools.kqp_validator import _validate_file
 
 
 def _write_kqp(path: Path, payload: object) -> None:
@@ -130,6 +131,34 @@ def test_import_rejects_bindings_non_object(tmp_path: pytest.TempPathFactory) ->
     _write_kqp(path, {"kqp_version": 1, "name": "Bad", "description": "", "bindings": ["nope"]})
     with pytest.raises(ValueError, match="bindings"):
         import_keyboard_pack(path)
+
+
+def test_import_runs_validator_before_merge(tmp_path: Path) -> None:
+    """Finding #42: bad pack files must be rejected at import, not merged in.
+
+    The kqp validator already knows what is allowed (parseable chord, known
+    command id, non-empty name).  ``import_keyboard_pack`` must call it
+    *before* ``save_keymap`` so a malformed file does not silently overwrite
+    the user's bindings.
+    """
+    path = tmp_path / "no_name.kqp"
+    # Missing 'name' field: validator reports it, importer must propagate.
+    _write_kqp(
+        path,
+        {
+            "kqp_version": 1,
+            "description": "Anonymous pack",
+            "bindings": {"edit.find": "Alt+F"},
+        },
+    )
+    expected = _validate_file(path, strict=False)
+    assert expected, "validator should report at least one error for this fixture"
+    with pytest.raises(ValueError) as excinfo:
+        import_keyboard_pack(path)
+    # Every validator error should be in the raised message so the user can
+    # see the full list at once instead of fix-once-and-retry.
+    for err in expected:
+        assert err in str(excinfo.value), f"missing validator error: {err!r}"
 
 
 # ---------------------------------------------------------------------------

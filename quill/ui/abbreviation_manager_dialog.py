@@ -15,6 +15,7 @@ from quill.core.abbreviations import (
     AbbreviationLibrary,
     save_abbreviation_library,
 )
+from quill.ui.dialog_contract import show_message_box
 
 
 class _AbbreviationEditDialog:
@@ -311,7 +312,7 @@ class AbbreviationManagerDialog:
             raw = json.loads(open(path, encoding="utf-8").read())
             incoming = raw.get("abbreviations", [])
         except Exception as exc:
-            wx.MessageBox(
+            show_message_box(
                 f"Could not read file: {exc}",
                 "Import Failed",
                 wx.OK | wx.ICON_ERROR,
@@ -347,7 +348,7 @@ class AbbreviationManagerDialog:
         if added:
             self._library.abbreviations.sort(key=lambda a: a.abbreviation.lower())
             save_abbreviation_library(self._library)
-        wx.MessageBox(
+        show_message_box(
             f"Imported {added} abbreviation(s). {skipped} skipped (duplicate IDs).",
             "Import Complete",
             wx.OK | wx.ICON_INFORMATION,
@@ -386,14 +387,14 @@ class AbbreviationManagerDialog:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as exc:
-            wx.MessageBox(
+            show_message_box(
                 f"Could not write file: {exc}",
                 "Export Failed",
                 wx.OK | wx.ICON_ERROR,
                 self.dialog,
             )
             return
-        wx.MessageBox(
+        show_message_box(
             f"Exported {len(self._library.abbreviations)} abbreviation(s).",
             "Export Complete",
             wx.OK | wx.ICON_INFORMATION,

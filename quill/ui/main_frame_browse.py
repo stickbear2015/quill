@@ -187,7 +187,7 @@ class BrowseModeMixin:
                     cache,
                 )
 
-            self._browse_cache_build_thread = threading.Thread(
+            self._browse_cache_build_thread = threading.Thread(  # GATE-40-OK: browse cache prewarm.
                 target=_worker,
                 name="quill-browse-cache-prewarm",
                 daemon=True,

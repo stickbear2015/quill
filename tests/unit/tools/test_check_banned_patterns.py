@@ -5,10 +5,13 @@ from pathlib import Path
 
 from quill.tools.check_banned_patterns import (
     _BareWxVisitor,
+    _REPO_ROOT,
     _check_checklistbox,
     _check_dialog_contract,
     _check_dialog_registry,
     _check_raw_xml,
+    _check_threading_thread,
+    _check_wx_message_box,
     find_violations,
 )
 
@@ -159,3 +162,72 @@ def test_checklistbox_ok_comment_exempts(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert _check_checklistbox([module]) == []
+
+
+def test_threading_thread_is_flagged(tmp_path: Path) -> None:
+    # #40: direct threading.Thread in quill/ui bypasses QuillTaskManager.
+    module = tmp_path / "worker.py"
+    module.write_text(
+        "import threading\n\n\n"
+        "def go():\n    threading.Thread(target=lambda: None, daemon=True).start()\n",
+        encoding="utf-8",
+    )
+    violations = _check_threading_thread([module])
+    assert len(violations) == 1
+    assert "GATE-40" in violations[0].message
+
+
+def test_threading_thread_ok_marker_exempts(tmp_path: Path) -> None:
+    module = tmp_path / "worker.py"
+    module.write_text(
+        "import threading\n\n\n"
+        "def go():\n"
+        "    threading.Thread(  # GATE-40-OK: legacy short-lived worker\n"
+        "        target=lambda: None, daemon=True\n"
+        "    ).start()\n",
+        encoding="utf-8",
+    )
+    assert _check_threading_thread([module]) == []
+
+
+def test_wx_message_box_is_flagged(tmp_path: Path) -> None:
+    # #41: raw wx.MessageBox bypasses the announce-dialog wrapper.  The
+    # source path must live under quill/ui or quill/devtools (the governed
+    # directories) for the gate to apply, so we drop a fixture file in the
+    # real source tree and assert the gate flags it, then clean up.
+    import os
+
+    target_dir = _REPO_ROOT / "quill" / "ui" / "_gate41_fixture"
+    target_dir.mkdir(exist_ok=True, parents=True)
+    module = target_dir / "dlg.py"
+    module.write_text(
+        "import wx\n\n\n"
+        "def go():\n    wx.MessageBox('oops', 'Err', wx.OK | wx.ICON_ERROR)\n",
+        encoding="utf-8",
+    )
+    try:
+        violations = _check_wx_message_box([module])
+        assert len(violations) == 1
+        assert "GATE-41" in violations[0].message
+    finally:
+        module.unlink()
+        target_dir.rmdir()
+
+
+def test_wx_message_box_ok_marker_exempts(tmp_path: Path) -> None:
+    target_dir = _REPO_ROOT / "quill" / "ui" / "_gate41_fixture"
+    target_dir.mkdir(exist_ok=True, parents=True)
+    module = target_dir / "dlg.py"
+    module.write_text(
+        "import wx\n\n\n"
+        "def go():\n"
+        "    wx.MessageBox(  # GATE-41-OK: tests, no UI to announce through\n"
+        "        'oops', 'Err', wx.OK\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    try:
+        assert _check_wx_message_box([module]) == []
+    finally:
+        module.unlink()
+        target_dir.rmdir()

@@ -252,7 +252,9 @@ class AIModelDialog:
                 message = f"Download failed: {exc}"
             self._wx.CallAfter(self._after_download, message)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: model download worker; bounded; posts via CallAfter.
+            target=worker, daemon=True
+        ).start()
 
     def _after_download(self, message: str) -> None:
         self.download_button.Enable(True)

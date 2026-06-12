@@ -154,7 +154,9 @@ class AskQuillChatDialog:
             avail, reason = assistant.is_available()
             self._wx.CallAfter(self._on_availability_checked, avail, reason)
 
-        threading.Thread(target=_check_available, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: availability probe; posts via CallAfter.
+            target=_check_available, daemon=True
+        ).start()
 
     def _on_availability_checked(self, available: bool, reason: str | None) -> None:
         if not available:
@@ -451,7 +453,9 @@ class AskQuillChatDialog:
                 result = ("error", "", "", str(exc))
             self._wx.CallAfter(self._apply, *result)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: streaming response worker; posts deltas via CallAfter.
+            target=worker, daemon=True
+        ).start()
 
     def _on_stream_delta(self, fragment: str) -> None:
         if not fragment:

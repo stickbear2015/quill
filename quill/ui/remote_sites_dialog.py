@@ -36,7 +36,7 @@ from quill.core.remote_sites import (
     save_password,
     upsert_site,
 )
-from quill.ui.dialog_contract import apply_modal_ids, focus_primary_control
+from quill.ui.dialog_contract import apply_modal_ids, focus_primary_control, show_message_box
 
 
 class DialogMode(Enum):
@@ -290,7 +290,7 @@ class RemoteSitesDialog(wx.Dialog):
         current = self._site_list.selected_site()
         if current is None:
             return
-        result = wx.MessageBox(
+        result = show_message_box(
             f"Delete the saved site '{current.name}'?",
             "Delete remote site",
             wx.ICON_QUESTION | wx.YES_NO | wx.NO_DEFAULT,
@@ -302,11 +302,13 @@ class RemoteSitesDialog(wx.Dialog):
     def _on_accept(self, _event: wx.Event | None) -> None:
         site = self._site_list.selected_site()
         if site is None:
-            wx.MessageBox("Choose a remote site first.", self.GetTitle(), wx.ICON_WARNING | wx.OK)
+            show_message_box(
+                "Choose a remote site first.", self.GetTitle(), wx.ICON_WARNING | wx.OK
+            )
             return
         path = self._target_text.GetValue().strip()
         if not path:
-            wx.MessageBox(
+            show_message_box(
                 "Enter a remote file path or select an entry from the directory list.",
                 self.GetTitle(),
                 wx.ICON_WARNING | wx.OK,
@@ -452,7 +454,9 @@ class _SiteEditorDialog(wx.Dialog):
         elif protocol == PROTOCOL_WEBDAV and extra_value:
             extra["webdav_base"] = extra_value
         if not name or not host:
-            wx.MessageBox("Name and host are required.", self.GetTitle(), wx.ICON_WARNING | wx.OK)
+            show_message_box(
+                "Name and host are required.", self.GetTitle(), wx.ICON_WARNING | wx.OK
+            )
             return
         site_id = (self._site.id if self._site else name).strip() or name
         self.site = RemoteSite(

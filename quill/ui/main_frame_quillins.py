@@ -486,7 +486,9 @@ class QuillinsMenuMixin:
                 refresh_details()
                 self._announce(f"Installed {ext_id}.")
             except Exception as exc:
-                wx.MessageBox(
+                from quill.ui.dialog_contract import show_message_box
+
+                show_message_box(
                     f"Install failed: {exc}",
                     "Install Quillin",
                     wx.OK | wx.ICON_ERROR,

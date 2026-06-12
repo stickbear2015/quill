@@ -155,7 +155,9 @@ class RunPythonDialog:
             )
             self._wx.CallAfter(self._finish_run, result)
 
-        threading.Thread(target=_do_run, name="quill-python-sandbox", daemon=True).start()
+        threading.Thread(  # GATE-40-OK: python sandbox run; bounded by timeout.
+            target=_do_run, name="quill-python-sandbox", daemon=True
+        ).start()
 
     def _finish_run(self, result: PythonSandboxResult) -> None:
         self._latest_result = result
@@ -1714,7 +1716,9 @@ class AssistantConnectionDialog:
             else:  # pragma: no cover - fallback when CallAfter is unavailable
                 self._finish_verify_connection(ok, message)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: connection probe; posts via CallAfter.
+            target=worker, daemon=True
+        ).start()
 
     def _finish_verify_connection(self, ok: bool, message: str) -> None:
         """UI-thread completion for the async verify (#127)."""
