@@ -1,5 +1,32 @@
 # Codex Review Log
 
+## 2026-06-12 17:30:59 -04:00
+
+Workspace-noise cleanup:
+
+- removed the leftover local temp/cache directories with elevated permissions:
+  - `.tmp/`
+  - `.pytest_cache/`
+  - `codegit-srcquill.pytest_cache/`
+- rechecked branch state after the cleanup
+- no product-code changes were made in this pass
+- this leaves the tracked tree focused on the documentation correction only
+
+Final intent from this checkpoint:
+
+- refresh handoff/readiness docs so they match the correction and cleanup
+- commit the documentation cleanup
+- push so the remote branch ends in a clean, fully documented state
+
+## 2026-06-12 17:29:07 -04:00
+
+Guidance-file correction:
+
+- corrected a repo-local guidance mistake
+- removed the untracked repo `AGENTS.md` file that should not have been introduced here
+- reverted the repo-local `CLAUDE.md` accessibility-guidance addition
+- this correction keeps repository support files focused on project artifacts rather than assistant-environment overrides
+
 ## 2026-06-12 17:27:38 -04:00
 
 Main resync + publishing integration audit:

@@ -2,6 +2,15 @@
 
 Status: stable implementation checkpoint with current `origin/main` merged, focused validation green, and next work identified.
 
+## 2026-06-12 cleanup note
+
+- post-sync workspace cleanup is complete
+- stray repo-local guidance drift has been corrected
+- local temp/cache noise from validation reruns has been removed
+- readiness judgment is unchanged:
+  - publishing integration is still in good shape on current upstream
+  - next meaningful product work is still `Update Remote Content...`
+
 ## 2026-06-12 upstream resync update
 
 - refreshed from current `origin/main` and merged that updated `main` back into `features/publishing-providers-framework`

@@ -1,5 +1,20 @@
 # Codex Handoff
 
+## 2026-06-12 17:30:59 -04:00 Clean Stop State
+
+- removed leftover local temp/cache noise after the upstream resync audit
+- corrected the mistaken repo-local guidance-file drift:
+  - no repo `AGENTS.md`
+  - no repo-local accessibility override left in `CLAUDE.md`
+- no product behavior changed in this cleanup pass
+
+Current practical state:
+
+- publishing branch is synced with upstream and already pushed
+- publishing integration remains healthy against current `main`
+- workspace temp/cache noise has been cleared
+- remaining tracked work from this pass is documentation-only
+
 ## 2026-06-12 17:27:38 -04:00 Current Merge State
 
 - local `main` has been resynced to current `origin/main`
