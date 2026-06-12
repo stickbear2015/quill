@@ -132,6 +132,27 @@ def make_default_backend() -> AIBackend:
     except Exception as exc:  # noqa: BLE001 - any failure falls back to the local model
         logger.warning("Configured AI provider probe failed; falling back to local model: %s", exc)
 
+    # Check the simple chat settings (ai_chat_default_provider / ai_chat_default_model).
+    # This path is set by the inline setup strip in AskQuillChatDialog.
+    try:
+        from quill.core.settings import load_settings
+
+        _s = load_settings()
+        _provider = getattr(_s, "ai_chat_default_provider", "") or ""
+        _model = (
+            getattr(_s, "ai_prompt_default_model", "")
+            or getattr(_s, "ai_chat_default_model", "")
+            or ""
+        )
+        if _provider and _model:
+            from quill.core.ai.provider_backend import SimpleChatBackend
+
+            _backend = SimpleChatBackend(_provider, _model)
+            if _backend.is_available()[0]:
+                return _backend
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Simple chat settings backend probe failed: %s", exc)
+
     if sys.platform == "darwin":
         try:
             from quill.core.ai.foundation_models import FoundationModelsBackend

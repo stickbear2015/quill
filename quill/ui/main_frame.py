@@ -1506,7 +1506,7 @@ class MainFrame(
             "tools.ask_quill_chat",
             "Ask Quill Chat",
             self.open_ask_quill_chat,
-            None,
+            self._binding_for("tools.ask_quill_chat"),
         )
         self.commands.register(
             "tools.ai_model",
@@ -2987,7 +2987,6 @@ class MainFrame(
             "tools.ai_prompt_studio": self._id_ai_prompt_studio,
             "tools.ai_agent_center": self._id_ai_agent_center,
             "tools.ai_accessibility_agent": self._id_ai_accessibility_agent,
-            "tools.ask_ai": self._id_ask_ai,
             "tools.prompt_library": self._id_prompt_library,
             "tools.skill_library": self._id_skill_library,
             "tools.check_grammar_ai": self._id_check_grammar_ai,
@@ -8628,7 +8627,9 @@ class MainFrame(
             notebook = wx.Notebook(dialog)
             notebook.SetName("Settings categories")
 
-            def _add_field_row(parent_panel, sizer, label: str, control, reset=None) -> None:
+            def _add_field_row(
+                parent_panel, sizer, label: str, control_or_factory, reset=None
+            ) -> object:
                 row = wx.BoxSizer(wx.HORIZONTAL)
                 row.Add(
                     wx.StaticText(parent_panel, label=label),
@@ -8636,10 +8637,12 @@ class MainFrame(
                     wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
                     8,
                 )
-                row.Add(control, 1, wx.EXPAND)
+                ctrl = control_or_factory() if callable(control_or_factory) else control_or_factory
+                row.Add(ctrl, 1, wx.EXPAND)
                 if reset is not None:
                     row.Add(reset, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
                 sizer.Add(row, 0, wx.EXPAND | wx.ALL, 6)
+                return ctrl
 
             def _reset_one(key: str) -> None:
                 writer = writers.get(key)
@@ -8815,16 +8818,24 @@ class MainFrame(
                     page_sizer.Add(ext_master_cb, 0, wx.ALL, 6)
                     _engine_ids = list_engine_ids()
                     _first_engine = load_engine_config(_engine_ids[0]) if _engine_ids else None
-                    ext_name_field = wx.TextCtrl(page)
+                    ext_name_field = _add_field_row(
+                        page,
+                        page_sizer,
+                        "External engine name",
+                        lambda p=page: wx.TextCtrl(p),
+                    )
                     ext_name_field.SetName("External engine name")
                     ext_name_field.SetValue(_first_engine.engine_id if _first_engine else "")
-                    _add_field_row(page, page_sizer, "External engine name", ext_name_field)
-                    ext_command_field = wx.TextCtrl(page)
+                    ext_command_field = _add_field_row(
+                        page,
+                        page_sizer,
+                        "External engine command",
+                        lambda p=page: wx.TextCtrl(p),
+                    )
                     ext_command_field.SetName("External engine command")
                     ext_command_field.SetValue(
                         " ".join(_first_engine.command) if _first_engine else ""
                     )
-                    _add_field_row(page, page_sizer, "External engine command", ext_command_field)
                     ext_engine_enabled_cb = wx.CheckBox(page, label="Enable this external engine")
                     ext_engine_enabled_cb.SetValue(
                         bool(_first_engine.enabled) if _first_engine else False
@@ -17135,43 +17146,50 @@ class MainFrame(
         form = wx.FlexGridSizer(0, 3, 8, 8)
         form.AddGrowableCol(1, 1)
 
-        def add_row(label: str, control: object, button: object | None = None) -> None:
+        def add_row(label: str, make_ctrl, button: object | None = None) -> object:
             form.Add(wx.StaticText(panel, label=label), 0, wx.ALIGN_CENTER_VERTICAL)
-            form.Add(control, 1, wx.EXPAND)
+            ctrl = make_ctrl()
+            form.Add(ctrl, 1, wx.EXPAND)
             if button is None:
                 form.AddSpacer(1)
             else:
                 form.Add(button, 0)
+            return ctrl
 
-        folder_picker = wx.DirPickerCtrl(panel, path=str(default_root))
-        add_row("Starting folder", folder_picker)
-
-        file_pattern_ctrl = wx.TextCtrl(panel, value="*")
-        add_row("File pattern", file_pattern_ctrl)
-
-        query_ctrl = wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
-        add_row("Search text", query_ctrl)
+        folder_picker = add_row(
+            "Starting folder", lambda: wx.DirPickerCtrl(panel, path=str(default_root))
+        )
+        file_pattern_ctrl = add_row("File pattern", lambda: wx.TextCtrl(panel, value="*"))
+        query_ctrl = add_row(
+            "Search text", lambda: wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
+        )
 
         replacement_ctrl = None
         if replace:
-            replacement_ctrl = wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER)
-            add_row("Replacement", replacement_ctrl)
+            replacement_ctrl = add_row(
+                "Replacement",
+                lambda: wx.TextCtrl(panel, value="", style=wx.TE_PROCESS_ENTER),
+            )
 
-        mode_choice = wx.Choice(panel, choices=["Plain text", "Wildcard", "Regular expression"])
+        mode_choice = add_row(
+            "Match mode",
+            lambda: wx.Choice(panel, choices=["Plain text", "Wildcard", "Regular expression"]),
+        )
         mode_choice.SetSelection(0)
-        add_row("Match mode", mode_choice)
 
-        output_choice = wx.Choice(
-            panel,
-            choices=[
-                "Filenames only",
-                "Filenames with line numbers and counts",
-                "Counts only",
-                "Filename with line context",
-            ],
+        output_choice = add_row(
+            "Output format",
+            lambda: wx.Choice(
+                panel,
+                choices=[
+                    "Filenames only",
+                    "Filenames with line numbers and counts",
+                    "Counts only",
+                    "Filename with line context",
+                ],
+            ),
         )
         output_choice.SetSelection(3)
-        add_row("Output format", output_choice)
 
         case_sensitive = wx.CheckBox(panel, label="Case sensitive")
         whole_word = wx.CheckBox(panel, label="Whole word")
@@ -17772,6 +17790,7 @@ class MainFrame(
 
             self._set_status(AI_DISABLED_MESSAGE)
             return
+
         self._apply_style_to_assistant()
         tool_catalog = allowed_tools(self.commands, getattr(self, "features", None))
         dialog = AskQuillChatDialog(

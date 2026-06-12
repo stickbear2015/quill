@@ -954,7 +954,6 @@ class MenuBuilderMixin:
         self._id_ai_agent_center = wx.NewIdRef()
         self._id_ai_accessibility_agent = wx.NewIdRef()
         self._id_ask_quill_chat = wx.NewIdRef()
-        self._id_ask_ai = wx.NewIdRef()
         self._id_prompt_library = wx.NewIdRef()
         self._id_skill_library = wx.NewIdRef()
         self._id_check_grammar_ai = wx.NewIdRef()
@@ -1181,8 +1180,8 @@ class MenuBuilderMixin:
         ai_menu.Check(self._id_ai_enabled, load_ai_enabled())
         ai_menu.AppendSeparator()
         ai_menu.Append(
-            self._id_ask_ai,
-            self._menu_label("&Ask AI...", "tools.ask_ai"),
+            self._id_ask_quill_chat,
+            self._menu_label("&Ask Quill...", "tools.ask_quill_chat"),
         )
         ai_menu.Append(
             self._id_prompt_library,
@@ -1196,10 +1195,6 @@ class MenuBuilderMixin:
         ai_menu.Append(
             self._id_ai_hub,
             self._menu_label("AI &Hub...", "tools.ai_hub"),
-        )
-        ai_menu.Append(
-            self._id_ask_quill_chat,
-            self._menu_label("Ask Quill &Chat...", "tools.ask_quill_chat"),
         )
         ai_menu.Append(
             self._id_ai_model,
@@ -1726,11 +1721,6 @@ class MenuBuilderMixin:
             wx.EVT_MENU,
             lambda _e: self.make_document_accessible(),
             id=self._id_ai_accessibility_agent,
-        )
-        self.frame.Bind(
-            wx.EVT_MENU,
-            lambda _e: self.open_ask_ai(),
-            id=self._id_ask_ai,
         )
         self.frame.Bind(
             wx.EVT_MENU,

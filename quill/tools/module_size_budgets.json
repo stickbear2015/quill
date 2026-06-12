@@ -19,11 +19,13 @@
   "_rebaseline_2026_06_10g": "main_frame.py +47, main_frame_power_tools.py +40 for editors.md \u00c2\u00a74.22/\u00c2\u00a74.23 Tier-1 features: select_chunk (Ctrl+Space), quote_lines (Ctrl+Q), unquote_lines (Ctrl+Shift+Q), duplicate_selection in Transform menu; 10 new power-tools commands (strip_html_tags, decode/encode entities, trim_blank_lines, shuffle_lines, sort_numeric/by_length, keep_unique_lines, delete_lines_containing/not_containing). CQ-1 decomposition is the path to lower these budgets.",
   "_rebaseline_2026_06_11": "Menu reorganization (x.md): Format menu restructured into Line/Sort/Whitespace/HTML submenus; Edit/File/Navigate/Tools menus reordered per design plan. main_frame_menu.py +12 net lines from new submenus and Sticky Notes move to Tools.",
   "_rebaseline_2026_06_11b": "Copy Tray feature: main_frame.py budget raised from 20957 to 20990 (+33 for tray icon Copy Tray submenu and _tray_paste_slot helper added to _on_tray_right_click). copy_tray_dialog.py raised from 178 to 244 for full dialog rewrite: two-panel edit surface with inline label, content TextCtrl, Paste from Clipboard button, auto-save on slot change, accessible name announcements, and public show()/close() methods satisfying A11Y-4 contract.",
+  "_rebaseline_2026_06_11l": "assistant_tools.py +12 for AssistantConnectionDialog per-provider model memory and focus-on-change (same UX as Ask Quill setup strip); assistant_panel.py given explicit budget entry (was 601 over default 600 cap) and grows to 646 for setup strip model-memory methods (_prefill_setup_from_settings, _on_setup_provider_changed); style_panel.py +6 for deferred is_available() probe (TrainStyleDialog). main_frame.py +6 for lint-clean lambda splits (_add_field_row signature split, ext-engine lambdas fixed for B023, search-in-files add_row calls wrapped). New gate: quill/tools/check_dialog_zorder.py + tests/unit/tools/test_dialog_zorder.py. ssh_dialogs.py and quillin_wizard.py z-order fixed.",
   "_next_target_main_frame": 15000,
   "_default_cap": 600,
   "budgets": {
-    "quill/ui/main_frame.py": 21197,
-    "quill/ui/assistant_tools.py": 1797,
+    "quill/ui/main_frame.py": 21216,
+    "quill/ui/assistant_tools.py": 1809,
+    "quill/ui/assistant_panel.py": 646,
     "quill/ui/main_frame_power_tools.py": 777,
     "quill/ui/main_frame_menu.py": 2785,
     "quill/core/read_aloud.py": 1243,
@@ -57,5 +59,6 @@
   "_rebaseline_2026_06_11g": "Phase 3 AI Prompt Library: prompt_library.py (364 lines, new), prompt_library_dialog.py (444 lines, new), main_frame.py +78 for open_prompt_library/check_grammar_with_ai/get_prompt_library, main_frame_menu.py +20 for ids/menu items/bindings. Bundled Quillin ai-writing-prompts with 7 prompts. .pqp import/export support. keymap.py +2 for command names. Quillin Manager install_extension() and Install from Folder button. ai_chat_dialog focus improvement.",
   "_rebaseline_2026_06_11h": "Ruff formatter pass grew several files: import sort fix in main_frame.py (+2), auto-fix passes in ai_chat_dialog.py (+14), prompt_library_dialog.py (+29), settings_specs.py (+3), settings.py (+5), abbreviation_manager_dialog.py (+2), copy_tray_dialog.py (+6), main_frame_quillins.py (+2). All growth is formatter normalization, not new feature code.",
   "_rebaseline_2026_06_11i": "Skill Library UI: main_frame.py +30 for open_skill_library(), _get_skill_files(), command registration, and command map entry; main_frame_menu.py +10 for _id_skill_library, menu item in AI submenu, and EVT_MENU binding. New file skill_library_dialog.py (539 lines). UX improvements: cancel button, intermediate step outputs, early not-configured guard, step name in progress status.",
-  "_rebaseline_2026_06_11j": "UX polish: prompt_library_dialog.py +12 for _check_ai_configured() early guard shown at dialog open when no AI model is set."
+  "_rebaseline_2026_06_11j": "UX polish: prompt_library_dialog.py +12 for _check_ai_configured() early guard shown at dialog open when no AI model is set.",
+  "_rebaseline_2026_06_11k": "Ask Quill unification: main_frame.py +13 for _ask_quill_chat_dialog cache and reuse guard in open_ask_quill_chat(). assistant_panel.py converted to modeless wx.Frame with inline setup strip; provider_backend.py +SimpleChatBackend; assistant.py fallback to simple chat settings."
 }

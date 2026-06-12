@@ -1,16 +1,11 @@
 """The "Ask Quill" AI chat dialog.
 
-A conversation with Quill's on-device assistant (Apple Foundation Models on
-macOS, llama.cpp on Windows/Linux). Each turn the assistant decides whether to
-answer in chat, insert or replace text in the document, or run a Quill command —
-and acts on the editor live via callbacks, but only after the user approves.
+A11Y-4 hardened modal dialog (Alt+Q). Generation always runs off the UI thread
+so the dialog stays responsive while the model is working.
 
-The whole conversation — transcript, suggestions, and the message edit field —
-renders inside an accessible WebView (Edge WebView2 on Windows): Markdown is
-formatted, new messages land in an ARIA live region, and the edit field is part
-of the page so the user stays in the web view to type. A plain wx ListBox +
-text field is the fallback when no WebView backend is available. Generation runs
-off the UI thread.
+If no AI backend is configured (neither the AI-13 connection file nor the
+simple chat settings), an inline setup strip lets the user pick a provider,
+enter a model ID, and supply an API key without leaving the dialog.
 """
 
 from __future__ import annotations
@@ -29,16 +24,24 @@ SUGGESTED_PROMPTS: tuple[str, ...] = (
     "Read this aloud",
 )
 
+_PROVIDER_LABELS: dict[str, str] = {
+    "openrouter": "OpenRouter",
+    "openai": "OpenAI",
+    "ollama_local": "Ollama (local)",
+    "ollama_cloud": "Ollama Cloud",
+}
+_PROVIDER_IDS: list[str] = list(_PROVIDER_LABELS)
+
 
 def classify_assistant_error(error: str) -> tuple[str, bool]:
-    """Return a user-facing error message and whether chat input should be disabled."""
+    """Return (user-facing message, whether to disable input)."""
     text = (error or "").strip()
     lowered = text.lower()
     if "failed to load native code" in lowered or "0xc000001d" in lowered:
         return (
-            "On-device AI couldn't start on this computer. This processor may not "
-            "support the built-in AI engine. You can turn AI off from Tools > AI Assistant, "
-            "or connect a cloud AI provider in AI settings.",
+            "On-device AI couldn't start. This processor may not support the built-in "
+            "AI engine. Use the setup strip to connect a cloud provider, or turn AI off "
+            "from Tools > AI Assistant.",
             True,
         )
     return (f"Error: {text}", False)
@@ -68,36 +71,34 @@ class AskQuillChatDialog:
         self._insert_text = insert_text
         self._replace_selection = replace_selection
         self._run_command = run_command
-        # AI-7: optional callback to present a navigable diff before applying a
-        # replacement. Signature: review_changes(original, revised, on_apply).
         self._review_changes = review_changes
         self._tool_titles = dict(tool_catalog)
         self._tool_ids = tuple(tid for tid, _ in tool_catalog)
         self._announce = announce or (lambda _m: None)
         self._last_response = ""
         self._first_done = False
-        # Branch-tree session log (#130): conversational exchanges are recorded
-        # as user/assistant turns and saved so the Session Branches browser is
-        # populated. Created lazily on the first completed exchange.
         self._session = None
         self._pending_user_message = ""
-        # Streaming state (AI-1): accumulate streamed fragments on the UI thread
-        # and announce them in throttled, sentence-sized chunks.
         self._stream_active = False
         self._stream_buffer = ""
         self._stream_announced = 0
         self._stream_last = 0.0
 
         self.dialog = wx.Dialog(
-            parent, title="Ask Quill", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+            parent,
+            title="Ask Quill",
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
         self.dialog.SetSize((760, 760))
         outer = wx.BoxSizer(wx.VERTICAL)
 
+        self._per_provider_models: dict[str, str] = {}
+        self._setup_current_provider: str = _PROVIDER_IDS[0]
+        self._setup_strip = self._build_setup_strip()
+        self._update_key_visibility()
+        outer.Add(self._setup_strip, 0, wx.EXPAND)
+
         self._full_messages: list[str] = []
-        # Render the whole chat (transcript + suggestions + edit field) as
-        # markdown in a WebView. Fall back to a list box + wx text field if the
-        # WebView backend (Edge WebView2 / WebKit) isn't available.
         self._webview = None
         self.messages = None
         self.input = None
@@ -119,7 +120,7 @@ class AskQuillChatDialog:
             self._webview = None
             self._build_fallback_input(outer)
 
-        # Approval bar — nothing is applied to the document until you approve.
+        # Approval bar — nothing touches the document until the user approves.
         self._pending = None
         self.approval_label = wx.StaticText(self.dialog, label="")
         self.approve_button = wx.Button(self.dialog, label="Approve")
@@ -145,16 +146,186 @@ class AskQuillChatDialog:
         self.copy_button.Bind(wx.EVT_BUTTON, self._on_copy)
         self.dialog.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
 
-        available, reason = assistant.is_available()
+        # Defer the availability check off the UI thread so the dialog opens
+        # immediately. The greeting and setup strip appear once the check completes.
+        self._setup_strip.Hide()
+
+        def _check_available() -> None:
+            avail, reason = assistant.is_available()
+            self._wx.CallAfter(self._on_availability_checked, avail, reason)
+
+        threading.Thread(target=_check_available, daemon=True).start()
+
+    def _on_availability_checked(self, available: bool, reason: str | None) -> None:
         if not available:
-            self._append("Quill", f"On-device AI is unavailable: {reason}")
-            self._set_busy(True)
-        elif self._webview is None:
-            # WebView bakes the greeting into the page (no flash); list box needs it added.
+            self._show_setup(reason or "No AI provider is configured.")
+        else:
+            self._setup_strip.Hide()
+            self.dialog.Layout()
+        if self._webview is None:
+            greeting = (
+                "Hi! Ask me to write, edit, or run something in your document."
+                if available
+                else "Hi! Ask me to write, edit, or run something."
+            )
+            self._append("Quill", greeting)
+        self._set_busy(not available)
+
+    # -- Setup strip ----------------------------------------------------------
+
+    def _build_setup_strip(self) -> object:
+        wx = self._wx
+        panel = wx.Panel(self.dialog)
+        panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self._setup_msg = wx.StaticText(panel, label="")
+        sizer.Add(self._setup_msg, 0, wx.LEFT | wx.TOP, 8)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(wx.StaticText(panel, label="Provider:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        self._setup_provider = wx.Choice(
+            panel, choices=[_PROVIDER_LABELS[p] for p in _PROVIDER_IDS]
+        )
+        self._setup_provider.SetSelection(0)
+        row.Add(self._setup_provider, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 12)
+
+        row.Add(wx.StaticText(panel, label="Model:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        self._setup_model = wx.TextCtrl(panel, size=wx.Size(200, -1))
+        self._setup_model.SetName("Model name or ID")
+        row.Add(self._setup_model, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 12)
+
+        self._setup_key_lbl = wx.StaticText(panel, label="API Key:")
+        self._setup_key = wx.TextCtrl(panel, style=wx.TE_PASSWORD, size=wx.Size(180, -1))
+        self._setup_key.SetName("API key")
+        row.Add(self._setup_key_lbl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        row.Add(self._setup_key, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 12)
+
+        self._setup_save_btn = wx.Button(panel, label="Save && Start")
+        row.Add(self._setup_save_btn, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        sizer.Add(row, 0, wx.EXPAND | wx.ALL, 8)
+        panel.SetSizer(sizer)
+        panel.Hide()
+
+        self._setup_provider.Bind(wx.EVT_CHOICE, self._on_setup_provider_changed)
+        self._setup_save_btn.Bind(wx.EVT_BUTTON, self._on_setup_save)
+        self._prefill_setup_from_settings()
+        return panel
+
+    def _prefill_setup_from_settings(self) -> None:
+        from quill.core.ai.providers import default_model_for_provider
+
+        for pid in _PROVIDER_IDS:
+            self._per_provider_models[pid] = default_model_for_provider(pid)
+        try:
+            from quill.core.settings import load_settings
+
+            s = load_settings()
+            saved_provider = getattr(s, "ai_chat_default_provider", "") or ""
+            saved_model = (
+                getattr(s, "ai_prompt_default_model", "")
+                or getattr(s, "ai_chat_default_model", "")
+                or ""
+            )
+            if saved_provider in _PROVIDER_IDS:
+                self._setup_provider.SetSelection(_PROVIDER_IDS.index(saved_provider))
+                self._setup_current_provider = saved_provider
+            if saved_model:
+                self._per_provider_models[self._setup_current_provider] = saved_model
+        except Exception:  # noqa: BLE001
+            pass
+        self._setup_model.SetValue(self._per_provider_models.get(self._setup_current_provider, ""))
+
+    def _on_setup_provider_changed(self, _event: object) -> None:
+        from quill.core.ai.providers import default_model_for_provider
+
+        self._per_provider_models[self._setup_current_provider] = (
+            self._setup_model.GetValue().strip()
+        )
+        new_pid = self._provider_id_for_selection()
+        self._setup_current_provider = new_pid
+        model = self._per_provider_models.get(new_pid) or default_model_for_provider(new_pid)
+        self._setup_model.SetValue(model)
+        self._update_key_visibility()
+        self._setup_model.SetFocus()
+        self._setup_model.SetSelection(-1, -1)
+
+    def _provider_id_for_selection(self) -> str:
+        idx = self._setup_provider.GetSelection()
+        return _PROVIDER_IDS[idx] if 0 <= idx < len(_PROVIDER_IDS) else _PROVIDER_IDS[0]
+
+    def _update_key_visibility(self) -> None:
+        from quill.core.ai_chat import PROVIDERS
+
+        pid = self._provider_id_for_selection()
+        needs = PROVIDERS.get(pid, {}).get("needs_key", True)
+        self._setup_key_lbl.Show(needs)
+        self._setup_key.Show(needs)
+        self._setup_strip.Layout()
+
+    def _show_setup(self, message: str) -> None:
+        self._setup_msg.SetLabel(message)
+        self._setup_strip.Show(True)
+        self.dialog.Layout()
+
+    def _on_setup_save(self, _event: object) -> None:
+        from quill.core.ai.provider_backend import SimpleChatBackend
+        from quill.core.ai_chat import PROVIDERS
+        from quill.core.settings import load_settings, save_settings
+
+        pid = self._provider_id_for_selection()
+        model = self._setup_model.GetValue().strip()
+        pdef = PROVIDERS.get(pid, {})
+        needs_key = pdef.get("needs_key", True)
+        key = self._setup_key.GetValue().strip() if needs_key else ""
+
+        if not model:
+            self._setup_msg.SetLabel("Enter a model name.")
+            return
+        if needs_key and not key:
+            self._setup_msg.SetLabel(f"Enter an API key for {pdef.get('label', pid)}.")
+            return
+
+        try:
+            s = load_settings()
+            s.ai_chat_default_provider = pid
+            s.ai_chat_default_model = model
+            save_settings(s)
+            self._per_provider_models[pid] = model
+            self._setup_current_provider = pid
+            if needs_key and key:
+                from quill.platform.windows.credential_store import save_secret
+
+                cred = pdef.get("credential_name") or f"quill-{pid}-api-key"
+                save_secret(cred, key)
+        except Exception as exc:  # noqa: BLE001
+            self._setup_msg.SetLabel(f"Could not save settings: {exc}")
+            return
+
+        self._assistant.backend = SimpleChatBackend(pid, model)
+        self._setup_strip.Hide()
+        self.dialog.Layout()
+        self._set_busy(False)
+        if self._webview is None:
             self._append("Quill", "Hi! Ask me to write, edit, or run something in your document.")
+        self._wx.CallAfter(self._focus_composer)
+
+    # -- Close ----------------------------------------------------------------
+
+    def _close(self) -> None:
+        self.dialog.EndModal(self._wx.ID_CANCEL)
+
+    def _on_char_hook(self, event: object) -> None:
+        wx = self._wx
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self._close()
+            return
+        event.Skip()
+
+    # -- Fallback UI (no WebView) ---------------------------------------------
 
     def _build_fallback_input(self, outer) -> None:
-        """List box transcript + wx text field, for when no WebView backend exists."""
         wx = self._wx
         outer.Add(
             wx.StaticText(self.dialog, label="Conversation"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 14
@@ -190,23 +361,13 @@ class AskQuillChatDialog:
         self.input.Bind(wx.EVT_TEXT_ENTER, lambda _e: self._submit(self.input.GetValue()))
         self.send_button.Bind(wx.EVT_BUTTON, lambda _e: self._submit(self.input.GetValue()))
 
-    def _close(self) -> None:
-        self.dialog.EndModal(self._wx.ID_CANCEL)
-
-    def _on_char_hook(self, event: object) -> None:
-        wx = self._wx
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
-            self._close()
-            return
-        event.Skip()
+    # -- Conversation ---------------------------------------------------------
 
     def _append(self, speaker: str, text: str) -> None:
         self._full_messages.append(text)
         if self._webview is not None:
-            # Rendered markdown in the WebView's ARIA live-region log.
             self._webview.append_message(speaker, text)
             return
-        # List-box fallback: one item per message (newlines flattened).
         display = f"{speaker}: {' '.join(text.splitlines())}"
         index = self.messages.GetCount()
         self.messages.Append(display)
@@ -236,6 +397,8 @@ class AskQuillChatDialog:
             self._webview.focus()
         elif self.input is not None:
             self.input.SetFocus()
+        else:
+            self.dialog.SetFocus()
 
     def _submit(self, message: str) -> None:
         message = (message or "").strip()
@@ -246,7 +409,6 @@ class AskQuillChatDialog:
         self._pending_user_message = message
         if self.input is not None:
             self.input.SetValue("")
-        # Suggestions fall away once the conversation starts (like Apple Intelligence).
         if not self._first_done:
             self._first_done = True
             if self._webview is not None:
@@ -292,19 +454,15 @@ class AskQuillChatDialog:
         threading.Thread(target=worker, daemon=True).start()
 
     def _on_stream_delta(self, fragment: str) -> None:
-        """UI thread: collect a streamed fragment and announce on a throttle (AI-1)."""
         if not fragment:
             return
         self._stream_buffer += fragment
         now = time.monotonic()
-        # Hold announcements to roughly one per 0.8s so speech stays intelligible
-        # instead of being interrupted token by token.
         if now - self._stream_last < 0.8:
             return
         self._announce_stream_progress()
 
     def _announce_stream_progress(self) -> None:
-        """Announce the next sentence-sized chunk of streamed text."""
         pending = self._stream_buffer[self._stream_announced :]
         if not pending.strip():
             return
@@ -315,7 +473,6 @@ class AskQuillChatDialog:
             pending.rfind("\n"),
         )
         if boundary < 0:
-            # No sentence end yet; wait unless a long run has built up.
             if len(pending) < 80:
                 return
             consumed = len(pending)
@@ -342,7 +499,6 @@ class AskQuillChatDialog:
         self.dialog.Layout()
 
     def _apply(self, action: str, text: str, tool: str, error: str) -> None:
-        # Nothing touches the document automatically — propose, then await approval.
         if action == "error":
             message, disable_chat = classify_assistant_error(error)
             self._append("Quill", message)
@@ -377,9 +533,6 @@ class AskQuillChatDialog:
             self._last_response = text
             self._append("Quill", text or "(no response)")
             if self._stream_active:
-                # The reply was already announced incrementally as it streamed
-                # in, and the full text is now in the transcript. Skip repeating
-                # the whole thing; the "Response ready" cue below closes it out.
                 self._stream_active = False
             else:
                 self._announce_incoming(text or "No response")
@@ -392,17 +545,9 @@ class AskQuillChatDialog:
             self._announce("Quill is proposing a change. Approve or discard.")
             self.approve_button.SetFocus()
         else:
-            # The live region already announced the reply; don't steal focus
-            # from the in-page edit field the user is sitting in.
             self._announce("Response ready")
 
     def _record_session_exchange(self, assistant_text: str) -> None:
-        """Persist the user/assistant turn pair to the branch-tree log (#130).
-
-        Created lazily on the first completed exchange and titled from the first
-        user message. Persistence failures must never disrupt the conversation,
-        so any error here is swallowed.
-        """
         user_message = self._pending_user_message
         self._pending_user_message = ""
         if not user_message or not assistant_text:
@@ -422,7 +567,7 @@ class AskQuillChatDialog:
             self._session = append_turn(self._session, ROLE_USER, user_message)
             self._session = append_turn(self._session, ROLE_ASSISTANT, assistant_text)
             save_session(self._session)
-        except Exception:  # noqa: BLE001 - session logging is best-effort
+        except Exception:  # noqa: BLE001
             pass
 
     def _on_approve(self, _event: object) -> None:
@@ -443,8 +588,6 @@ class AskQuillChatDialog:
                 if self._get_selection():
                     selection = self._get_selection()
                     if self._review_changes is not None and selection != text:
-                        # AI-7: let the reader review the change as a navigable,
-                        # line-by-line diff before it touches the document.
                         self._review_changes(selection, text, self._apply_reviewed_replace)
                         self._append("Quill", "Opened the change review.")
                     else:
@@ -459,8 +602,6 @@ class AskQuillChatDialog:
         self._focus_composer()
 
     def _apply_reviewed_replace(self, reviewed_text: str) -> None:
-        # Callback from the AI-7 diff review dialog: apply the reviewed text as a
-        # single replacement of the selection.
         self._replace_selection(reviewed_text)
         self._append("Quill", "Applied the reviewed changes.")
         self._announce("Applied reviewed changes")
@@ -483,6 +624,8 @@ class AskQuillChatDialog:
                 wx.TheClipboard.Close()
             self._announce("Copied last response to clipboard")
 
+    # -- Lifecycle ------------------------------------------------------------
+
     def show(self) -> None:
         self.dialog.CentreOnParent()
         apply_modal_ids(
@@ -491,7 +634,6 @@ class AskQuillChatDialog:
             escape_id=self._wx.ID_CANCEL,
         )
         try:
-            # Land in the web view's edit field (or the wx field in fallback).
             self._wx.CallAfter(self._focus_composer)
             show_modal_dialog(self.dialog, "Ask Quill")
         finally:

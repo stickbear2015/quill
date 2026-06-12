@@ -159,29 +159,26 @@ def open_quillin_wizard(
     grid = wx.FlexGridSizer(rows=0, cols=2, vgap=6, hgap=8)
     grid.AddGrowableCol(1, 1)
 
-    def _add_field(label_text: str, ctrl: object) -> None:
+    def _add_field(label_text: str, make_ctrl) -> object:
         grid.Add(wx.StaticText(scrolled, label=label_text), 0, wx.ALIGN_CENTER_VERTICAL)
+        ctrl = make_ctrl()
         grid.Add(ctrl, 1, wx.EXPAND)
+        return ctrl
 
-    name_ctrl = wx.TextCtrl(scrolled)
+    name_ctrl = _add_field("Display &name *", lambda: wx.TextCtrl(scrolled))
     name_ctrl.SetName("Display name")
-    _add_field("Display &name *", name_ctrl)
 
-    ext_id_ctrl = wx.TextCtrl(scrolled)
+    ext_id_ctrl = _add_field("Extension &ID *", lambda: wx.TextCtrl(scrolled))
     ext_id_ctrl.SetName("Extension ID")
-    _add_field("Extension &ID *", ext_id_ctrl)
 
-    version_ctrl = wx.TextCtrl(scrolled, value="1.0.0")
+    version_ctrl = _add_field("&Version *", lambda: wx.TextCtrl(scrolled, value="1.0.0"))
     version_ctrl.SetName("Version")
-    _add_field("&Version *", version_ctrl)
 
-    author_ctrl = wx.TextCtrl(scrolled)
+    author_ctrl = _add_field("&Author", lambda: wx.TextCtrl(scrolled))
     author_ctrl.SetName("Author")
-    _add_field("&Author", author_ctrl)
 
-    license_ctrl = wx.TextCtrl(scrolled, value="MIT")
+    license_ctrl = _add_field("&License", lambda: wx.TextCtrl(scrolled, value="MIT"))
     license_ctrl.SetName("License")
-    _add_field("&License", license_ctrl)
 
     id_box.Add(grid, 0, wx.ALL | wx.EXPAND, 8)
     id_box.Add(wx.StaticText(scrolled, label="&Description"), 0, wx.LEFT | wx.RIGHT, 8)
@@ -212,17 +209,17 @@ def open_quillin_wizard(
     detail_grid = wx.FlexGridSizer(rows=0, cols=2, vgap=6, hgap=8)
     detail_grid.AddGrowableCol(1, 1)
 
-    def _add_detail_field(label_text: str, ctrl: object) -> None:
+    def _add_detail_field(label_text: str, make_ctrl) -> object:
         detail_grid.Add(wx.StaticText(scrolled, label=label_text), 0, wx.ALIGN_CENTER_VERTICAL)
+        ctrl = make_ctrl()
         detail_grid.Add(ctrl, 1, wx.EXPAND)
+        return ctrl
 
-    cmd_title_ctrl = wx.TextCtrl(scrolled)
+    cmd_title_ctrl = _add_detail_field("Menu &title *", lambda: wx.TextCtrl(scrolled))
     cmd_title_ctrl.SetName("Menu title")
-    _add_detail_field("Menu &title *", cmd_title_ctrl)
 
-    cmd_id_ctrl = wx.TextCtrl(scrolled)
+    cmd_id_ctrl = _add_detail_field("Command &ID *", lambda: wx.TextCtrl(scrolled))
     cmd_id_ctrl.SetName("Command ID")
-    _add_detail_field("Command &ID *", cmd_id_ctrl)
 
     detail_box.Add(detail_grid, 0, wx.ALL | wx.EXPAND, 8)
     detail_box.Add(

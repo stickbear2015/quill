@@ -79,7 +79,13 @@ class TrainStyleDialog:
         self.build_button.Bind(wx.EVT_BUTTON, self._on_build)
         self.clear_button.Bind(wx.EVT_BUTTON, self._on_clear)
 
-        available, reason = assistant.is_available()
+        def _check_avail() -> None:
+            avail, reason = assistant.is_available()
+            self._wx.CallAfter(self._on_ai_availability_checked, avail, reason)
+
+        threading.Thread(target=_check_avail, daemon=True).start()
+
+    def _on_ai_availability_checked(self, available: bool, reason: str | None) -> None:
         if not available:
             self.build_button.Enable(False)
             self._announce(f"AI unavailable: {reason}")

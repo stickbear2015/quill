@@ -90,3 +90,49 @@ class ProviderChatBackend(AIBackend):
             if text:
                 on_delta(text)
         return text or ""
+
+
+class SimpleChatBackend(AIBackend):
+    """AIBackend backed by the simple ai_chat.send_prompt path.
+
+    Uses settings.ai_chat_default_provider / ai_chat_default_model rather than
+    the AI-13 connection file, so the two config paths share the same Assistant.
+    """
+
+    name = "simple_chat"
+
+    def __init__(self, provider_id: str, model_id: str) -> None:
+        self._provider_id = provider_id
+        self._model_id = model_id
+
+    def _load_key(self) -> str:
+        from quill.core.ai_chat import PROVIDERS
+        from quill.platform.windows.credential_store import load_secret
+
+        pdef = PROVIDERS.get(self._provider_id, {})
+        cred = pdef.get("credential_name")
+        return load_secret(cred) if cred else ""
+
+    def is_available(self) -> tuple[bool, str | None]:
+        if not self._provider_id or not self._model_id:
+            return False, "No provider or model configured."
+        from quill.core.ai_chat import PROVIDERS
+
+        pdef = PROVIDERS.get(self._provider_id)
+        if pdef is None:
+            return False, f"Unknown provider: {self._provider_id}"
+        if pdef.get("needs_key") and not self._load_key().strip():
+            return False, f"No API key configured for {pdef['label']}."
+        return True, None
+
+    def respond(self, prompt: str) -> str:
+        from quill.core.ai_chat import send_prompt
+
+        return send_prompt(self._provider_id, self._model_id, prompt, api_key=self._load_key())
+
+    def respond_stream(self, prompt: str, on_delta: Callable[[str], None]) -> str:
+        # send_prompt does not stream; deliver the full response as a single delta.
+        text = self.respond(prompt)
+        if text:
+            on_delta(text)
+        return text
