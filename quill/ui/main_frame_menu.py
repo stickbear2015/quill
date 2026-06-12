@@ -113,6 +113,9 @@ class MenuBuilderMixin:
         self._id_publishing_connections = wx.NewIdRef()
         self._id_publishing_verify_connection = wx.NewIdRef()
         self._id_publishing_browse_content = wx.NewIdRef()
+        self._id_publishing_create_draft = wx.NewIdRef()
+        self._id_publishing_create_page_draft = wx.NewIdRef()
+        self._id_publishing_update_remote_item = wx.NewIdRef()
         self._publishing_file_menu = wx.Menu()
         self._publishing_file_menu.Append(
             self._id_publishing_connections,
@@ -128,6 +131,18 @@ class MenuBuilderMixin:
         self._publishing_file_menu.Append(
             self._id_publishing_browse_content,
             self._menu_label("&Browse Published Content...", "publishing.browse_content"),
+        )
+        self._publishing_file_menu.Append(
+            self._id_publishing_create_draft,
+            self._menu_label("Create Post &Draft...", "publishing.create_draft"),
+        )
+        self._publishing_file_menu.Append(
+            self._id_publishing_create_page_draft,
+            self._menu_label("Create Page Draft...", "publishing.create_page_draft"),
+        )
+        self._publishing_file_menu.Append(
+            self._id_publishing_update_remote_item,
+            self._menu_label("&Update Remote Content...", "publishing.update_remote_item"),
         )
         file_menu.AppendSeparator()
         file_menu.AppendSubMenu(self._publishing_file_menu, "P&ublish")
@@ -1733,6 +1748,21 @@ class MenuBuilderMixin:
             wx.EVT_MENU,
             lambda _e: self._browse_publishing_content(),
             id=self._id_publishing_browse_content,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self._create_publishing_draft(),
+            id=self._id_publishing_create_draft,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self._create_publishing_page_draft(),
+            id=self._id_publishing_create_page_draft,
+        )
+        self.frame.Bind(
+            wx.EVT_MENU,
+            lambda _e: self._update_publishing_remote_item(),
+            id=self._id_publishing_update_remote_item,
         )
         self.frame.Bind(wx.EVT_MENU, lambda _e: self.show_about_quill(), id=self._id_about_quill)
         # macOS routes the application-menu "About" to wx.ID_ABOUT — wire it to

@@ -13,6 +13,7 @@ from uuid import uuid4
 from quill.core.html_to_markdown import html_to_markdown
 from quill.core.net import verified_ssl_context
 from quill.core.paths import app_data_dir
+from quill.core.browser_preview import render_preview_body
 from quill.core.publishing_clients import (
     PublishingRemoteDocument,
     PublishingRemoteItemSummary,
@@ -366,6 +367,100 @@ def load_publishing_remote_item(
     )
 
 
+def update_publishing_remote_item(
+    profile: PublishingConnectionProfile,
+    secret: str,
+    *,
+    content_kind: str,
+    remote_id: str,
+    title: str,
+    document_text: str,
+    authoring_surface: str,
+    timeout_seconds: float = 10.0,
+) -> tuple[bool, str, PublishingRemoteDocument | None]:
+    normalized = _normalized_profile(profile)
+    if not normalized.site_url:
+        return False, "Enter a site URL before updating published content.", None
+    policy_error = _validate_endpoint_security(normalized.site_url)
+    if policy_error:
+        return False, policy_error, None
+    if normalized.auth_method not in provider_implemented_auth_methods(normalized.provider_id):
+        return (
+            False,
+            (
+                f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
+                f"{publishing_provider_display_name(normalized.provider_id)}, "
+                "but is not implemented yet."
+            ),
+            None,
+        )
+    client = publishing_provider_client(normalized.provider_id)
+    if client is None:
+        provider_name = publishing_provider_display_name(normalized.provider_id)
+        return False, f"{provider_name} updating is not implemented yet.", None
+    if content_kind not in provider_content_kinds(normalized.provider_id):
+        return False, "That publishing content type is not supported for this provider.", None
+    if not remote_id.strip():
+        return False, "Open a published item before updating remote content.", None
+    clean_title = title.strip() or "(untitled)"
+    body_html = _publishing_update_body_html(document_text, authoring_surface)
+    return client.update_remote_item(
+        normalized,
+        secret,
+        content_kind=content_kind,
+        remote_id=remote_id,
+        title=clean_title,
+        body_html=body_html,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def create_publishing_remote_item(
+    profile: PublishingConnectionProfile,
+    secret: str,
+    *,
+    content_kind: str,
+    title: str,
+    document_text: str,
+    authoring_surface: str,
+    status: str = "draft",
+    timeout_seconds: float = 10.0,
+) -> tuple[bool, str, PublishingRemoteDocument | None]:
+    normalized = _normalized_profile(profile)
+    if not normalized.site_url:
+        return False, "Enter a site URL before creating published content.", None
+    policy_error = _validate_endpoint_security(normalized.site_url)
+    if policy_error:
+        return False, policy_error, None
+    if normalized.auth_method not in provider_implemented_auth_methods(normalized.provider_id):
+        return (
+            False,
+            (
+                f"{publishing_auth_method_name(normalized.auth_method)} is planned for "
+                f"{publishing_provider_display_name(normalized.provider_id)}, "
+                "but is not implemented yet."
+            ),
+            None,
+        )
+    client = publishing_provider_client(normalized.provider_id)
+    if client is None:
+        provider_name = publishing_provider_display_name(normalized.provider_id)
+        return False, f"{provider_name} publishing is not implemented yet.", None
+    if content_kind not in provider_content_kinds(normalized.provider_id):
+        return False, "That publishing content type is not supported for this provider.", None
+    clean_title = title.strip() or "(untitled)"
+    body_html = _publishing_update_body_html(document_text, authoring_surface)
+    return client.create_remote_item(
+        normalized,
+        secret,
+        content_kind=content_kind,
+        title=clean_title,
+        body_html=body_html,
+        status=status.strip().lower() or "draft",
+        timeout_seconds=timeout_seconds,
+    )
+
+
 def prepare_publishing_remote_content(
     body_html: str,
     *,
@@ -396,6 +491,13 @@ def prepare_publishing_remote_content(
         authoring_surface="html",
         open_representation=PUBLISHING_OPEN_REPRESENTATION_RAW_HTML,
     )
+
+
+def _publishing_update_body_html(document_text: str, authoring_surface: str) -> str:
+    normalized_surface = authoring_surface.strip().lower()
+    if normalized_surface == "html":
+        return document_text
+    return render_preview_body(document_text, "markdown")
 
 
 def _verify_wordpress_app_password(

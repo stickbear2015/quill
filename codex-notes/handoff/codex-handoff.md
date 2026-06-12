@@ -1,5 +1,93 @@
 # Codex Handoff
 
+## 2026-06-12 18:42:20 -04:00 Startup Regression Fix
+
+- fixed a launch-blocking startup regression introduced by the merged upstream menu split
+- failure was:
+  - missing `MainFrame._append_power_tools_file_create_items`
+- this was an upstream/main integration bug, not a publishing-slice regression
+- resolution:
+  - added the missing helper to `PowerToolsMenuMixin`
+  - added a regression test so menu-builder helper calls cannot drift from mixin definitions again
+
+## 2026-06-12 18:42:20 -04:00 Latest Verification
+
+- targeted startup-regression plus publishing-owned verification passed
+- result: `40 passed in 1.85s`
+- verification set:
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+## 2026-06-12 18:31:56 -04:00 Latest Coding Update
+
+- completed the first local-to-remote publish/create slice
+- Quill now supports:
+  - `Create Post Draft...`
+  - `Create Page Draft...`
+- both actions are available under `File > Publish`
+- both actions are command-registered publishing commands, so they stay compatible with command-palette discovery and feature gating
+- successful create flows now attach publishing-remote metadata to the current tab so later `Update Remote Content...` can target the created remote item
+
+## 2026-06-12 18:31:56 -04:00 Latest Verification
+
+- publishing-owned create/update/browse slice passed
+- result: `39 passed in 1.94s`
+- verification set:
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+## 2026-06-12 18:31:56 -04:00 Next Read
+
+- branch now covers:
+  - connection storage and verification
+  - browse/open remote publishing content
+  - update existing remote content
+  - create new remote post/page drafts from local documents
+- likely next meaningful slice is the first non-draft publish-state step:
+  - publish current draft/item
+  - or a tighter “promote created draft” flow if we want to keep scope small
+- no new governed custom dialog was added in the draft-create slice; the flow still relies on review-first confirmation prompts only
+
+## 2026-06-12 18:15:44 -04:00 Latest Coding Update
+
+- completed the planned publishing `Update Remote Content...` slice
+- Quill can now update an opened publishing-remote post or page back to the provider through:
+  - `File > Publish > Update Remote Content...`
+- the update flow is explicit and review-first
+- the flow now respects the saved authoring surface from the open step:
+  - Markdown-authored remote tabs render to HTML body content on send
+  - explicitly HTML-authored remote tabs send raw HTML unchanged
+- successful update responses now refresh remote metadata on the current document:
+  - status
+  - updated timestamp
+  - remote URL
+
+## 2026-06-12 18:15:44 -04:00 Latest Verification
+
+- publishing-owned update slice passed after implementation
+- result: `36 passed in 1.58s`
+- verification set:
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+## 2026-06-12 18:15:44 -04:00 Next Read
+
+- branch is ready for the next publishing slice after remote-update behavior
+- likely next work should focus on the remaining publish/create path rather than more remote-open representation work
+- before committing, keep in mind there is still local assistant-guidance noise in the workspace:
+  - untracked `AGENTS.md`
+  - modified `CLAUDE.md`
+  These should stay out of the branch unless the user explicitly wants them tracked.
+
 ## 2026-06-12 17:30:59 -04:00 Clean Stop State
 
 - removed leftover local temp/cache noise after the upstream resync audit

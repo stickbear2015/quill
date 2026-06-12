@@ -36,3 +36,19 @@ def test_remote_publishing_open_records_explicit_representation_metadata() -> No
     assert '"source_kind": "publishing_remote"' in SOURCE
     assert '"publishing_authoring_surface": prepared_content.authoring_surface' in SOURCE
     assert '"publishing_open_representation": prepared_content.open_representation' in SOURCE
+
+
+def test_remote_publishing_update_uses_saved_authoring_surface_metadata() -> None:
+    assert '"publishing.update_remote_item"' in SOURCE
+    assert 'authoring_surface = str(metadata.get("publishing_authoring_surface", "")).strip().lower()' in SOURCE
+    assert 'document_text=self.editor.GetValue()' in SOURCE
+    assert 'authoring_surface=authoring_surface or "markdown"' in SOURCE
+
+
+def test_publishing_create_draft_commands_stay_command_registered_and_metadata_backed() -> None:
+    assert '"publishing.create_draft"' in SOURCE
+    assert '"publishing.create_page_draft"' in SOURCE
+    assert 'def _create_publishing_draft(self) -> None:' in SOURCE
+    assert 'def _create_publishing_page_draft(self) -> None:' in SOURCE
+    assert '"publishing_remote_id": remote_document.remote_id' in SOURCE
+    assert '"publishing_content_kind": remote_document.content_kind' in SOURCE

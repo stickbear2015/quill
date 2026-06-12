@@ -5,6 +5,7 @@ import json
 import quill.core.publishing as publishing
 import quill.core.publishing_clients as publishing_clients
 from quill.core.publishing import PublishingConnectionProfile
+from quill.core.publishing_clients import publishing_provider_client
 from quill.core.publishing_providers import AUTH_METHOD_APP_PASSWORD
 
 
@@ -196,6 +197,107 @@ def test_load_publishing_remote_item_preserves_markup_significant_escapes(monkey
     assert document.body == "<pre>&lt;em&gt;keep escaped markup&lt;/em&gt; &amp; text</pre>"
 
 
+def test_wordpress_update_remote_item_posts_json_payload(monkeypatch) -> None:
+    request_details: dict[str, object] = {}
+
+    def _urlopen(request, **_kwargs):
+        request_details["url"] = request.full_url
+        request_details["method"] = request.get_method()
+        request_details["body"] = request.data.decode("utf-8") if request.data else ""
+        return _FakeResponse(
+            {
+                "id": 22,
+                "link": "https://example.com/about",
+                "title": {"rendered": "About page"},
+                "status": "publish",
+                "modified_gmt": "2026-06-08T05:00:00",
+                "type": "page",
+                "content": {"rendered": "<p>About body</p>"},
+            }
+        )
+
+    monkeypatch.setattr(publishing_clients, "urlopen", _urlopen)
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+
+    ok, message, document = publishing.update_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="page",
+        remote_id="22",
+        title="About page",
+        document_text="<p>About body</p>",
+        authoring_surface="html",
+    )
+
+    assert ok is True
+    assert message == "Updated published content on example.com."
+    assert document is not None
+    assert request_details["method"] == "POST"
+    assert request_details["url"] == "https://example.com/wp-json/wp/v2/pages/22?context=edit&_fields=id%2Clink%2Ctitle%2Cstatus%2Cmodified_gmt%2Ctype%2Ccontent"
+    assert json.loads(str(request_details["body"])) == {
+        "title": "About page",
+        "content": "<p>About body</p>",
+    }
+
+
+def test_wordpress_create_remote_item_posts_json_payload(monkeypatch) -> None:
+    request_details: dict[str, object] = {}
+
+    def _urlopen(request, **_kwargs):
+        request_details["url"] = request.full_url
+        request_details["method"] = request.get_method()
+        request_details["body"] = request.data.decode("utf-8") if request.data else ""
+        return _FakeResponse(
+            {
+                "id": 44,
+                "link": "https://example.com/posts/draft",
+                "title": {"rendered": "Draft title"},
+                "status": "draft",
+                "modified_gmt": "2026-06-12T22:00:00",
+                "type": "post",
+                "content": {"rendered": "<p>Draft body</p>"},
+            }
+        )
+
+    monkeypatch.setattr(publishing_clients, "urlopen", _urlopen)
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+
+    ok, message, document = publishing.create_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="post",
+        title="Draft title",
+        document_text="<p>Draft body</p>",
+        authoring_surface="html",
+        status="draft",
+    )
+
+    assert ok is True
+    assert message == "Created published content on example.com."
+    assert document is not None
+    assert request_details["method"] == "POST"
+    assert request_details["url"] == "https://example.com/wp-json/wp/v2/posts?context=edit&_fields=id%2Clink%2Ctitle%2Cstatus%2Cmodified_gmt%2Ctype%2Ccontent"
+    assert json.loads(str(request_details["body"])) == {
+        "title": "Draft title",
+        "content": "<p>Draft body</p>",
+        "status": "draft",
+    }
+
+
 def test_load_publishing_remote_item_rejects_unsupported_content_kind() -> None:
     profile = PublishingConnectionProfile(
         id="pub-one",
@@ -245,3 +347,116 @@ def test_prepare_publishing_remote_content_falls_back_to_raw_html_for_tables() -
     assert prepared.authoring_surface == "html"
     assert prepared.open_representation == "raw_html"
     assert prepared.text == "<table><tr><td>Cell</td></tr></table>"
+
+
+def test_update_publishing_remote_item_converts_markdown_tabs_to_html_body(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def _update_remote_item(profile, secret, **kwargs):
+        captured["profile"] = profile
+        captured["secret"] = secret
+        captured.update(kwargs)
+        return True, "Updated published content on example.com.", None
+
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+    client = publishing_provider_client("wordpress")
+    assert client is not None
+    monkeypatch.setattr(client, "update_remote_item", _update_remote_item)
+
+    ok, message, document = publishing.update_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="post",
+        remote_id="22",
+        title="Hello",
+        document_text="# Title\n\nHello world",
+        authoring_surface="markdown",
+    )
+
+    assert ok is True
+    assert message == "Updated published content on example.com."
+    assert document is None
+    assert captured["content_kind"] == "post"
+    assert captured["remote_id"] == "22"
+    assert captured["title"] == "Hello"
+    assert captured["body_html"] == '<h1 id="title">Title</h1>\n<p>Hello world</p>'
+
+
+def test_update_publishing_remote_item_preserves_html_tabs(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def _update_remote_item(profile, secret, **kwargs):
+        captured.update(kwargs)
+        return True, "Updated published content on example.com.", None
+
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+    client = publishing_provider_client("wordpress")
+    assert client is not None
+    monkeypatch.setattr(client, "update_remote_item", _update_remote_item)
+
+    ok, _message, _document = publishing.update_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="page",
+        remote_id="22",
+        title="About",
+        document_text="<p>About body</p>",
+        authoring_surface="html",
+    )
+
+    assert ok is True
+    assert captured["body_html"] == "<p>About body</p>"
+
+
+def test_create_publishing_remote_item_converts_markdown_tabs_to_html_body(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def _create_remote_item(profile, secret, **kwargs):
+        captured["profile"] = profile
+        captured["secret"] = secret
+        captured.update(kwargs)
+        return True, "Created published content on example.com.", None
+
+    profile = PublishingConnectionProfile(
+        id="pub-one",
+        label="Site one",
+        provider_id="wordpress",
+        site_url="https://example.com",
+        auth_method=AUTH_METHOD_APP_PASSWORD,
+        account_identifier="writer",
+    )
+    client = publishing_provider_client("wordpress")
+    assert client is not None
+    monkeypatch.setattr(client, "create_remote_item", _create_remote_item)
+
+    ok, message, document = publishing.create_publishing_remote_item(
+        profile,
+        "secret",
+        content_kind="post",
+        title="Hello",
+        document_text="# Title\n\nHello world",
+        authoring_surface="markdown",
+        status="draft",
+    )
+
+    assert ok is True
+    assert message == "Created published content on example.com."
+    assert document is None
+    assert captured["content_kind"] == "post"
+    assert captured["title"] == "Hello"
+    assert captured["status"] == "draft"
+    assert captured["body_html"] == '<h1 id="title">Title</h1>\n<p>Hello world</p>'

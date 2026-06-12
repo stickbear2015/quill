@@ -272,6 +272,8 @@ from quill.core.onboarding import (
 from quill.core.outline import OutlineEntry, extract_outline_entries
 from quill.core.paths import app_data_dir, ensure_app_directories
 from quill.core.publishing import prepare_publishing_remote_content
+from quill.core.publishing import create_publishing_remote_item
+from quill.core.publishing import update_publishing_remote_item
 from quill.core.quick_nav import (
     NavItem,
     build_nav_index,
@@ -1613,6 +1615,24 @@ class MainFrame(
             "publishing.browse_content",
             "Browse Published Content...",
             self._browse_publishing_content,
+            None,
+        )
+        self.commands.register(
+            "publishing.create_draft",
+            "Create Post Draft...",
+            self._create_publishing_draft,
+            None,
+        )
+        self.commands.register(
+            "publishing.create_page_draft",
+            "Create Page Draft...",
+            self._create_publishing_page_draft,
+            None,
+        )
+        self.commands.register(
+            "publishing.update_remote_item",
+            "Update Remote Content...",
+            self._update_publishing_remote_item,
             None,
         )
         self.commands.register(
@@ -9213,6 +9233,180 @@ class MainFrame(
         self._refresh_title()
         content_kind = "page" if remote_document.content_kind == "page" else "post"
         self._set_status(f"Opened {content_kind} from publishing.")
+
+    def _update_publishing_remote_item(self) -> None:
+        from quill.core.publishing import current_publishing_connection, load_publishing_secret
+
+        metadata = self.document.source_metadata
+        if metadata.get("source_kind") != "publishing_remote":
+            message = "Open a published post or page before updating remote content."
+            self._show_message_box(
+                message,
+                "Update Remote Content",
+                self._wx.ICON_INFORMATION | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        profile = current_publishing_connection()
+        if profile is None:
+            message = "No current publishing connection is selected."
+            self._show_message_box(
+                message,
+                "Update Remote Content",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        provider_id = str(metadata.get("publishing_provider_id", "")).strip()
+        site_url = str(metadata.get("publishing_site_url", "")).strip()
+        remote_id = str(metadata.get("publishing_remote_id", "")).strip()
+        content_kind = str(metadata.get("publishing_content_kind", "")).strip().lower()
+        authoring_surface = str(metadata.get("publishing_authoring_surface", "")).strip().lower()
+        if provider_id and profile.provider_id != provider_id:
+            message = "The current publishing connection does not match this remote item."
+            self._show_message_box(
+                message,
+                "Update Remote Content",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        if site_url and profile.site_url.rstrip("/") != site_url.rstrip("/"):
+            message = "The current publishing connection does not match this remote site."
+            self._show_message_box(
+                message,
+                "Update Remote Content",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        label_kind = "page" if content_kind == "page" else "post"
+        remote_url = str(metadata.get("publishing_remote_url", "")).strip() or "(no public URL)"
+        title = self._current_document_title()
+        review_message = (
+            f"Update this remote {label_kind} on {profile.site_url}?\n\n"
+            f"Title: {title}\n"
+            f"Authoring surface: {authoring_surface or 'markdown'}\n"
+            f"Remote URL: {remote_url}\n\n"
+            "Choose Yes to send the current document text to the remote item."
+        )
+        proceed = self._show_message_box(
+            review_message,
+            "Update Remote Content",
+            self._wx.ICON_INFORMATION | self._wx.YES_NO | self._wx.CANCEL,
+        )
+        if proceed != self._wx.ID_YES:
+            self._set_status("Update remote content cancelled")
+            return
+        ok, message, remote_document = update_publishing_remote_item(
+            profile,
+            load_publishing_secret(profile.id),
+            content_kind=content_kind,
+            remote_id=remote_id,
+            title=title,
+            document_text=self.editor.GetValue(),
+            authoring_surface=authoring_surface or "markdown",
+        )
+        icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
+        self._show_message_box(message, "Update Remote Content", icon | self._wx.OK)
+        if not ok or remote_document is None:
+            self._set_status(message)
+            return
+        metadata["publishing_status"] = remote_document.status
+        metadata["publishing_updated_at"] = remote_document.updated_at
+        metadata["publishing_remote_url"] = remote_document.remote_url
+        self.document.mark_saved()
+        self._refresh_title()
+        self._set_status(message)
+
+    def _create_publishing_draft(self) -> None:
+        self._create_publishing_item("post")
+
+    def _create_publishing_page_draft(self) -> None:
+        self._create_publishing_item("page")
+
+    def _create_publishing_item(self, content_kind: str) -> None:
+        from quill.core.publishing import current_publishing_connection, load_publishing_secret
+
+        profile = current_publishing_connection()
+        if profile is None:
+            message = "No current publishing connection is selected."
+            self._show_message_box(
+                message,
+                "Create Publishing Draft",
+                self._wx.ICON_WARNING | self._wx.OK,
+            )
+            self._set_status(message)
+            return
+        title = self._publishing_document_title()
+        authoring_surface = self._publishing_document_authoring_surface()
+        label_kind = "page" if content_kind == "page" else "post"
+        review_message = (
+            f"Create a remote {label_kind} draft on {profile.site_url}?\n\n"
+            f"Title: {title}\n"
+            f"Authoring surface: {authoring_surface}\n\n"
+            "Choose Yes to send the current document text and create a draft."
+        )
+        proceed = self._show_message_box(
+            review_message,
+            "Create Publishing Draft",
+            self._wx.ICON_INFORMATION | self._wx.YES_NO | self._wx.CANCEL,
+        )
+        if proceed != self._wx.ID_YES:
+            self._set_status("Create publishing draft cancelled")
+            return
+        ok, message, remote_document = create_publishing_remote_item(
+            profile,
+            load_publishing_secret(profile.id),
+            content_kind=content_kind,
+            title=title,
+            document_text=self.editor.GetValue(),
+            authoring_surface=authoring_surface,
+            status="draft",
+        )
+        icon = self._wx.ICON_INFORMATION if ok else self._wx.ICON_WARNING
+        self._show_message_box(message, "Create Publishing Draft", icon | self._wx.OK)
+        if not ok or remote_document is None:
+            self._set_status(message)
+            return
+        self.document.source_metadata.update(
+            {
+                "source_kind": "publishing_remote",
+                "publishing_authoring_surface": authoring_surface,
+                "publishing_open_representation": (
+                    "raw_html" if authoring_surface == "html" else "readable_markdown"
+                ),
+                "publishing_provider_id": remote_document.provider_id,
+                "publishing_site_url": remote_document.site_url,
+                "publishing_remote_id": remote_document.remote_id,
+                "publishing_remote_url": remote_document.remote_url,
+                "publishing_content_kind": remote_document.content_kind,
+                "publishing_status": remote_document.status,
+                "publishing_updated_at": remote_document.updated_at,
+            }
+        )
+        self.document.mark_saved()
+        self._refresh_title()
+        self._set_status(message)
+
+    def _publishing_document_title(self) -> str:
+        title = self._current_document_title().strip()
+        if title:
+            return title
+        first_line = self.editor.GetValue().splitlines()[0].strip() if self.editor.GetValue() else ""
+        if first_line:
+            return first_line.lstrip("#").strip() or "(untitled)"
+        return "(untitled)"
+
+    def _publishing_document_authoring_surface(self) -> str:
+        metadata = self.document.source_metadata
+        saved_surface = str(metadata.get("publishing_authoring_surface", "")).strip().lower()
+        if saved_surface in {"markdown", "html"}:
+            return saved_surface
+        path = getattr(self.document, "path", None)
+        if path is not None and path.suffix.lower() in {".html", ".htm", ".xhtml"}:
+            return "html"
+        return "markdown"
 
     def _set_ai_menu_status_badge(
         self, ready: bool | None, detail: str, badge: str | None = None

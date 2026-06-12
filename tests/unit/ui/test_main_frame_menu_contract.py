@@ -124,3 +124,24 @@ def test_publishing_actions_live_in_file_menu_not_top_level_publishing_menu() ->
         'self._publishing_file_menu.Append(\n'
         '            self._id_publishing_browse_content,' in source
     )
+    assert (
+        'self._publishing_file_menu.Append(\n'
+        '            self._id_publishing_create_draft,' in source
+    )
+    assert (
+        'self._publishing_file_menu.Append(\n'
+        '            self._id_publishing_create_page_draft,' in source
+    )
+    assert (
+        'self._publishing_file_menu.Append(\n'
+        '            self._id_publishing_update_remote_item,' in source
+    )
+
+
+def test_menu_builder_only_calls_power_tools_helpers_that_exist() -> None:
+    source = _menu_source()
+    helper_names = set(re.findall(r"def (_append_power_tools_[A-Za-z0-9_]+)\(", source))
+    called_helpers = set(re.findall(r"self\.(_append_power_tools_[A-Za-z0-9_]+)\(", source))
+
+    missing_helpers = {name for name in called_helpers if name not in helper_names}
+    assert missing_helpers == set()

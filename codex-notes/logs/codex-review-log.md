@@ -1,5 +1,228 @@
 # Codex Review Log
 
+## 2026-06-12 18:45:31 -04:00
+
+Post-fix assessment:
+
+- user asked whether the startup regression was caused by merging `main` into the publishing branch
+- answer: yes
+- the failure source was the upstream/main menu-split integration state carried into the branch merge:
+  - `MenuBuilderMixin` called `_append_power_tools_file_create_items(...)`
+  - `PowerToolsMenuMixin` did not define that helper
+  - startup failed during menu construction
+- this was a merge-quality miss, not a publishing-feature regression
+
+Process correction going forward:
+
+- post-merge work needs an immediate launch/smoke pass, not only feature-slice tests
+- upstream mixin/menu refactors need explicit contract checks:
+  - builder call sites
+  - helper definitions
+  - startup-critical menu bindings
+- the new regression test added in this fix is intended to keep this exact merge failure from recurring
+
+## 2026-06-12 18:42:20 -04:00
+
+Startup regression fix:
+
+- fixed the reported launch crash:
+  - `AttributeError: 'MainFrame' object has no attribute '_append_power_tools_file_create_items'`
+
+Root cause:
+
+- this was not caused by the post-merge publishing changes
+- it was an upstream/main integration gap from the split menu/mixin refactor
+- `MenuBuilderMixin._build_menu()` called `_append_power_tools_file_create_items(...)`
+- `PowerToolsMenuMixin` did not define that helper, so startup failed during menu construction
+
+Resolution:
+
+- added the missing `_append_power_tools_file_create_items(...)` helper to `PowerToolsMenuMixin`
+- kept behavior aligned with the merged menu intent:
+  - `New Document from Clipboard` remains placed near `File > New`
+- added a regression test that verifies the menu builder does not call any missing power-tools helper
+
+Validation:
+
+- reran the targeted startup-regression plus publishing-owned slice
+- result: `40 passed in 1.85s`
+- verification set:
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+## 2026-06-12 18:39:17 -04:00
+
+Startup regression investigation:
+
+- user reported an immediate startup crash after the upstream merge and later publishing work
+- traceback pointed to:
+  - `quill/ui/main_frame_menu.py`
+  - missing `MainFrame._append_power_tools_file_create_items`
+- investigation result:
+  - this is not caused by the publishing slice added after the merge
+  - this is an upstream/main integration bug in the split menu/mixin path
+  - `MenuBuilderMixin._build_menu()` now calls `_append_power_tools_file_create_items(...)`
+  - `PowerToolsMenuMixin` does not define that helper, so startup fails before the app can finish constructing
+- remediation plan:
+  - add the missing mixin helper
+  - add a regression test so the menu builder cannot reference a missing helper again
+
+## 2026-06-12 18:31:56 -04:00
+
+Implementation result:
+
+- completed the first local-to-remote publish slice after remote-update support
+- added:
+  - `publishing.create_draft`
+  - `publishing.create_page_draft`
+- both actions are command-registered so they remain command-palette-visible, not menu-only
+
+Behavior added in this pass:
+
+- Quill can now create a remote WordPress post draft from the current document
+- Quill can now create a remote WordPress page draft from the current document
+- both actions live under `File > Publish`
+- both actions stay review-first with an explicit confirmation before network write-back
+- successful create flows now attach publishing-remote linkage metadata to the current document so later remote-update actions can operate on the created item
+- outbound content respects the same authoring-surface rule already used by remote update:
+  - Markdown-authored documents render to HTML body content on send
+  - explicitly HTML-authored documents send raw HTML unchanged
+
+PRD / governance alignment check:
+
+- commands are still real `publishing.*` commands, preserving command palette discoverability
+- no new custom dialog surface was added in this slice
+- the flow stays inside standard confirmation/message-box patterns, reducing dialog-governance burden
+- plain-language command labels and status copy were preserved
+
+Validation:
+
+- reran the publishing-owned slice with the new create-draft coverage
+- result: `39 passed in 1.94s`
+- verification set:
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+## 2026-06-12 18:25:56 -04:00
+
+Implementation start:
+
+- resumed the next publishing slice after remote-update support
+- selected the first local-to-remote publish path as the next implementation target
+- scope chosen for this pass:
+  - `publishing.create_draft`
+  - `publishing.create_page_draft`
+- current implementation intent:
+  - keep these as real commands so they stay command-palette-visible
+  - keep them under `File > Publish`
+  - avoid a new custom dialog if the existing review/confirmation pattern is enough
+  - preserve PRD rules:
+    - explicit review-first network action
+    - plain-language status and command names
+    - accessibility-safe standard controls
+    - minimal dialog-governance expansion
+
+## 2026-06-12 18:19:18 -04:00
+
+Planning checkpoint:
+
+- user asked what comes next in the approved publishing flow after remote update support
+- user also asked to keep checking:
+  - command palette coverage
+  - PRD alignment
+  - accessibility requirements
+  - dialog-governance requirements
+- current read:
+  - the new `publishing.update_remote_item` action is command-registered, so it is on the same command-path surface as the rest of Quill command palette actions
+  - next likely product slice is the first explicit create/publish path for local documents rather than more remote-open/update refinement
+- planning intent for the next implementation recommendation:
+  - keep adding publishing actions as real commands, not menu-only actions
+  - avoid unnecessary new dialogs
+  - preserve review-first network consent and plain-language accessibility copy
+
+## 2026-06-12 18:15:44 -04:00
+
+Implementation result:
+
+- completed the planned `Update Remote Content...` slice for publishing-remote tabs
+- added provider write-back plumbing for remote publishing updates
+- added the `File > Publish > Update Remote Content...` entry and command wiring
+
+Behavior added in this pass:
+
+- Quill now updates an opened publishing-remote post/page back to the provider when the user explicitly chooses `Update Remote Content...`
+- the action only proceeds for tabs opened from publishing remote content
+- the action checks that the current publishing connection still matches the opened remote item
+- the action stays review-first with a confirmation summary before network write-back
+- outbound content respects the saved authoring surface:
+  - Markdown-authored publishing tabs are rendered to HTML body content on send
+  - explicitly HTML-authored publishing tabs are sent as raw HTML unchanged
+- successful update responses refresh saved remote metadata on the current document:
+  - remote URL
+  - publishing status
+  - publishing updated-at timestamp
+
+Validation:
+
+- reran the publishing-owned update slice with workspace-local temp dirs
+- result: `36 passed in 1.58s`
+- verification set:
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+
+Notes:
+
+- an earlier broader scoped rerun hit unrelated `tmp_path` setup issues before the workspace-local `.tmp/pytest` base existed
+- no additional upstream/main failures were introduced by this publishing slice
+
+## 2026-06-12 18:01:00 -04:00
+
+Implementation start:
+
+- resumed the next planned publishing slice: `Update Remote Content...`
+- re-read the active publishing plan, current handoff, and current review log before coding
+- confirmed the branch already preserves remote-open metadata needed for update work:
+  - `source_kind`
+  - `publishing_authoring_surface`
+  - `publishing_open_representation`
+  - provider/site/remote-id/content-kind/status metadata
+- confirmed the current code gap is exactly the expected one:
+  - browse/open exists
+  - remote update command id exists in feature mapping
+  - no remote write-back API, menu item, or UI handler exists yet
+- implementation intent for this pass:
+  - add provider-aware remote update support
+  - convert Markdown-authored publishing tabs to HTML body content on send
+  - send explicitly HTML-authored publishing tabs as raw HTML unchanged
+  - keep the action explicit and review-first inside `File > Publish`
+
+## 2026-06-12 17:43:01 -04:00
+
+Planning checkpoint:
+
+- user asked whether the branch is ready to carry on after the latest upstream merge/sync work
+- answer: yes
+- branch is in a good place for new coding work again
+- focused publishing integration remains green against current `main`
+
+Next planned implementation slice:
+
+- `Update Remote Content...`
+- use stored publishing metadata from an opened remote publishing tab
+- decide update behavior from the saved authoring surface:
+  - Markdown-authored remote tabs convert to HTML on send
+  - explicitly HTML-authored remote tabs send raw HTML unchanged
+- keep the flow explicit and review-first, consistent with the approved publishing plan
+
 ## 2026-06-12 17:30:59 -04:00
 
 Workspace-noise cleanup:

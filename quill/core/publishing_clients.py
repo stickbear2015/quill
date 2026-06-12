@@ -65,6 +65,30 @@ class PublishingProviderClient(Protocol):
         timeout_seconds: float,
     ) -> tuple[bool, str, PublishingRemoteDocument | None]: ...
 
+    def update_remote_item(
+        self,
+        profile: object,
+        secret: str,
+        *,
+        content_kind: str,
+        remote_id: str,
+        title: str,
+        body_html: str,
+        timeout_seconds: float,
+    ) -> tuple[bool, str, PublishingRemoteDocument | None]: ...
+
+    def create_remote_item(
+        self,
+        profile: object,
+        secret: str,
+        *,
+        content_kind: str,
+        title: str,
+        body_html: str,
+        status: str,
+        timeout_seconds: float,
+    ) -> tuple[bool, str, PublishingRemoteDocument | None]: ...
+
 
 class WordPressPublishingClient:
     provider_id = WORDPRESS_PROVIDER_ID
@@ -138,6 +162,93 @@ class WordPressPublishingClient:
         host = _display_host(site_url)
         return True, f"Opened published content from {host}.", document
 
+    def update_remote_item(
+        self,
+        profile: object,
+        secret: str,
+        *,
+        content_kind: str,
+        remote_id: str,
+        title: str,
+        body_html: str,
+        timeout_seconds: float,
+    ) -> tuple[bool, str, PublishingRemoteDocument | None]:
+        account_identifier = str(getattr(profile, "account_identifier", "")).strip()
+        site_url = str(getattr(profile, "site_url", "")).strip()
+        if not account_identifier:
+            return False, "Enter a username or email before updating published content.", None
+        if not secret.strip():
+            return False, "Enter an application password before updating published content.", None
+        endpoint = _wordpress_item_endpoint(site_url, content_kind, remote_id)
+        payload = {
+            "title": title,
+            "content": body_html,
+        }
+        try:
+            result = _request_json(
+                endpoint,
+                account_identifier=account_identifier,
+                secret=secret,
+                timeout_seconds=timeout_seconds,
+                method="POST",
+                json_payload=payload,
+            )
+        except _PublishingRequestError as exc:
+            return False, exc.message, None
+        if not isinstance(result, dict):
+            return False, "The publishing site returned an invalid response.", None
+        document = _wordpress_document_from_payload(site_url, content_kind, result)
+        if document is None:
+            return False, "The publishing site returned an invalid response.", None
+        host = _display_host(site_url)
+        return True, f"Updated published content on {host}.", document
+
+    def create_remote_item(
+        self,
+        profile: object,
+        secret: str,
+        *,
+        content_kind: str,
+        title: str,
+        body_html: str,
+        status: str,
+        timeout_seconds: float,
+    ) -> tuple[bool, str, PublishingRemoteDocument | None]:
+        account_identifier = str(getattr(profile, "account_identifier", "")).strip()
+        site_url = str(getattr(profile, "site_url", "")).strip()
+        if not account_identifier:
+            return False, "Enter a username or email before creating published content.", None
+        if not secret.strip():
+            return (
+                False,
+                "Enter an application password before creating published content.",
+                None,
+            )
+        endpoint = _wordpress_collection_write_endpoint(site_url, content_kind)
+        payload = {
+            "title": title,
+            "content": body_html,
+            "status": status,
+        }
+        try:
+            result = _request_json(
+                endpoint,
+                account_identifier=account_identifier,
+                secret=secret,
+                timeout_seconds=timeout_seconds,
+                method="POST",
+                json_payload=payload,
+            )
+        except _PublishingRequestError as exc:
+            return False, exc.message, None
+        if not isinstance(result, dict):
+            return False, "The publishing site returned an invalid response.", None
+        document = _wordpress_document_from_payload(site_url, content_kind, result)
+        if document is None:
+            return False, "The publishing site returned an invalid response.", None
+        host = _display_host(site_url)
+        return True, f"Created published content on {host}.", document
+
 
 _BUILTIN_PUBLISHING_CLIENTS: dict[str, PublishingProviderClient] = {
     WORDPRESS_PROVIDER_ID: WordPressPublishingClient(),
@@ -159,14 +270,22 @@ def _request_json(
     account_identifier: str,
     secret: str,
     timeout_seconds: float,
+    method: str = "GET",
+    json_payload: object | None = None,
 ) -> object:
+    body: bytes | None = None
+    headers = {
+        "Accept": "application/json",
+        "Authorization": _basic_auth_header(account_identifier, secret),
+    }
+    if json_payload is not None:
+        body = json.dumps(json_payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
     request = Request(
         endpoint,
-        headers={
-            "Accept": "application/json",
-            "Authorization": _basic_auth_header(account_identifier, secret),
-        },
-        method="GET",
+        headers=headers,
+        data=body,
+        method=method,
     )
     try:
         with urlopen(request, timeout=timeout_seconds, context=_context_for(endpoint)) as response:
@@ -184,8 +303,13 @@ def _request_json(
             raise _PublishingRequestError(
                 "The requested published content could not be found."
             ) from exc
+        if exc.code == 400 and method != "GET":
+            raise _PublishingRequestError(
+                "The publishing site rejected the remote update request."
+            ) from exc
         raise _PublishingRequestError(
-            f"Publishing site returned HTTP {exc.code} while loading content."
+            f"Publishing site returned HTTP {exc.code} while "
+            f"{'loading content' if method == 'GET' else 'updating content'}."
         ) from exc
     except URLError as exc:
         reason = getattr(exc, "reason", None)
@@ -209,6 +333,16 @@ def _wordpress_collection_endpoint(site_url: str, content_kind: str) -> str:
             "context": "edit",
             "per_page": "50",
             "_fields": "id,link,title,status,modified_gmt,type",
+        }
+    )
+    return site_url.rstrip("/") + f"/wp-json/wp/v2/{_wordpress_kind_path(content_kind)}?{query}"
+
+
+def _wordpress_collection_write_endpoint(site_url: str, content_kind: str) -> str:
+    query = urlencode(
+        {
+            "context": "edit",
+            "_fields": "id,link,title,status,modified_gmt,type,content",
         }
     )
     return site_url.rstrip("/") + f"/wp-json/wp/v2/{_wordpress_kind_path(content_kind)}?{query}"
