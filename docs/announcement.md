@@ -20,6 +20,15 @@ QUILL is designed around the way people actually work with screen readers, struc
 
 This beta is already capable enough for serious daily work, while still being honest about its beta status. Some areas will continue to grow, but the foundation is here: a complete writing environment shaped by accessibility from the first line of code.
 
+## Download QUILL 0.5.0 Beta
+
+QUILL 0.5.0 Beta is available now for Windows.
+
+- [Download the QUILL 0.5.0 Installer (Windows)](https://github.com/Community-Access/quill/releases/download/v0.5.0/Quill-Setup-0.5.0.exe) — Full installer, approximately 70 MB. Includes embedded Python runtime and all dependencies. No separate Python installation required.
+- [View the full release on GitHub](https://github.com/Community-Access/quill/releases/tag/v0.5.0) — Release notes, source code, and all release assets.
+
+The installer requires Windows 10 or later, 64-bit. Run the installer and follow the prompts. QUILL will be available in your Start menu when complete.
+
 ## What is new in QUILL 0.5.0 Beta
 
 QUILL 0.5.0 Beta brings together a broad set of features into one accessible writing environment.
@@ -273,7 +282,9 @@ Office Hours will be a chance to:
 * Learn what is coming next
 * Help shape the road to QUILL 1.0
 
-Connection details will be shared through the usual QUILL community channels closer to the event.
+[Register for QUILL Office Hours on Zoom](https://us06web.zoom.us/meeting/register/m7oKZPRKSD-0SBWsHd0YRA)
+
+Registration is free. A confirmation with the meeting link will be sent to your email after you register.
 
 ## A community-built editor for the road ahead
 
