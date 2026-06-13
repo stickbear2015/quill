@@ -53,7 +53,7 @@
     "quill/ui/prompt_library_dialog.py": 488,
     "quill/ui/skill_library_dialog.py": 540,
     "quill/ui/setup_wizard_pages.py": 621,
-    "quill/core/keymap.py": 438,
+    "quill/core/keymap.py": 439,
     "quill/core/keymap_packs.py": 279,
     "quill/tools/check_banned_patterns.py": 650
   },
@@ -83,5 +83,6 @@
   "_rebaseline_2026_06_13c": "assistant_ai.py 1230 -> 1264 for the AI Hub / Ask Quill foundation: test_chat() (Test Chat primitive) plus per-provider credential storage (provider_credential_target, load/save/clear_provider_api_key, set_active_provider) and per-provider default model (provider_models_path, load/save_provider_model). Re-baselined to measured size.",
   "_rebaseline_2026_06_13d": "assistant_tools.py 1813 -> 1866 for AI Hub consolidation in AssistantConnectionDialog: Test Chat button (+_on_test_chat/_finish_test_chat async probe) and a per-provider Forget-key button (_on_forget_provider_key), per-provider key+model load on provider switch, and set_active_provider() on save so each provider keeps its own key/model. Re-baselined to measured size.",
   "_rebaseline_2026_06_13e": "assistant_tools.py 1866 -> 1877: AI Hub now hosts an optional 'On-device model...' button (+_on_open_model_settings) so the merged AI Model/Connection entry reaches the on-device model dialog from one place. Re-baselined to measured size.",
-  "_rebaseline_2026_06_13f": "features.py 1020 -> 1029 for the new locked-off core.glow feature (GLOW hidden for 0.5.0 pending completion; audit/fix/update commands gated by it). Re-baselined to measured size."
+  "_rebaseline_2026_06_13f": "features.py 1020 -> 1029 for the new locked-off core.glow feature (GLOW hidden for 0.5.0 pending completion; audit/fix/update commands gated by it). Re-baselined to measured size.",
+  "_rebaseline_2026_06_13g": "keymap.py 438 -> 439 for the edit.find legacy rebinding that restores Find to Ctrl+F. Re-baselined to measured size."
 }
