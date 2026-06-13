@@ -1,5 +1,116 @@
 # Codex Review Log
 
+## 2026-06-12 19:10:42 -04:00
+
+Stopping-point sync:
+
+- user requested a clean handoff state, detailed commit, and push
+- current branch work is being left in a documented planning-and-implementation checkpoint
+- latest uncommitted changes in this pass are documentation-only:
+  - updated publishing plan addendum
+  - new focused planning note
+  - corrected audience-language framing
+  - refreshed readiness memory
+  - refreshed handoff
+  - refreshed review log
+
+Branch state being documented at this stop:
+
+- merged `main` publishing branch remains repaired after the upstream menu-split regression
+- implemented publishing slices currently include:
+  - connection storage and verification
+  - browse/open remote content
+  - remote update
+  - create post/page draft
+- planning artifacts now also capture the next design concerns:
+  - browse scaling and timeouts
+  - draft visibility
+  - stronger publishing confirmation/result UX
+  - remote-item editor identity
+
+Push intent:
+
+- commit only tracked repo artifacts relevant to this branch state
+- keep local assistant-guidance files out of git
+
+## 2026-06-12 19:05:06 -04:00
+
+Documentation correction:
+
+- user requested that the latest planning write-up not imply Quill is being built only for blind users
+- corrected the new planning note accordingly
+- updated related support docs to keep the wording consistent:
+  - handoff
+  - readiness memory
+  - review log
+
+Corrected framing:
+
+- Quill remains accessibility-first
+- the product should provide strong non-visual feedback
+- the audience framing should stay broader than a single accessibility group
+
+## 2026-06-12 19:00:31 -04:00
+
+Research and planning pass:
+
+- user requested a thorough planning-only pass with no coding
+- reviewed current official WordPress developer documentation to inform provider-neutral publishing planning:
+  - posts REST API reference
+  - pages REST API reference
+  - REST API pagination guidance
+
+Key research findings used in planning:
+
+- WordPress post/page collection endpoints default to `status=publish`
+- post/page collection endpoints support explicit `status` filtering
+- large result sets are expected to be paginated
+- WordPress guidance explicitly expects clients to retrieve large collections page by page
+
+Planning outputs completed:
+
+- updated the main publishing planning document with a new addendum covering:
+  - draft visibility
+  - browse scaling / timeout handling
+  - confirmation-result UX
+  - remote-item editor identity
+- created a separate review note for focused reading:
+  - `codex-notes/notes/publishing-browse-confirmation-and-remote-identity-planning-2026-06-12.md`
+
+Important guardrail preserved:
+
+- research used WordPress because it is the first implemented provider
+- planning conclusions were written to remain provider-neutral at the framework and product-contract level
+
+## 2026-06-12 18:54:42 -04:00
+
+Planning-only checkpoint:
+
+- user reported product-behavior concerns after the recent publishing work
+- requested planning only, not coding
+
+Observed/product concerns to account for in the plan:
+
+- drafts created through publishing are not visible in the current browse-content experience
+- browsing both posts and pages together can time out on large servers
+- create-draft actions do not currently provide a strong enough success confirmation for user confidence
+- update/publish flows should similarly provide explicit confirmation and outcome feedback
+- opened remote posts/pages currently do not get a temporary local file/title-bar path that reflects the remote item title
+
+Planning implications recorded from this checkpoint:
+
+- browse-content likely needs a more scalable loading strategy for large sites:
+  - staged loading
+  - per-kind loading
+  - better timeout/error messaging
+  - possibly separate post/page fetches surfaced progressively
+- draft visibility needs to be reviewed as part of the browse contract, not treated as a side issue
+- publishing actions need a clearer confirmation/result UX across:
+  - create draft
+  - update remote content
+  - later publish/promote flows
+- title-bar/document identity for opened publishing items should be reviewed so the open tab better reflects the remote content title
+
 ## 2026-06-12 18:45:31 -04:00
 
 Post-fix assessment:

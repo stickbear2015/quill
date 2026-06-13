@@ -2,6 +2,15 @@
 
 Status: stable implementation checkpoint with current `origin/main` merged, focused validation green, and next work identified.
 
+## 2026-06-12 planning-language correction
+
+- updated the latest publishing planning note so it does not imply Quill is being designed only for blind users
+- corrected wording now reflects the intended product stance more accurately:
+  - accessibility-first
+  - strong non-visual feedback
+  - broader audience than a single user group
+- no product behavior changed in this pass
+
 ## 2026-06-12 cleanup note
 
 - post-sync workspace cleanup is complete

@@ -1,5 +1,40 @@
 # Codex Handoff
 
+## 2026-06-12 19:10:42 -04:00 Clean Handoff State
+
+- branch is being left in a clean documented stopping state for push
+- latest pass in this checkpoint is documentation-only
+- no additional product code changed after the last publishing implementation and startup-regression fix commit
+
+Current practical state:
+
+- publishing branch includes:
+  - browse/open remote content
+  - update remote content
+  - create post draft
+  - create page draft
+- merged-main startup regression has been repaired and documented
+- planning now explicitly covers the next likely product/design work:
+  - browse scaling and timeout handling
+  - draft visibility in browse
+  - stronger publishing confirmation and result feedback
+  - remote item title/tab identity
+
+Push expectation from this checkpoint:
+
+- commit the current documentation and planning updates
+- push so the remote branch reflects the same clean stop state
+
+## 2026-06-12 19:05:06 -04:00 Documentation Language Correction
+
+- corrected the latest planning-note wording so it does not frame Quill as being only for blind users
+- current intended framing remains:
+  - accessibility-first
+  - strong non-visual feedback
+  - provider-neutral publishing design
+  - broader user audience than a single accessibility group
+- no product code or behavior changed in this documentation pass
+
 ## 2026-06-12 18:42:20 -04:00 Startup Regression Fix
 
 - fixed a launch-blocking startup regression introduced by the merged upstream menu split

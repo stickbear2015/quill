@@ -1,5 +1,87 @@
 # Publishing Providers Framework Plan
 
+## 2026-06-12 browse, confirmation, and remote-identity planning addendum
+
+This addendum records a planning-only review after the first browse/open/update/create-draft publishing slices were integrated.
+
+Research basis:
+
+- WordPress REST API collection endpoints for posts and pages default list queries to `status=publish`
+- WordPress REST API pagination guidance explicitly expects large collections to be fetched page by page rather than as one oversized pull
+- those WordPress details informed this review, but the resulting product guidance below is intentionally provider-neutral so the publishing framework remains reusable across future providers
+
+Observed product gaps from branch testing:
+
+- drafts created through the current publishing flow may not appear in the browse surface
+- loading both posts and pages together can time out on servers with large content collections
+- write actions need stronger explicit outcome confirmation for user trust:
+  - create draft
+  - update remote content
+  - later publish/promote flows
+- opened remote items still behave too much like anonymous unsaved documents in title-bar identity terms
+
+Planning decisions locked by this addendum:
+
+- publishing browse must evolve from a simple one-shot fetch into a scalable collection-loading model
+- draft visibility is part of the browse contract and must be made explicit in product wording and filters
+- publishing write actions must always produce unambiguous success or failure confirmation in plain language
+- opened remote items should gain a clearer document identity model so the editor title/tab better reflects the remote item title without pretending the item is a normal local source file
+
+Approved planning direction for the next non-coding design pass:
+
+- treat browse as a provider-neutral listing workflow with:
+  - explicit content-kind scope
+  - explicit status scope
+  - progressive or staged loading where feasible
+  - timeout/error messages that say which slice failed
+- avoid a design that assumes every provider can cheaply return all content kinds and all statuses in one request
+- preserve the review-first rule not only before network writes, but also after them with clear result reporting
+- keep temporary/local identity work separate from remote-linkage truth:
+  - the UI may use a temp-backed or synthesized local identity for tab/title clarity
+  - the source metadata must remain the authoritative linkage record
+
+Provider-neutral browse-model guidance:
+
+- the browse surface should be designed around a generic model of:
+  - connection
+  - content kind
+  - status set
+  - page of results
+  - partial result state
+  - timeout / partial-failure state
+- WordPress happens to expose posts and pages as separate endpoints with default `publish` status filtering, but future providers may expose:
+  - one combined content endpoint
+  - different status vocabularies
+  - cursor-based pagination instead of page-based pagination
+- Quill therefore should normalize browse behavior at the framework layer instead of hard-coding WordPress assumptions into the product contract
+
+Recommended next implementation-planning slices:
+
+- `Browse Remote Content Scaling`
+  - add explicit status filters, including drafts
+  - add staged or progressive loading for multiple content kinds
+  - add timeout-aware partial results and retry wording
+- `Publishing Confirmation Model`
+  - standardize pre-send confirmation and post-send result confirmation across create/update/publish actions
+  - outcome copy should report:
+    - target site
+    - content kind
+    - resulting state
+    - public or admin URL when available
+- `Remote Item Editor Identity`
+  - decide whether opened remote items should use:
+    - synthesized temp file names
+    - tab-title overrides
+    - or both
+  - preserve the distinction between UI identity and authoritative remote linkage metadata
+
+Constraints preserved from the main plan:
+
+- no silent network writes
+- command-first architecture must remain intact for command palette discoverability
+- dialog count should stay low unless a new governed dialog is clearly justified
+- every new confirmation or browse filter surface must remain accessibility-first and use standard-control patterns
+
 ## 2026-06-10 audit addendum
 
 This addendum reflects a post-merge audit after updating the branch with current `main`.
