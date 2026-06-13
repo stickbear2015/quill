@@ -47,12 +47,12 @@ DECTALK_RELEASE_ZIP_URL = (
 )
 DECTALK_RELEASE_ZIP_SHA256 = "4a778056c109b37f95ade4b3d3e308b9396b22a4b0629f9756ec0e5051b9636d"
 
-# GLOW ships as part of the base bundle (not an optional, on-demand download):
-# the `glow` extra pulls quill-glow-core[glow] (the full acb-large-print engine)
-# into the embedded runtime so structured-document audit/fix works out of the
-# box. The vendored contract wheel (see _install_vendored_glow) remains an
-# offline fallback if the extra cannot be installed at build time.
-DEFAULT_BUNDLED_DEPENDENCY_GROUPS = ("ui", "spellcheck", "ocr", "glow")
+# GLOW is hidden for 0.5.0 (the core.glow feature is locked off), so the heavy
+# `glow` extra (quill-glow-core[glow], not yet on a public index) is NOT bundled
+# in the shipping build. The vendored contract wheel (see _install_vendored_glow)
+# still installs the safe GLOW seam. Re-add "glow" here when GLOW is re-enabled
+# and its wheels are published.
+DEFAULT_BUNDLED_DEPENDENCY_GROUPS = ("ui", "spellcheck", "ocr")
 
 
 def main() -> int:

@@ -288,6 +288,9 @@ def merge_keymaps(raw: object) -> dict[str, str]:
         return DEFAULT_KEYMAP.copy()
     merged = DEFAULT_KEYMAP.copy()
     legacy_rebindings = {
+        # Find returns to the conventional Ctrl+F. It had briefly defaulted to the
+        # QUILL-key prefix; rewrite that stale saved binding on load.
+        "edit.find": ("CTRL+SHIFT+GRAVE, F", "Ctrl+F"),
         "window.next_document": ("CTRL+TAB", "Ctrl+Shift+Grave, Tab"),
         "window.previous_document": ("CTRL+SHIFT+TAB", "Ctrl+Shift+Grave, Shift+Tab"),
         "view.send_to_tray": ("CTRL+ALT+T", "Ctrl+Shift+Grave, T"),
