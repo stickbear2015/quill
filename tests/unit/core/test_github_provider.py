@@ -55,7 +55,9 @@ def test_get_file_rejects_binary_payload() -> None:
         sha="abc123",
     )
     repo = SimpleNamespace(full_name="owner/repo")
-    provider._gh.get_repo = MagicMock(return_value=SimpleNamespace(get_contents=MagicMock(return_value=binary)))
+    provider._gh.get_repo = MagicMock(
+        return_value=SimpleNamespace(get_contents=MagicMock(return_value=binary))
+    )
     try:
         provider.get_file(repo, "image.png", "main")
     except ValueError as exc:
@@ -75,7 +77,9 @@ def test_get_file_accepts_utf8_text() -> None:
         sha="deadbeef",
     )
     repo = SimpleNamespace(full_name="owner/repo")
-    provider._gh.get_repo = MagicMock(return_value=SimpleNamespace(get_contents=MagicMock(return_value=text)))
+    provider._gh.get_repo = MagicMock(
+        return_value=SimpleNamespace(get_contents=MagicMock(return_value=text))
+    )
     result = provider.get_file(repo, "readme.md", "main")
     assert result.content == b"hello world"
     assert result.sha == "deadbeef"

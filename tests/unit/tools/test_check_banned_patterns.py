@@ -201,8 +201,7 @@ def test_wx_message_box_is_flagged(tmp_path: Path) -> None:
     target_dir.mkdir(exist_ok=True, parents=True)
     module = target_dir / "dlg.py"
     module.write_text(
-        "import wx\n\n\n"
-        "def go():\n    wx.MessageBox('oops', 'Err', wx.OK | wx.ICON_ERROR)\n",
+        "import wx\n\n\ndef go():\n    wx.MessageBox('oops', 'Err', wx.OK | wx.ICON_ERROR)\n",
         encoding="utf-8",
     )
     try:

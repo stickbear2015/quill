@@ -39,11 +39,7 @@ def _resolve_base_url(arg: str | None) -> str:
     still points at a moving branch ref so release CI cannot accidentally ship
     unpinned bootstrappers.
     """
-    candidate = (
-        arg
-        or os.environ.get("QUILL_BOOTSTRAPPER_BASE_URL")
-        or DEFAULT_BASE_URL
-    )
+    candidate = arg or os.environ.get("QUILL_BOOTSTRAPPER_BASE_URL") or DEFAULT_BASE_URL
     lowered = candidate.lower()
     forbidden = ("/head", "/master/", "/main/")
     if any(seg in lowered for seg in forbidden):
@@ -58,6 +54,7 @@ def _resolve_base_url(arg: str | None) -> str:
             "Pin to a real commit SHA before building a release."
         )
     return candidate
+
 
 BOOTSTRAPPERS = [
     "bootstrap.exe",
