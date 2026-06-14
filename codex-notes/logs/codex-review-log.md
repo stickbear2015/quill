@@ -825,6 +825,33 @@ What I changed in this follow-up audit pass:
   - `dialogs.md`
   - `codex-memory/publishing-providers-framework-readiness.md`
   - `codex-plans/publishing-providers-framework.md`
+## 2026-06-14
+
+What I changed in this pass:
+
+- restored `CLAUDE.md` fully from `main`
+- ran a broader merge-sensitive verification pass around the `main` surfaces that publishing extends
+- restored `CLAUDE.md` from `main` so the branch no longer carries the duplicated response-heading guidance
+- reran the publishing-owned verification slice against the merged publishing branch
+- updated `codex-notes/handoff/codex-handoff.md`
+
+Why this was needed:
+
+- the heading/accessibility rule is already being carried by local `AGENTS.md`, so `CLAUDE.md` should not drift on the branch
+- after the large `main` merge, we needed one more truthful pass focused on the code and governance surfaces owned by the publishing work
+- the notes needed to reflect the newest verified checkpoint
+- after the targeted publishing-owned pass, we still wanted confidence that the newer `main` shell work and our publishing integration were coexisting cleanly where they touch
+
+Validation run:
+
+- `.venv\Scripts\pytest.exe tests/unit/core/test_features.py tests/unit/core/test_publishing.py tests/unit/core/test_publishing_browse.py tests/unit/core/test_publishing_framework.py tests/unit/ui/test_main_frame.py tests/unit/ui/test_main_frame_menu_contract.py tests/unit/ui/test_publishing_connection_dialog_a11y.py tests/unit/ui/test_dialog_inventory.py tests/unit/ui/test_main_frame_characterization.py tests/unit/tools/test_module_size_budget.py tests/unit/tools/test_check_banned_patterns.py tests/unit/tools/test_network_egress_audit.py tests/unit/tools/test_dialog_button_contract.py tests/unit/ui/test_dialog_hardening_contract.py -q --basetemp=.tmp/pytest-publishing-final`
+- result: `121 passed in 43.18s`
+
+Broader merge-sensitive validation run:
+
+- `.venv\Scripts\pytest.exe tests/unit/ui/test_main_frame.py tests/unit/ui/test_main_frame_accessibility.py tests/unit/ui/test_main_frame_browse.py tests/unit/ui/test_main_frame_characterization.py tests/unit/ui/test_main_frame_clear_logs.py tests/unit/ui/test_main_frame_close_resilience.py tests/unit/ui/test_main_frame_compare_and_macros.py tests/unit/ui/test_main_frame_ctx1_wiring.py tests/unit/ui/test_main_frame_cq16_characterization.py tests/unit/ui/test_main_frame_dict2_wiring.py tests/unit/ui/test_main_frame_editing_lens.py tests/unit/ui/test_main_frame_feat19_wiring.py tests/unit/ui/test_main_frame_feedback.py tests/unit/ui/test_main_frame_forget_key.py tests/unit/ui/test_main_frame_heading_style.py tests/unit/ui/test_main_frame_insert_link.py tests/unit/ui/test_main_frame_libraries.py tests/unit/ui/test_main_frame_menu_contract.py tests/unit/ui/test_main_frame_menu_editor.py tests/unit/ui/test_main_frame_navigation.py tests/unit/ui/test_main_frame_onboarding.py tests/unit/ui/test_main_frame_open_threading.py tests/unit/ui/test_main_frame_preview_dark.py tests/unit/ui/test_main_frame_prompt_search.py tests/unit/ui/test_main_frame_quill_key.py tests/unit/ui/test_main_frame_quillins.py tests/unit/ui/test_main_frame_regex_helper.py tests/unit/ui/test_main_frame_save_as_format.py tests/unit/ui/test_main_frame_settings_dialog.py tests/unit/ui/test_main_frame_share_dialogs.py tests/unit/ui/test_main_frame_statusbar_context.py tests/unit/ui/test_main_frame_undo_atomic.py tests/unit/ui/test_main_frame_watch_service.py tests/unit/ui/test_remote_sites_dialog.py tests/unit/ui/test_connection_dialog_a11y.py tests/unit/ui/test_dialog_inventory.py tests/unit/ui/test_dialog_hardening_contract.py tests/unit/core/test_features.py tests/unit/core/test_remote_sites.py tests/unit/core/test_github_provider.py tests/unit/core/test_publishing.py tests/unit/core/test_publishing_browse.py tests/unit/core/test_publishing_framework.py tests/unit/tools/test_module_size_budget.py tests/unit/tools/test_check_banned_patterns.py tests/unit/tools/test_network_egress_audit.py tests/unit/tools/test_dialog_button_contract.py -q --basetemp=.tmp/pytest-publishing-broader`
+- result: `424 passed in 36.44s`
+
   - `codex-handoff.md`
 - added a focused regression assertion in `tests/unit/ui/test_main_frame.py`
 - updated older publishing and feature tests to honor the current dev-only `QUILL_DATA_DIR` override contract from `quill/core/paths.py`

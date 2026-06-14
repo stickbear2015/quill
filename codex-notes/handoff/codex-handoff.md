@@ -1,5 +1,53 @@
 # Codex Handoff
 
+## 2026-06-14 16:21:11 -04:00 Broader Merge-Sensitive Verification
+
+- ran a broader merge-sensitive suite across the `main` shell surfaces that publishing extends:
+  - `main_frame`
+  - file/menu wiring
+  - remote-sites coexistence
+  - dialog governance
+  - feature wiring
+  - network and module-budget gates
+- intent of this pass was to validate our publishing integration against current `main`, not to re-own unrelated `main` feature behavior
+
+## 2026-06-14 16:21:11 -04:00 Latest Verification
+
+- broader publishing-integration verification passed
+- result: `424 passed in 36.44s`
+- run detail:
+  - used workspace-local temp path:
+    - `--basetemp=.tmp/pytest-publishing-broader`
+
+## 2026-06-14 16:21:11 -04:00 Publishing Verification + CLAUDE Cleanup
+
+- restored `CLAUDE.md` to match `main` so the accessibility-heading guidance lives only in local `AGENTS.md`
+- reran the publishing-owned verification slice against the merged branch state rather than the unrelated broader `main` additions
+- confirmed the integrated publishing code still passes with current `main`
+
+## 2026-06-14 16:21:11 -04:00 Latest Verification
+
+- focused publishing-owned plus governance verification passed
+- result: `121 passed in 43.18s`
+- verification set:
+  - `tests/unit/core/test_features.py`
+  - `tests/unit/core/test_publishing.py`
+  - `tests/unit/core/test_publishing_browse.py`
+  - `tests/unit/core/test_publishing_framework.py`
+  - `tests/unit/ui/test_main_frame.py`
+  - `tests/unit/ui/test_main_frame_menu_contract.py`
+  - `tests/unit/ui/test_publishing_connection_dialog_a11y.py`
+  - `tests/unit/ui/test_dialog_inventory.py`
+  - `tests/unit/ui/test_main_frame_characterization.py`
+  - `tests/unit/tools/test_module_size_budget.py`
+  - `tests/unit/tools/test_check_banned_patterns.py`
+  - `tests/unit/tools/test_network_egress_audit.py`
+  - `tests/unit/tools/test_dialog_button_contract.py`
+  - `tests/unit/ui/test_dialog_hardening_contract.py`
+- run detail:
+  - used workspace-local temp path:
+    - `--basetemp=.tmp/pytest-publishing-final`
+
 ## 2026-06-12 19:10:42 -04:00 Clean Handoff State
 
 - branch is being left in a clean documented stopping state for push
