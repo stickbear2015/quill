@@ -32,6 +32,17 @@ class StatusBarMixin:
         ordered = [item for item in self.settings.status_bar_order if item in allowed]
         hidden = {item for item in self.settings.status_bar_hidden if item in allowed}
         visible = [item for item in ordered if item not in hidden]
+        # Hide cells whose governing feature is disabled so the bar reflects
+        # the active feature profile rather than showing "Unavailable" cells.
+        feature_manager = getattr(self, "features", None)
+        if feature_manager is not None:
+            status_bar_features = getattr(self, "_STATUS_BAR_FEATURES", {}) or {}
+            visible = [
+                item
+                for item in visible
+                if item not in status_bar_features
+                or feature_manager.is_enabled(status_bar_features[item])
+            ]
         if (
             getattr(self.settings, "title_bar_path_mode", "name") == "full_path"
             and "file_path" in visible
@@ -93,7 +104,15 @@ class StatusBarMixin:
             and feature_manager is not None
             and not feature_manager.is_enabled(feature_id)
         ):
-            return "Unavailable in current profile"
+            # Return empty string rather than "Unavailable in current profile".
+            # _statusbar_items() already filters disabled-feature cells out of
+            # the layout, so this path is a defensive fallback. If a cell
+            # somehow escapes the filter, broadcasting "unavailable" in its
+            # button label causes JAWS and NVDA to read the word "unavailable"
+            # as part of the window announcement (#176). The help text (set by
+            # _statusbar_help_text) still carries the unavailable reason for
+            # sighted users who inspect the cell.
+            return ""
         read_aloud = getattr(self, "_read_aloud", None)
         read_aloud_state = getattr(read_aloud, "state", "idle")
         notifications = getattr(self, "_notifications", [])
@@ -194,6 +213,12 @@ class StatusBarMixin:
                 return "Slots: ?/12"
             count = sum(1 for _, s in self._tray().all_slots() if not s.is_empty())
             return f"Slots: {count}/12"
+        if item == "language_profile":
+            tab = getattr(self, "_current_tab", None)
+            profile = getattr(tab, "_language_profile", None)
+            if profile is None:
+                return "Plain text"
+            return profile.name
         if item == "sr_name":
             # A11Y live indicator (§8.3): show the detected screen reader name.
             # Cache the result on the instance to avoid re-running tasklist on
@@ -282,6 +307,7 @@ class StatusBarMixin:
             "extend_mode": "Extend selection mode active. Press F7 to toggle.",
             "abbreviations": "Abbreviation expansion. Press Enter to toggle on/off.",
             "copy_tray_slots": "Copy tray slots in use. Press Enter to open Copy Tray.",
+            "language_profile": "Active language profile. Press Enter to change language.",
             "sr_name": "Detected screen reader. Press Enter to re-detect.",
             "suggestion": "Frequently used command. Press Enter to run it.",
         }
@@ -464,6 +490,9 @@ class StatusBarMixin:
             "search_term": self.find_text,
             "file_path": self.open_containing_folder,
         }
+        if item == "language_profile":
+            self.set_document_language()
+            return
         # §8.3: A11Y indicator re-detection.
         if item == "sr_name":
             if hasattr(self, "_sr_name_cache"):

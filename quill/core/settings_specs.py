@@ -186,6 +186,14 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         keywords=("confirm", "prompt", "destructive", "safety"),
     ),
     SettingSpec(
+        "startup_folder",
+        "Default file-open folder",
+        "general",
+        "text",
+        "Initial folder for Open and Save As dialogs. Leave blank to use the Documents folder.",
+        keywords=("startup folder", "default folder", "open folder", "file dialog", "start folder"),
+    ),
+    SettingSpec(
         "default_new_document_format",
         "Default new-document format",
         "general",
@@ -298,6 +306,18 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         "text",
         "Path to a .wav file played on expansion. Leave blank for the default system sound.",
         keywords=("abbreviation", "sound", "wav", "audio"),
+    ),
+    SettingSpec(
+        "abbreviation_backspace_behavior",
+        "Backspace after expansion",
+        "editing",
+        "choice",
+        "What to do when you press Backspace immediately after an abbreviation expands.",
+        choices=(
+            ("delete", "Delete the expanded text"),
+            ("revert", "Revert to the typed abbreviation"),
+        ),
+        keywords=("abbreviation", "backspace", "undo", "delete", "revert"),
     ),
     SettingSpec(
         "persistent_undo",
@@ -446,15 +466,13 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         "OCR engine",
         "accessibility",
         "choice",
-        "Which engine recognizes text in images. Automatic prefers the built-in "
-        "Windows engine and falls back to Tesseract when it is installed.",
+        "Which engine recognizes text in images. Automatic uses the built-in Windows engine.",
         choices=(
             ("auto", "Automatic"),
             ("windows", "Windows (built-in)"),
-            ("tesseract", "Tesseract"),
         ),
         feature_id="core.ocr",
-        keywords=("ocr", "image", "text", "tesseract", "windows", "recognition"),
+        keywords=("ocr", "image", "text", "windows", "recognition"),
     ),
     # --- External file-change watch and safe reload (FEAT-19) --------------
     SettingSpec(
@@ -609,6 +627,58 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         feature_id="core.accessibility",
         keywords=("trace", "diagnostics", "announcement"),
     ),
+    # --- Sound notifications (QSP) ----------------------------------------
+    SettingSpec(
+        "sound_enabled",
+        "Enable sound notifications",
+        "accessibility",
+        "bool",
+        "Play short earcon sounds for editing events (abbreviation expansion, save, search, etc.).",
+        keywords=("sound", "audio", "earcon", "notification", "beep"),
+    ),
+    SettingSpec(
+        "sound_pack_path",
+        "Sound pack path",
+        "accessibility",
+        "text",
+        "Path to a .qsp file or folder. Leave blank to use the bundled Ink pack.",
+        keywords=("sound", "pack", "qsp", "earcon", "theme"),
+    ),
+    SettingSpec(
+        "sound_volume",
+        "Sound notification volume",
+        "accessibility",
+        "int",
+        "Volume for earcon sounds (0 = silent, 100 = full).",
+        minimum=0,
+        maximum=100,
+        keywords=("sound", "volume", "audio", "earcon"),
+    ),
+    SettingSpec(
+        "sound_events_disabled",
+        "Silenced sound events",
+        "accessibility",
+        "text",
+        "Comma-separated list of sound event IDs to silence, e.g. transcription_word_inserted.",
+        keywords=("sound", "disable", "mute", "earcon", "events"),
+    ),
+    SettingSpec(
+        "indent_tone_scale",
+        "Indentation tones",
+        "accessibility",
+        "choice",
+        "Play a pitched tone as the caret moves across indent levels. The tone rises "
+        "as you go deeper and falls as you come back out. Choose the musical scale, or "
+        "Off to disable.",
+        choices=(
+            ("", "Off"),
+            ("pentatonic", "Pentatonic (no dissonance)"),
+            ("whole_tone", "Whole tone (even steps)"),
+            ("diatonic", "Diatonic C major (familiar)"),
+            ("chromatic", "Chromatic (one semitone per level)"),
+        ),
+        keywords=("sound", "indent", "indentation", "tone", "pitch", "code", "earcon"),
+    ),
     # --- Read Aloud --------------------------------------------------------
     SettingSpec(
         "announcement_verbosity",
@@ -699,8 +769,6 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
             ("piper", "Piper"),
             ("kokoro", "Kokoro"),
             ("espeak", "eSpeak"),
-            ("melotts", "MeloTTS"),
-            ("chatterbox", "Chatterbox"),
             ("openvoice", "OpenVoice"),
         ),
         feature_id="core.read_aloud",
@@ -781,8 +849,8 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         "ai",
         "text",
         "Default provider selected when the Ask AI dialog opens"
-        " (openrouter, openai, ollama_local, ollama_cloud).",
-        keywords=("ai", "chat", "provider", "openrouter", "openai", "ollama"),
+        " (ollama, ollama_cloud, openai, claude, openrouter, gemini, custom).",
+        keywords=("ai", "chat", "provider", "ollama", "openai", "claude", "openrouter", "gemini"),
     ),
     SettingSpec(
         "ai_chat_default_model",
@@ -809,6 +877,23 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         "Default model ID used when running prompt-library prompts."
         " Leave blank to fall back to the Ask AI default model.",
         keywords=("ai", "prompt", "model", "prompt library", "grammar"),
+    ),
+    # --- Bug reporting --------------------------------------------------------
+    SettingSpec(
+        "bug_reporter_name",
+        "Bug reporter name",
+        "general",
+        "text",
+        "Your name, pre-filled in the Report a Bug dialog for convenience.",
+        keywords=("name", "bug", "report", "contact"),
+    ),
+    SettingSpec(
+        "bug_reporter_email",
+        "Bug reporter email",
+        "general",
+        "text",
+        "Your contact email, pre-filled in the Report a Bug dialog for convenience.",
+        keywords=("email", "bug", "report", "contact"),
     ),
     # --- Transcription -----------------------------------------------------
     SettingSpec(

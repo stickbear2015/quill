@@ -143,6 +143,17 @@ def test_legacy_preview_conflict_migrates_to_in_app_preview() -> None:
     assert merged["view.browser_preview"] == "Ctrl+Shift+Grave, V"
 
 
+def test_find_defaults_to_ctrl_f() -> None:
+    assert DEFAULT_KEYMAP["edit.find"] == "Ctrl+F"
+
+
+def test_legacy_find_grave_binding_migrates_to_ctrl_f() -> None:
+    # A saved keymap that still has Find on the QUILL-key prefix is rewritten to
+    # the conventional Ctrl+F on load.
+    merged = keymap_module.merge_keymaps({"edit.find": "Ctrl+Shift+Grave, F"})
+    assert merged["edit.find"] == "Ctrl+F"
+
+
 def test_profile_picker_shortcut_is_available() -> None:
     assert DEFAULT_KEYMAP["help.switch_feature_profile"] == "Alt+Shift+P"
 

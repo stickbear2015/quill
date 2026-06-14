@@ -33,6 +33,7 @@ from quill.core.features import (
     FeatureManager,
 )
 from quill.core.settings import Settings
+from quill.ui.dialog_contract import apply_modal_ids
 
 _log = logging.getLogger(__name__)
 
@@ -42,9 +43,17 @@ _log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class _WelcomePage(wx.Panel):
-    def __init__(self, parent: wx.Window, settings: Settings) -> None:
+class _WizardPage(wx.Panel):
+    """Base for all wizard page panels."""
+
+    def __init__(self, parent: wx.Window, name: str) -> None:
         super().__init__(parent)
+        self.SetName(name)
+
+
+class _WelcomePage(_WizardPage):
+    def __init__(self, parent: wx.Window, settings: Settings) -> None:
+        super().__init__(parent, "Welcome")
         sizer = wx.BoxSizer(wx.VERTICAL)
         heading = wx.StaticText(
             self,
@@ -72,11 +81,9 @@ class _WelcomePage(wx.Panel):
         pass
 
 
-class _KeyboardSoundPage(wx.Panel):
-    """Page 1 - keyboard pack and earcon / sound preferences."""
-
+class _KeyboardSoundPage(_WizardPage):
     def __init__(self, parent: wx.Window, settings: Settings) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Keyboard and Sound")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="Keyboard and Sound", name="wizard.kb_heading")
@@ -110,12 +117,14 @@ class _KeyboardSoundPage(wx.Panel):
         grid.Add(pack_label, flag=wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self._pack, flag=wx.EXPAND)
 
-        sound_label = wx.StaticText(
-            self, label="Play sounds for mode changes:", name="wizard.kb_sound_label"
+        # The label lives on the checkbox itself, not a separate StaticText, so
+        # screen readers announce it instead of reading an unlabeled control
+        # (#208). An empty cell keeps the two-column grid aligned.
+        self._sounds = wx.CheckBox(
+            self, label="Play sounds for mode changes", name="wizard.kb_sounds_check"
         )
-        self._sounds = wx.CheckBox(self, name="wizard.kb_sounds_check")
         self._sounds.SetValue(bool(settings.quill_key_sound_enter))
-        grid.Add(sound_label, flag=wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(wx.StaticText(self, label=""), flag=wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self._sounds)
 
         sizer.Add(grid, flag=wx.LEFT | wx.RIGHT | wx.BOTTOM, border=12)
@@ -125,11 +134,9 @@ class _KeyboardSoundPage(wx.Panel):
         settings.keyboard_pack = self._pack.GetStringSelection() or "QUILL Default"
 
 
-class _ProfilePage(wx.Panel):
-    """Page 2 - feature profile selection."""
-
+class _ProfilePage(_WizardPage):
     def __init__(self, parent: wx.Window, feature_manager: FeatureManager) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Feature Profile")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="Feature Profile", name="wizard.profile_heading")
@@ -148,38 +155,40 @@ class _ProfilePage(wx.Panel):
         desc.Wrap(440)
         sizer.Add(desc, flag=wx.LEFT | wx.RIGHT | wx.BOTTOM, border=12)
 
-        self._profiles: list[str] = []
-        self._radio_btns: list[wx.RadioButton] = []
-        first = True
-        for profile_id, profile in PROFILE_DEFINITIONS.items():
-            style = wx.RB_GROUP if first else 0
-            rb = wx.RadioButton(
-                self,
-                label=f"{profile.name}  -  {profile.description}",
-                style=style,
-                name=f"wizard.profile_{profile_id}",
-            )
-            if profile_id == feature_manager.active_profile_id:
-                rb.SetValue(True)
-            self._profiles.append(profile_id)
-            self._radio_btns.append(rb)
-            sizer.Add(rb, flag=wx.LEFT | wx.BOTTOM, border=8)
-            first = False
+        # A single RadioBox (not a row of individual RadioButtons): arrow keys
+        # navigate within the group and wrap top-to-bottom, instead of escaping
+        # into the Back/Next/Cancel buttons at the ends (#209). Screen readers
+        # also announce it as one labelled radio group.
+        self._profiles: list[str] = list(PROFILE_DEFINITIONS.keys())
+        choices = [
+            f"{profile.name}  -  {profile.description}" for profile in PROFILE_DEFINITIONS.values()
+        ]
+        self._radio = wx.RadioBox(
+            self,
+            label="Choose a profile",
+            choices=choices,
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+            name="wizard.profile_choices",
+        )
+        try:
+            active_index = self._profiles.index(feature_manager.active_profile_id)
+        except ValueError:
+            active_index = 0
+        self._radio.SetSelection(active_index)
+        sizer.Add(self._radio, flag=wx.ALL, border=12)
 
         self.SetSizer(sizer)
 
     def collect(self, _settings: Settings, overrides: dict) -> None:
-        for rb, profile_id in zip(self._radio_btns, self._profiles, strict=False):
-            if rb.GetValue():
-                overrides["_profile"] = profile_id
-                return
+        index = self._radio.GetSelection()
+        if 0 <= index < len(self._profiles):
+            overrides["_profile"] = self._profiles[index]
 
 
-class _RemoteAccessPage(wx.Panel):
-    """Page 3 - remote access on/off."""
-
+class _RemoteAccessPage(_WizardPage):
     def __init__(self, parent: wx.Window, feature_manager: FeatureManager) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Remote Access")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="Remote Access", name="wizard.remote_heading")
@@ -212,11 +221,9 @@ class _RemoteAccessPage(wx.Panel):
         overrides["core.remote"] = state
 
 
-class _AIPage(wx.Panel):
-    """Page 4 - AI assistance on/off."""
-
+class _AIPage(_WizardPage):
     def __init__(self, parent: wx.Window, feature_manager: FeatureManager) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "AI Assistance")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="AI Assistance", name="wizard.ai_heading")
@@ -265,11 +272,9 @@ class _AIPage(wx.Panel):
         overrides["future.ai"] = state
 
 
-class _ReadingAccessibilityPage(wx.Panel):
-    """Page 5 - read aloud + accessibility announcements."""
-
+class _ReadingAccessibilityPage(_WizardPage):
     def __init__(self, parent: wx.Window, settings: Settings) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Reading and Accessibility")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(
@@ -323,11 +328,9 @@ class _ReadingAccessibilityPage(wx.Panel):
                 settings.announcement_verbosity = data
 
 
-class _WritingToolsPage(wx.Panel):
-    """Page 6 - spell check, word prediction, autocorrect."""
-
+class _WritingToolsPage(_WizardPage):
     def __init__(self, parent: wx.Window, settings: Settings) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Writing Tools")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="Writing Tools", name="wizard.writing_heading")
@@ -374,11 +377,9 @@ class _WritingToolsPage(wx.Panel):
         settings.autoformat_smart_quotes = self._smart_quotes.GetValue()
 
 
-class _StartupBehaviourPage(wx.Panel):
-    """Page 7 - startup and window behaviour."""
-
+class _StartupBehaviourPage(_WizardPage):
     def __init__(self, parent: wx.Window, settings: Settings) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Startup Behaviour")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="Startup Behaviour", name="wizard.startup_heading")
@@ -425,11 +426,9 @@ class _StartupBehaviourPage(wx.Panel):
         settings.tray_enabled = self._tray.GetValue()
 
 
-class _SummaryPage(wx.Panel):
-    """Page 8 - summary of what will be applied."""
-
+class _SummaryPage(_WizardPage):
     def __init__(self, parent: wx.Window) -> None:
-        super().__init__(parent)
+        super().__init__(parent, "Summary")
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         heading = wx.StaticText(self, label="You are all set!", name="wizard.summary_heading")
@@ -517,6 +516,16 @@ class SetupWizardDialog(wx.Dialog):
         self.SetMinSize((500, 420))
         self.Fit()
         self.CentreOnParent()
+        apply_modal_ids(self, affirmative_id=wx.ID_OK, cancel_id=wx.ID_CANCEL)
+        # SetFocus() during __init__ doesn't survive the Windows dialog-show
+        # sequence.  EVT_INIT_DIALOG (WM_INITDIALOG) fires just before the
+        # window is shown, but Windows runs its own post-INITDIALOG focus reset
+        # afterward — overwriting our SetFocus call with the Cancel button.
+        # wx.CallAfter defers _focus_nav_button to the next event-loop tick,
+        # which runs AFTER Windows finishes its own initialisation, so our
+        # choice wins.  The Navigate() binding previously on _WizardPage panels
+        # was also removed: Navigate() without a focusable child calls wxBell().
+        self.Bind(wx.EVT_INIT_DIALOG, lambda _e: wx.CallAfter(self._focus_nav_button))
 
     def _build_pages(self) -> list[wx.Panel]:
         return [
@@ -586,8 +595,18 @@ class SetupWizardDialog(wx.Dialog):
                 summary_page.update_summary(
                     self._settings, self._pending_overrides, self._feature_manager
                 )
+        self._focus_nav_button()
+
+    def _focus_nav_button(self) -> None:
+        # SetDefaultItem makes Enter trigger the active nav button regardless
+        # of which page control currently holds focus — without it, Windows
+        # picks Cancel as the default (because Next/Finish have no standard ID).
+        total = len(self._pages)
+        if self._current_page == total - 1:
+            self.SetDefaultItem(self._finish_btn)
             self._finish_btn.SetFocus()
         else:
+            self.SetDefaultItem(self._next_btn)
             self._next_btn.SetFocus()
 
     def _collect_current(self) -> None:

@@ -371,10 +371,12 @@ class ConsoleWindow:
                 try:
                     Path(path).write_text(text, encoding="utf-8")
                 except OSError as exc:
-                    wx.MessageBox(
+                    from quill.ui.dialog_contract import show_message_box
+
+                    show_message_box(
                         f"Could not save transcript:\n{exc}",
                         "Error",
-                        wx.OK | wx.ICON_ERROR,
+                        self._wx.OK | self._wx.ICON_ERROR,
                     )
 
     def _show_help(self) -> None:
@@ -398,7 +400,9 @@ class ConsoleWindow:
             "  const doc = await quill.activeDocument()\n"
             "  Requires Node.js on PATH."
         )
-        self._wx.MessageBox(
+        from quill.ui.dialog_contract import show_message_box
+
+        show_message_box(
             help_text,
             "Developer Console Help",
             self._wx.OK | self._wx.ICON_INFORMATION,

@@ -56,20 +56,12 @@ def _build_power_tools_registrar() -> FirstPartyRegistrar:
         label="Special &Character...",
         separator_before=True,
     )
-    add(
-        id="power.insert_date_time",
-        title="Insert Date and Time",
-        top_level="Insert",
-        group="insert",
-        label="Date and &Time",
-    )
-    add(
-        id="power.calculate_and_insert_date",
-        title="Insert Calculated Date",
-        top_level="Insert",
-        group="insert",
-        label="C&alculated Date...",
-    )
+    # NOTE: Power-tool date/time items (``power.insert_date_time`` and
+    # ``power.calculate_and_insert_date``) used to live on the Insert menu next to
+    # the bundled Quillin snippets of the same names. They were removed to
+    # eliminate the duplicate and to honour the Quillin migration: the bundled
+    # ``com.quill.bundled.insert-tools`` Quillin now ships these as a Layer 1
+    # snippet pack surfaced through the new ``Insert > Date and Time`` submenu.
     add(
         id="power.insert_file_content",
         title="Insert File Content",
@@ -257,6 +249,30 @@ def _build_power_tools_registrar() -> FirstPartyRegistrar:
         label="&Encode HTML Entities",
         separator_before=False,
     )
+    add(
+        id="power.encode_all_non_ascii",
+        title="Convert Non-ASCII to HTML Entities",
+        top_level="Format",
+        group="html_encoding",
+        label="Convert &Non-ASCII to HTML Entities",
+        separator_before=True,
+    )
+    add(
+        id="power.show_non_ascii",
+        title="Show Non-ASCII Characters",
+        top_level="Format",
+        group="html_encoding",
+        label="&Show Non-ASCII Characters...",
+        separator_before=False,
+    )
+    add(
+        id="power.reencode_file",
+        title="Re-encode As",
+        top_level="Format",
+        group="html_encoding",
+        label="&Re-encode As...",
+        separator_before=False,
+    )
 
     # Navigate menu ------------------------------------------------------
     add(
@@ -295,18 +311,18 @@ def _build_power_tools_registrar() -> FirstPartyRegistrar:
     # Search menu --------------------------------------------------------
     add(
         id="power.count_regex_matches",
-        title="Count Regex Matches",
+        title="Count Regular Expression Matches",
         top_level="Search",
         group="search",
-        label="&Count Regex Matches...",
+        label="&Count Regular Expression Matches...",
         separator_before=True,
     )
     add(
         id="power.extract_regex_matches",
-        title="Extract Regex Matches",
+        title="Extract Regular Expression Matches",
         top_level="Search",
         group="search",
-        label="E&xtract Regex Matches...",
+        label="E&xtract Regular Expression Matches...",
     )
     add(
         id="power.set_lines_first_not_second",

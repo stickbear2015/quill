@@ -114,8 +114,8 @@
             "properties": {
               "parent": {
                 "type": "string",
-                "description": "Top-level menu title to attach under, e.g. File, Edit, Insert, Format, Tools, Navigate, Search, Help.",
-                "enum": ["File", "Edit", "Insert", "Format", "Tools", "Navigate", "Search", "View", "Help"]
+                "description": "Top-level menu (e.g. File, Edit, Insert, Format, Tools, Navigate, Search, View, Help) or a conventional submenu parent (Date and Time) the host builds and exposes to Quillins.",
+                "enum": ["File", "Edit", "Insert", "Format", "Tools", "Navigate", "Search", "View", "Help", "Date and Time"]
               },
               "command": { "type": "string", "description": "A command id contributed above or a built-in command id." }
             }
@@ -151,6 +151,16 @@
               }
             }
           }
+        },
+        "sound_pack": {
+          "type": "string",
+          "description": "Relative path to a QSP directory inside the extension bundle (e.g. 'sounds/'). Loaded by SoundManager and merged with the active pack; extension events take precedence.",
+          "pattern": "^[A-Za-z0-9_./-]+/?$"
+        },
+        "sound_events": {
+          "type": "object",
+          "description": "Additional event IDs contributed by this extension. Keys are event IDs (must include the extension id as a prefix, e.g. 'com.example.foo.fired'); values are WAV filenames relative to sound_pack.",
+          "additionalProperties": { "type": "string" }
         }
       }
     }

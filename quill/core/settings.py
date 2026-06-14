@@ -76,12 +76,6 @@ class Settings:
     read_aloud_espeak_executable: str = ""
     read_aloud_espeak_voice: str = "en"
     read_aloud_espeak_rate: int = 175
-    read_aloud_melotts_executable: str = ""
-    read_aloud_melotts_voice: str = "en-us"
-    read_aloud_melotts_rate: int = 180
-    read_aloud_chatterbox_executable: str = ""
-    read_aloud_chatterbox_voice: str = "english_narrator"
-    read_aloud_chatterbox_rate: int = 180
     read_aloud_openvoice_executable: str = ""
     read_aloud_openvoice_voice: str = "en-base"
     read_aloud_openvoice_rate: int = 180
@@ -111,6 +105,7 @@ class Settings:
     voice_commands_enabled: bool = False
     watch_folder_enabled: bool = False
     watch_folder_path: str = ""
+    startup_folder: str = ""
     watch_folder_include_subfolders: bool = False
     watch_folder_process_existing: bool = False
     watch_folder_auto_start: bool = False
@@ -176,6 +171,9 @@ class Settings:
     ollama_base_url: str = "http://localhost:11434"
     # AI prompts (Phase 3): separate default model for prompt-library runs.
     ai_prompt_default_model: str = ""
+    # Bug reporter identity: pre-fill the Report a Bug dialog for speed.
+    bug_reporter_name: str = ""
+    bug_reporter_email: str = ""
     # I18N: BCP 47 language tag for the UI; empty string means "use OS default".
     language: str = ""
     # WIZARD: True once the first-run setup wizard has completed.
@@ -184,6 +182,16 @@ class Settings:
     console_enabled: bool = True
     console_python_timeout: int = 30
     console_typescript_timeout: int = 30
+    # QSP: sound notification system (earcons).
+    sound_enabled: bool = True
+    sound_pack_path: str = ""  # empty = bundled Ink pack
+    sound_volume: int = 80  # 0-100; passed to sound_lib Output.set_volume()
+    sound_events_disabled: str = ""  # comma-separated SoundEvent IDs to silence
+    # Indent tone overlay: "" = off, else one of pentatonic/whole_tone/diatonic/chromatic.
+    # When set, moving the caret across indent levels plays a pitched tone per level.
+    indent_tone_scale: str = ""
+    # Abbreviation backspace: "delete" removes expansion, "revert" puts the original back.
+    abbreviation_backspace_behavior: str = "delete"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Settings:
@@ -261,8 +269,6 @@ class Settings:
             "piper",
             "kokoro",
             "espeak",
-            "melotts",
-            "chatterbox",
             "openvoice",
         }
         if read_aloud_engine not in _valid_engines:
@@ -313,27 +319,6 @@ class Settings:
             read_aloud_espeak_rate = 80
         if read_aloud_espeak_rate > 450:
             read_aloud_espeak_rate = 450
-        read_aloud_melotts_executable = str(data.get("read_aloud_melotts_executable", "")).strip()
-        read_aloud_melotts_voice = (
-            str(data.get("read_aloud_melotts_voice", "en-us")).strip().lower() or "en-us"
-        )
-        read_aloud_melotts_rate = int(data.get("read_aloud_melotts_rate", 180))
-        if read_aloud_melotts_rate < 80:
-            read_aloud_melotts_rate = 80
-        if read_aloud_melotts_rate > 450:
-            read_aloud_melotts_rate = 450
-        read_aloud_chatterbox_executable = str(
-            data.get("read_aloud_chatterbox_executable", "")
-        ).strip()
-        read_aloud_chatterbox_voice = (
-            str(data.get("read_aloud_chatterbox_voice", "english_narrator")).strip().lower()
-            or "english_narrator"
-        )
-        read_aloud_chatterbox_rate = int(data.get("read_aloud_chatterbox_rate", 180))
-        if read_aloud_chatterbox_rate < 80:
-            read_aloud_chatterbox_rate = 80
-        if read_aloud_chatterbox_rate > 450:
-            read_aloud_chatterbox_rate = 450
         read_aloud_openvoice_executable = str(
             data.get("read_aloud_openvoice_executable", "")
         ).strip()
@@ -396,6 +381,7 @@ class Settings:
             status_page_refresh_announcement_cadence = "quiet"
         watch_folder_enabled = bool(data.get("watch_folder_enabled", False))
         watch_folder_path = str(data.get("watch_folder_path", "")).strip()
+        startup_folder = str(data.get("startup_folder", "")).strip()
         watch_folder_include_subfolders = bool(data.get("watch_folder_include_subfolders", False))
         watch_folder_process_existing = bool(data.get("watch_folder_process_existing", False))
         watch_folder_auto_start = bool(data.get("watch_folder_auto_start", False))
@@ -422,7 +408,7 @@ class Settings:
         )
         # OCR-2: image-to-text engine selection
         ocr_engine = str(data.get("ocr_engine", "auto")).strip().lower()
-        if ocr_engine not in {"auto", "windows", "tesseract"}:
+        if ocr_engine not in {"auto", "windows"}:
             ocr_engine = "auto"
         # SHELL-1: file-manager "Send to Quill" context-menu verbs
         shell_integration_enabled = bool(data.get("shell_integration_enabled", False))
@@ -498,6 +484,8 @@ class Settings:
             or "http://localhost:11434"
         )
         ai_prompt_default_model = str(data.get("ai_prompt_default_model", ""))
+        bug_reporter_name = str(data.get("bug_reporter_name", "")).strip()
+        bug_reporter_email = str(data.get("bug_reporter_email", "")).strip()
         language = str(data.get("language", "")).strip()
         setup_wizard_completed = bool(data.get("setup_wizard_completed", False))
         console_enabled = bool(data.get("console_enabled", True))
@@ -512,6 +500,20 @@ class Settings:
         abbreviation_expansion = bool(data.get("abbreviation_expansion", True))
         abbreviation_expansion_sound = bool(data.get("abbreviation_expansion_sound", False))
         abbreviation_expansion_sound_file = str(data.get("abbreviation_expansion_sound_file", ""))
+        sound_enabled = bool(data.get("sound_enabled", True))
+        sound_pack_path = str(data.get("sound_pack_path", ""))
+        try:
+            sound_volume = int(data.get("sound_volume", 80))
+        except (TypeError, ValueError):
+            sound_volume = 80
+        sound_volume = max(0, min(100, sound_volume))
+        sound_events_disabled = str(data.get("sound_events_disabled", ""))
+        indent_tone_scale = str(data.get("indent_tone_scale", ""))
+        if indent_tone_scale not in ("", "pentatonic", "whole_tone", "diatonic", "chromatic"):
+            indent_tone_scale = ""
+        abbreviation_backspace_behavior = str(data.get("abbreviation_backspace_behavior", "delete"))
+        if abbreviation_backspace_behavior not in {"delete", "revert"}:
+            abbreviation_backspace_behavior = "delete"
         raw_mp = int(data.get("multi_press_window_ms", 400))
         multi_press_window_ms = max(100, min(1000, raw_mp))
         if recent_files_limit < 1:
@@ -573,12 +575,6 @@ class Settings:
             read_aloud_espeak_executable=read_aloud_espeak_executable,
             read_aloud_espeak_voice=read_aloud_espeak_voice,
             read_aloud_espeak_rate=read_aloud_espeak_rate,
-            read_aloud_melotts_executable=read_aloud_melotts_executable,
-            read_aloud_melotts_voice=read_aloud_melotts_voice,
-            read_aloud_melotts_rate=read_aloud_melotts_rate,
-            read_aloud_chatterbox_executable=read_aloud_chatterbox_executable,
-            read_aloud_chatterbox_voice=read_aloud_chatterbox_voice,
-            read_aloud_chatterbox_rate=read_aloud_chatterbox_rate,
             read_aloud_openvoice_executable=read_aloud_openvoice_executable,
             read_aloud_openvoice_voice=read_aloud_openvoice_voice,
             read_aloud_openvoice_rate=read_aloud_openvoice_rate,
@@ -603,6 +599,7 @@ class Settings:
             voice_commands_enabled=voice_commands_enabled,
             watch_folder_enabled=watch_folder_enabled,
             watch_folder_path=watch_folder_path,
+            startup_folder=startup_folder,
             watch_folder_include_subfolders=watch_folder_include_subfolders,
             watch_folder_process_existing=watch_folder_process_existing,
             watch_folder_auto_start=watch_folder_auto_start,
@@ -655,6 +652,8 @@ class Settings:
             ai_chat_default_model=ai_chat_default_model,
             ollama_base_url=ollama_base_url,
             ai_prompt_default_model=ai_prompt_default_model,
+            bug_reporter_name=bug_reporter_name,
+            bug_reporter_email=bug_reporter_email,
             abbreviation_expansion=abbreviation_expansion,
             abbreviation_expansion_sound=abbreviation_expansion_sound,
             abbreviation_expansion_sound_file=abbreviation_expansion_sound_file,
@@ -664,6 +663,12 @@ class Settings:
             console_enabled=console_enabled,
             console_python_timeout=console_python_timeout,
             console_typescript_timeout=console_typescript_timeout,
+            sound_enabled=sound_enabled,
+            sound_pack_path=sound_pack_path,
+            sound_volume=sound_volume,
+            sound_events_disabled=sound_events_disabled,
+            indent_tone_scale=indent_tone_scale,
+            abbreviation_backspace_behavior=abbreviation_backspace_behavior,
         )
 
 

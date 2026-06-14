@@ -33,8 +33,20 @@ class RemoteProvider(ABC):
         """
 
     @abstractmethod
-    def list_refs(self, repository: RemoteRepository) -> list[RemoteRef]:
-        """Return all branches then all tags for *repository*."""
+    def list_refs(
+        self,
+        repository: RemoteRepository,
+        *,
+        limit: int = 100,
+    ) -> list[RemoteRef]:
+        """Return up to *limit* branches then up to *limit* tags for *repository*.
+
+        The default ``limit`` of 100 keeps repos with thousands of refs (e.g.
+        ``kubernetes/kubernetes``) from burning the anonymous 60-req/hour rate
+        limit on a single browse dialog (finding #34).  Callers that need the
+        full list may pass a larger ``limit``; the dialog uses a "Show all
+        refs" affordance for that case.
+        """
 
     @abstractmethod
     def list_directory(

@@ -15,12 +15,46 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import urllib.request  # noqa: S310
 from pathlib import Path
 
-BASE_URL = (
-    "https://raw.githubusercontent.com/accessibleapps/app_updater/HEAD/autoupdate/bootstrappers/"
+# Pinned to a specific commit SHA of accessibleapps/app_updater.  ``HEAD``
+# is banned: it lets a compromised upstream repoint us at attacker bytes at
+# release time.  Override with the ``QUILL_BOOTSTRAPPER_BASE_URL`` env var
+# (full URL, e.g. for local mirrors) or the ``--base-url`` flag for one-off
+# testing.  The committed ``checksums.sha256`` then pins the exact bytes.
+DEFAULT_BASE_URL = (
+    "https://raw.githubusercontent.com/accessibleapps/app_updater/"
+    "<REPLACE_WITH_COMMIT_SHA>/autoupdate/bootstrappers/"
 )
+DEFAULT_BASE_SHA = "<REPLACE_WITH_COMMIT_SHA>"
+
+
+def _resolve_base_url(arg: str | None) -> str:
+    """Return the pinned base URL, refusing ``HEAD``/``master``/``main``/empty.
+
+    Order of precedence: ``--base-url`` arg > ``QUILL_BOOTSTRAPPER_BASE_URL`` env
+    > :data:`DEFAULT_BASE_URL`.  Raises ``ValueError`` when the resolved URL
+    still points at a moving branch ref so release CI cannot accidentally ship
+    unpinned bootstrappers.
+    """
+    candidate = arg or os.environ.get("QUILL_BOOTSTRAPPER_BASE_URL") or DEFAULT_BASE_URL
+    lowered = candidate.lower()
+    forbidden = ("/head", "/master/", "/main/")
+    if any(seg in lowered for seg in forbidden):
+        raise ValueError(
+            "Refusing to use a moving branch ref in BASE_URL: "
+            f"{candidate!r}. Pin to a specific commit SHA, or set "
+            "QUILL_BOOTSTRAPPER_BASE_URL to a pinned URL."
+        )
+    if DEFAULT_BASE_SHA in candidate and DEFAULT_BASE_SHA.startswith("<"):
+        raise ValueError(
+            "DEFAULT_BASE_URL still has the <REPLACE_WITH_COMMIT_SHA> placeholder. "
+            "Pin to a real commit SHA before building a release."
+        )
+    return candidate
+
 
 BOOTSTRAPPERS = [
     "bootstrap.exe",
@@ -59,8 +93,8 @@ def _save_checksums(checksum_path: Path, checksums: dict[str, str]) -> None:
     checksum_path.write_text("".join(lines), encoding="utf-8")
 
 
-def _download(filename: str, dest: Path) -> str:
-    url = BASE_URL + filename
+def _download(filename: str, dest: Path, base_url: str) -> str:
+    url = base_url + filename
     print(f"  Downloading {filename} from {url} ...")
     with urllib.request.urlopen(url) as resp:  # noqa: S310
         data = resp.read()
@@ -89,7 +123,18 @@ def main() -> int:
         default=_DEFAULT_DIR,
         help="Directory that holds the bootstrapper binaries.",
     )
+    parser.add_argument(
+        "--base-url",
+        default=None,
+        help=(
+            "Override the pinned bootstrapper base URL (env var "
+            "QUILL_BOOTSTRAPPER_BASE_URL is also honoured). Refusing to point "
+            "at HEAD/master/main so release CI cannot ship unpinned bytes."
+        ),
+    )
     args = parser.parse_args()
+
+    base_url = _resolve_base_url(args.base_url)
 
     bootstrapper_dir: Path = args.bootstrapper_dir
     checksum_path = bootstrapper_dir / "checksums.sha256"
@@ -128,7 +173,7 @@ def main() -> int:
             continue
 
         bootstrapper_dir.mkdir(parents=True, exist_ok=True)
-        digest = _download(filename, dest)
+        digest = _download(filename, dest, base_url)
         updated[filename] = digest
         print(f"  OK       {filename}  {digest[:12]}...")
 

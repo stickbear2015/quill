@@ -98,14 +98,27 @@ class QuillinsMenuMixin:
                 )
         return menu
 
-    def _append_quillin_menu_items(self, menu: object, parent_title: str) -> None:
+    def _append_quillin_menu_items(
+        self,
+        menu: object,
+        parent_title: str,
+        *,
+        prepend_separator: bool = True,
+    ) -> None:
         """Append bundled/third-party Quillin commands whose menu home is ``parent_title``.
 
         This is what lets a Quillin's ``menus`` contribution land in its declared
-        conventional home (Insert, Format, Search, ...) instead of only the flat
-        Tools > Quillins backstop list, so a converted built-in keeps the menu
-        placement recorded in ``menus.md``. Each item is bound to run through the
-        same capability/consent-gated path as any other Quillin command.
+        conventional home (Insert, Format, Search, ...) or in a conventional
+        submenu (e.g. "Date and Time") instead of only the flat Tools > Quillins
+        backstop list, so a converted built-in keeps the menu placement recorded
+        in ``menus.md``. Each item is bound to run through the same
+        capability/consent-gated path as any other Quillin command.
+
+        ``prepend_separator`` defaults to True and prepends a separator before
+        the first appended item — which is what the top-level callers want
+        (a Quillin block visually separate from the host's own items). Submenu
+        callers pass ``prepend_separator=False`` so the first item lands at the
+        top of the submenu without a leading separator.
         """
 
         registry = getattr(self, "_quillin_registry", None)
@@ -120,7 +133,8 @@ class QuillinsMenuMixin:
             if resolved is None:
                 continue
             if not appended:
-                menu.AppendSeparator()
+                if prepend_separator:
+                    menu.AppendSeparator()
                 appended = True
             item_id = wx.NewIdRef()
             menu.Append(item_id, self._menu_label(resolved.command.title, contribution.command_id))
@@ -204,6 +218,15 @@ class QuillinsMenuMixin:
                     self._quillin_index[command.id] = (manifest, entry.directory)
                     if manifest.id in bundled_ids:
                         self._bundled_command_ids.add(command.id)
+                if manifest.contributes.sound_pack:
+                    from quill.ui import sound_manager
+
+                    sound_manager.register_quillin_sounds(
+                        manifest.id,
+                        entry.directory,
+                        manifest.contributes.sound_pack,
+                        manifest.contributes.sound_events,
+                    )
 
         for command_id, resolved in registry.commands.items():
             binding = next(
@@ -332,8 +355,6 @@ class QuillinsMenuMixin:
             title="Quillins Manager",
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
-        panel = wx.Panel(dialog)
-        outer = wx.BoxSizer(wx.VERTICAL)
         body = wx.BoxSizer(wx.VERTICAL)
 
         if self._quillins_enabled():
@@ -347,28 +368,28 @@ class QuillinsMenuMixin:
                 "Quillins are disabled in this build and are listed for review "
                 "only. Choose a Quillin to read its details."
             )
-        body.Add(wx.StaticText(panel, label=intro_text), 0, wx.ALL | wx.EXPAND, 8)
+        body.Add(wx.StaticText(dialog, label=intro_text), 0, wx.ALL | wx.EXPAND, 8)
 
         labels = [self._quillin_list_label(item) for item in installed] or [
             "(no Quillins installed)"
         ]
-        chooser = wx.ListBox(panel, choices=labels)
+        chooser = wx.ListBox(dialog, choices=labels)
         chooser.SetName("Installed Quillins")
         if installed:
             chooser.SetSelection(0)
         body.Add(chooser, 1, wx.ALL | wx.EXPAND, 8)
 
-        body.Add(wx.StaticText(panel, label="&Details"), 0, wx.LEFT | wx.RIGHT, 8)
-        details = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        body.Add(wx.StaticText(dialog, label="&Details"), 0, wx.LEFT | wx.RIGHT, 8)
+        details = wx.TextCtrl(dialog, style=wx.TE_MULTILINE | wx.TE_READONLY)
         details.SetName("Quillin details")
         body.Add(details, 1, wx.ALL | wx.EXPAND, 8)
 
-        enable_button = wx.Button(panel, label="&Enable")
-        disable_button = wx.Button(panel, label="&Disable")
-        reload_button = wx.Button(panel, label="&Reload")
-        remove_button = wx.Button(panel, label="Re&move...")
-        install_button = wx.Button(panel, label="&Install from Folder...")
-        close_button = wx.Button(panel, id=wx.ID_OK, label="&Close")
+        enable_button = wx.Button(dialog, label="&Enable")
+        disable_button = wx.Button(dialog, label="&Disable")
+        reload_button = wx.Button(dialog, label="&Reload")
+        remove_button = wx.Button(dialog, label="Re&move...")
+        install_button = wx.Button(dialog, label="&Install from Folder...")
+        close_button = wx.Button(dialog, id=wx.ID_OK, label="&Close")
 
         actions = wx.BoxSizer(wx.HORIZONTAL)
         for button in (enable_button, disable_button, reload_button, remove_button, install_button):
@@ -380,9 +401,7 @@ class QuillinsMenuMixin:
         button_sizer.Realize()
         body.Add(button_sizer, 0, wx.EXPAND | wx.ALL, 8)
 
-        panel.SetSizer(body)
-        outer.Add(panel, 1, wx.EXPAND)
-        dialog.SetSizerAndFit(outer)
+        dialog.SetSizerAndFit(body)
         dialog.SetSize((640, 560))
         if hasattr(dialog, "CentreOnParent"):
             dialog.CentreOnParent()
@@ -468,7 +487,7 @@ class QuillinsMenuMixin:
                 "Select a Quillin folder to install",
                 style=wx.DD_DEFAULT_STYLE,
             ) as ddlg:
-                if ddlg.ShowModal() != wx.ID_OK:
+                if self._show_modal_dialog(ddlg, "Install Quillin") != wx.ID_OK:
                     return
                 src_path = ddlg.GetPath()
             from pathlib import Path
@@ -486,7 +505,9 @@ class QuillinsMenuMixin:
                 refresh_details()
                 self._announce(f"Installed {ext_id}.")
             except Exception as exc:
-                wx.MessageBox(
+                from quill.ui.dialog_contract import show_message_box
+
+                show_message_box(
                     f"Install failed: {exc}",
                     "Install Quillin",
                     wx.OK | wx.ICON_ERROR,

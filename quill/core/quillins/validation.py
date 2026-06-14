@@ -2,7 +2,7 @@
 
 QUILL ships no ``jsonschema`` dependency (see ``pyproject.toml`` — runtime deps
 are only ``regex`` and ``defusedxml``), so the normative manifest contract from
-``docs/scripting.md`` §13 is enforced here in pure, strictly-typed Python, the
+``docs/quillins.md`` §13 is enforced here in pure, strictly-typed Python, the
 same hand-rolled-validator style used by the other ``quill/core`` stores.
 
 The published JSON Schema artifact lives at
@@ -61,7 +61,14 @@ _TOP_LEVEL_KEYS = frozenset({
     "runtime",
     "contributes",
 })
-_CONTRIBUTES_KEYS = frozenset({"commands", "menus", "context_menu", "hotkeys"})
+_CONTRIBUTES_KEYS = frozenset({
+    "commands",
+    "menus",
+    "context_menu",
+    "hotkeys",
+    "sound_pack",
+    "sound_events",
+})
 _COMMAND_KEYS = frozenset({"id", "title", "run"})
 _MENU_KEYS = frozenset({"parent", "command"})
 _CONTEXT_KEYS = frozenset({"command", "when"})
@@ -252,12 +259,21 @@ def _validate_contributes(raw: object, errors: list[str]) -> tuple[Contributions
     menus = _validate_menus(raw.get("menus", []), errors)
     context_menu = _validate_context_menu(raw.get("context_menu", []), errors)
     hotkeys = _validate_hotkeys(raw.get("hotkeys", []), errors)
+    sound_pack = str(raw["sound_pack"]) if isinstance(raw.get("sound_pack"), str) else ""
+    raw_se = raw.get("sound_events")
+    sound_events: tuple[tuple[str, str], ...] = ()
+    if isinstance(raw_se, dict):
+        sound_events = tuple(
+            (str(k), str(v)) for k, v in raw_se.items() if isinstance(k, str) and isinstance(v, str)
+        )
 
     contributions = Contributions(
         commands=tuple(commands),
         menus=menus,
         context_menu=context_menu,
         hotkeys=hotkeys,
+        sound_pack=sound_pack,
+        sound_events=sound_events,
     )
     return contributions, contributed_ids, any_handler
 
@@ -385,7 +401,7 @@ def validate_manifest(
         )
         _validate_command_references(contributions, contributed_ids, builtin_command_ids, errors)
 
-    # docs/scripting.md §15 rule 6: a handler command requires an entry module
+    # docs/quillins.md §15 rule 6: a handler command requires an entry module
     # (Python or Node) and the ui.command capability.
     if any_handler:
         if main is None:

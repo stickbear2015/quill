@@ -12,6 +12,7 @@ Threading contract (same as SSH mixin):
 
 from __future__ import annotations
 
+import contextlib
 import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -58,22 +59,22 @@ class GitHubRemoteMixin:
         if not self._ensure_github_ready():
             return
         token = load_github_token()
-        provider = GitHubRemoteProvider(token=token or None)
-        identity = provider.get_identity()
-        identity_label = (
-            f"{identity.display_name} ({identity.login})"
-            if identity
-            else "Anonymous (public repositories only)"
-        )
-        from quill.ui.github_dialogs import GitHubRepositoryBrowserDialog
+        with contextlib.closing(GitHubRemoteProvider(token=token or None)) as provider:
+            identity = provider.get_identity()
+            identity_label = (
+                f"{identity.display_name} ({identity.login})"
+                if identity
+                else "Anonymous (public repositories only)"
+            )
+            from quill.ui.github_dialogs import GitHubRepositoryBrowserDialog
 
-        result = GitHubRepositoryBrowserDialog(
-            self.frame, provider=provider, identity_label=identity_label
-        ).show()
-        if result is None:
-            self._set_status("GitHub browse cancelled")
-            return
-        self._github_open_file(provider, result, identity)
+            result = GitHubRepositoryBrowserDialog(
+                self.frame, provider=provider, identity_label=identity_label
+            ).show()
+            if result is None:
+                self._set_status("GitHub browse cancelled")
+                return
+            self._github_open_file(provider, result, identity)
 
     def open_github_file_url(self) -> None:
         """File > Open Remote > GitHub File URL..."""
@@ -86,7 +87,7 @@ class GitHubRemoteMixin:
             "Open GitHub File URL",
         ) as dlg:
             dlg.SetName("GitHub file URL")
-            if dlg.ShowModal() != wx.ID_OK:
+            if self._show_modal_dialog(dlg, "Open GitHub File URL") != wx.ID_OK:
                 return
             url = dlg.GetValue().strip()
         if not url:
@@ -102,19 +103,19 @@ class GitHubRemoteMixin:
             return
         owner_repo, ref, path = parsed
         token = load_github_token()
-        provider = GitHubRemoteProvider(token=token or None)
-        identity = provider.get_identity()
-        from quill.core.github.models import BrowseResult, RemoteRepository
+        with contextlib.closing(GitHubRemoteProvider(token=token or None)) as provider:
+            identity = provider.get_identity()
+            from quill.core.github.models import BrowseResult, RemoteRepository
 
-        repo_obj = RemoteRepository(provider="github", full_name=owner_repo)
-        pseudo_result = BrowseResult(
-            repository=repo_obj,
-            path=path,
-            ref=ref,
-            sha="",
-            html_url=url,
-        )
-        self._github_open_file(provider, pseudo_result, identity)
+            repo_obj = RemoteRepository(provider="github", full_name=owner_repo)
+            pseudo_result = BrowseResult(
+                repository=repo_obj,
+                path=path,
+                ref=ref,
+                sha="",
+                html_url=url,
+            )
+            self._github_open_file(provider, pseudo_result, identity)
 
     def github_save_back(self) -> None:
         """File > Open Remote > Save to GitHub..."""
@@ -139,17 +140,20 @@ class GitHubRemoteMixin:
             value=f"Update {Path(origin.path).name}",
         ) as dlg:
             dlg.SetName("Commit message")
-            if dlg.ShowModal() != wx.ID_OK:
+            if self._show_modal_dialog(dlg, "Save to GitHub") != wx.ID_OK:
                 return
             message = dlg.GetValue().strip()
         if not message:
             return
         content = self.document.text.encode("utf-8")
         token = load_github_token()
-        provider = GitHubRemoteProvider(token=token or None)
+        # #35: pass the provider through contextlib.closing so the worker
+        # thread is guaranteed to release the underlying GitHub session
+        # even if the user quits mid-save.
+        provider = contextlib.closing(GitHubRemoteProvider(token=token or None))
         self._set_status(f"Saving {Path(origin.path).name} to GitHub...")
         self._announce(f"Saving {Path(origin.path).name} to GitHub")
-        threading.Thread(
+        threading.Thread(  # GATE-40-OK: short-lived save worker.
             target=self._save_back_worker,
             args=(provider, origin, content, message),
             daemon=True,
@@ -162,9 +166,11 @@ class GitHubRemoteMixin:
         login: str | None = None
         if token:
             try:
-                p = GitHubRemoteProvider(token=token)
-                acc = p.get_identity()
-                login = acc.login if acc else None
+                # #35: bind the identity probe to a context manager so the
+                # throwaway session is closed.
+                with contextlib.closing(GitHubRemoteProvider(token=token)) as p:
+                    acc = p.get_identity()
+                    login = acc.login if acc else None
             except Exception:  # noqa: BLE001
                 pass
         from quill.ui.github_dialogs import GitHubManageAccountsDialog
@@ -229,7 +235,7 @@ class GitHubRemoteMixin:
     ) -> None:
         self._set_status(f"Downloading {Path(result.path).name} from GitHub...")
         self._announce(f"Downloading {Path(result.path).name} from GitHub")
-        threading.Thread(
+        threading.Thread(  # GATE-40-OK: GitHub open worker; bounded by size.
             target=self._open_worker,
             args=(provider, result, identity),
             daemon=True,
@@ -243,7 +249,11 @@ class GitHubRemoteMixin:
     ) -> None:
         wx = self._wx
         try:
-            remote_file = provider.get_file(result.repository, result.path, result.ref)
+            # ``provider`` is a contextlib.closing wrapper so the underlying
+            # GitHub session is released on this worker thread once the
+            # download completes (finding #35).
+            with provider as live_provider:
+                remote_file = live_provider.get_file(result.repository, result.path, result.ref)
             wx.CallAfter(self._on_file_fetched, remote_file, result, identity)
         except Exception as exc:  # noqa: BLE001
             wx.CallAfter(self._on_github_error, str(exc), "Open from GitHub")
@@ -257,11 +267,23 @@ class GitHubRemoteMixin:
         temp_dir = app_data_dir() / "github-temp"
         temp_dir.mkdir(parents=True, exist_ok=True)
         local_path = temp_dir / Path(remote_file.path).name
-        # Decode as UTF-8 with fallback to Latin-1 for binary/encoded files.
+        # #25: the provider rejects binary files at the boundary, so this
+        # decode is now expected to be plain UTF-8.  We still surface a clean
+        # error if the bytes are not valid UTF-8 instead of corrupting them
+        # via latin-1 + UTF-8 round-trip.
         try:
             text = remote_file.content.decode("utf-8")
-        except UnicodeDecodeError:
-            text = remote_file.content.decode("latin-1")
+        except UnicodeDecodeError as exc:
+            self._set_status(f"Refused to open non-UTF-8 file: {exc.reason}")
+            self._announce(f"Could not open {Path(remote_file.path).name}: file is not UTF-8 text.")
+            self._show_message_box(
+                f"{Path(remote_file.path).name} is not a UTF-8 text file.\n"
+                "GitHub's API will not let Quill round-trip binary content "
+                "safely.  Download the file manually instead.",
+                "Open from GitHub",
+                self._wx.ICON_ERROR | self._wx.OK,
+            )
+            return
         local_path.write_text(text, encoding="utf-8", newline="")
 
         account_id = (
@@ -305,15 +327,16 @@ class GitHubRemoteMixin:
     ) -> None:
         wx = self._wx
         try:
-            result = provider.write_file(
-                origin.repository,
-                origin.path,
-                origin.ref,
-                content,
-                origin.sha,
-                message,
-            )
-            wx.CallAfter(self._on_save_back_done, origin, result)
+            with provider as live_provider:
+                new_sha = live_provider.write_file(
+                    origin.repository,
+                    origin.path,
+                    origin.ref,
+                    content,
+                    origin.sha,
+                    message,
+                )
+            wx.CallAfter(self._on_save_back_done, origin, new_sha)
         except Exception as exc:  # noqa: BLE001
             wx.CallAfter(self._on_github_error, str(exc), "Save to GitHub")
 
@@ -337,6 +360,48 @@ class GitHubRemoteMixin:
         self._set_status(f"GitHub error: {message}")
         self._announce(f"GitHub error: {message}")
         self._show_message_box(message, title, self._wx.ICON_ERROR | self._wx.OK)
+
+    # ------------------------------------------------------------------
+    # Cleanup (finding #32)
+
+    def prune_orphaned_github_temp(self) -> int:
+        """Remove GitHub-temp files no longer referenced by an open tab.
+
+        Returns the number of files removed.  Called from
+        :meth:`MainFrame._on_close` so a file opened once and never saved
+        back to GitHub does not linger in the user's app-data directory
+        forever (the original "privacy leak" finding #32).
+
+        The implementation is safe to run repeatedly and silently swallows
+        per-file errors so a single permission glitch does not block the
+        main shutdown path.
+        """
+        try:
+            temp_dir = app_data_dir() / "github-temp"
+        except Exception:  # noqa: BLE001 - paths failure must not crash shutdown
+            return 0
+        if not temp_dir.exists():
+            return 0
+        live_paths = {Path(p).resolve() for p in self._gh_state().origins}
+        removed = 0
+        for entry in temp_dir.iterdir():
+            try:
+                target = entry.resolve()
+            except OSError:
+                continue
+            if target in live_paths:
+                continue
+            try:
+                if entry.is_file() or entry.is_symlink():
+                    entry.unlink()
+                else:
+                    import shutil
+
+                    shutil.rmtree(entry)
+                removed += 1
+            except OSError:
+                continue
+        return removed
 
     # ------------------------------------------------------------------
     # Bind menu items (called from main_frame_menu._bind_events)

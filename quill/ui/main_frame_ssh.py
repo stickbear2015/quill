@@ -69,7 +69,7 @@ class SshEditingMixin:
             with wx.PasswordEntryDialog(
                 self.frame, f"Password for {site.username or ''}@{site.host}", "SSH Password"
             ) as dialog:
-                if dialog.ShowModal() != wx.ID_OK:
+                if self._show_modal_dialog(dialog, "SSH Password") != wx.ID_OK:
                     return None
                 password = dialog.GetValue()
         return ConnectionRequest(
@@ -107,7 +107,9 @@ class SshEditingMixin:
             else:
                 self._wx.CallAfter(self._on_ssh_connected, connection, request)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: SSH connect worker.
+            target=worker, daemon=True
+        ).start()
 
     def _ssh_error(self, message: str) -> None:
         self._set_status(message)

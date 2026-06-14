@@ -271,7 +271,9 @@ class AskAIDialog:
                 return
             wx.CallAfter(self._on_models_loaded, models, "")
 
-        threading.Thread(target=_fetch, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: one-shot startup fetch; self-exits.
+            target=_fetch, daemon=True
+        ).start()
 
     def _on_models_loaded(self, models: list[AIModel], error: str) -> None:
         self._loading = False
@@ -367,7 +369,9 @@ class AskAIDialog:
             except Exception as e:
                 wx.CallAfter(self._on_send_error, str(e))
 
-        threading.Thread(target=_do_send, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: one-shot send worker; posts via CallAfter.
+            target=_do_send, daemon=True
+        ).start()
 
     def _on_response_received(self, response: str, model_id: str, provider_label: str) -> None:
         self._send_btn.Enable()
@@ -379,7 +383,9 @@ class AskAIDialog:
     def _on_send_error(self, error: str) -> None:
         self._send_btn.Enable()
         self._status_label.SetLabel("Error — see details.")
-        wx.MessageBox(
+        from quill.ui.dialog_contract import show_message_box
+
+        show_message_box(
             f"AI request failed:\n\n{error}",
             "Ask AI — Error",
             wx.OK | wx.ICON_ERROR,

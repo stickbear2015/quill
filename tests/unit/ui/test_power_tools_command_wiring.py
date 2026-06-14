@@ -32,8 +32,6 @@ _MENU_SOURCE = Path(eds_menu_module.__file__).read_text(encoding="utf-8")
 # Every power-tool command id that must be both registered and menu-wired.
 _POWER_TOOLS_COMMAND_IDS = [
     "power.insert_special_character",
-    "power.insert_date_time",
-    "power.calculate_and_insert_date",
     "power.insert_file_content",
     "power.new_document_from_clipboard",
     "power.paste_html_as_markdown",
@@ -69,6 +67,9 @@ _POWER_TOOLS_COMMAND_IDS = [
     "power.strip_html_tags",
     "power.decode_html_entities",
     "power.encode_html_entities",
+    "power.encode_all_non_ascii",
+    "power.show_non_ascii",
+    "power.reencode_file",
     "power.shuffle_lines",
     "power.sort_lines_numeric",
     "power.sort_lines_by_length",
@@ -174,7 +175,7 @@ def test_read_only_state_refreshes_on_tab_switch() -> None:
 
 def test_read_only_state_refreshes_on_open() -> None:
     # Newly opened/selected tabs must re-apply a persisted read-only guard.
-    create_tab = _SOURCE[_SOURCE.index("def _create_document_tab") :][:1400]
+    create_tab = _SOURCE[_SOURCE.index("def _create_document_tab") :][:1700]
     assert "self._refresh_read_only_state()" in create_tab
 
 
@@ -225,8 +226,6 @@ def test_menu_recirculation_preserves_shipped_group_order() -> None:
     expected = {
         "insert": [
             "power.insert_special_character",
-            "power.insert_date_time",
-            "power.calculate_and_insert_date",
             "power.insert_file_content",
         ],
         "edit": [
@@ -261,6 +260,9 @@ def test_menu_recirculation_preserves_shipped_group_order() -> None:
             "power.strip_html_tags",
             "power.decode_html_entities",
             "power.encode_html_entities",
+            "power.encode_all_non_ascii",
+            "power.show_non_ascii",
+            "power.reencode_file",
         ],
         "navigate": [
             "power.go_to_percent",

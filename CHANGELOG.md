@@ -1,5 +1,132 @@
 # Changelog
 
+## 0.5.1 — Sound Packs, Compare Mode, Code-Aware Editing, Encoding Tools (2026-06-15)
+
+### New features
+
+- **Save As Word (.docx).** `quill/io/export.py::write_document_as` now routes
+  `.docx` through Pandoc (`gfm -> docx`) via `pandoc.py::convert_file_with_pandoc`,
+  mapping Markdown headings to real Word styles for a navigable document. RTF
+  was already supported; the Save As dialog gains a "Word Document (*.docx)"
+  type (#204).
+- **Citation help (MLA, Chicago, APA).** New pure `quill/core/citations.py`
+  formats book / journal article / website sources in MLA 9, Chicago 17
+  (author-date), and APA 7 — both in-text and bibliography, with per-style
+  author handling (et al., initials, ampersand). **Insert -> Insert Citation...**
+  is an accessible form that inserts the in-text citation, the bibliography
+  entry, or both at the cursor (#203).
+- **QSP sound pack system.** A pluggable earcon engine: `quill/core/sound_pack.py`
+  loads a sound pack (a directory or `.qsp` zip with a `manifest.json` mapping
+  event IDs to WAV files), `quill/ui/sound_manager.py` plays them non-blocking,
+  and `quill/core/sound_events.py` is the canonical `SoundEvent` catalog. Ships
+  the synthesised **Ink** pack plus four **indentation-tone** packs (pentatonic,
+  whole-tone, diatonic, chromatic) that play a pitched tone as the caret crosses
+  indent levels. Partial packs and an overlay architecture let an indent-tone
+  pack layer over a primary pack. **Tools → Reading & Dictation → Sound Events...**
+  toggles individual events; **Toggle Sound Notifications** flips them all and
+  plays a confirming earcon. Quillins can contribute sounds via the host API.
+  Generators: `scripts/gen_ink_sounds.py`, `scripts/gen_indent_tones.py`.
+  Covered by `tests/unit/core/test_sound_pack.py`,
+  `tests/unit/platform/test_sound_player.py` (#181/#182/#184).
+- **Keyboard-first compare mode.** `quill/core/compare_service.py` (pure difflib
+  engine) and `quill/ui/compare_dialog.py` (modal, screen-reader-first) add
+  keyboard difference review: F8/Shift+F8 next/previous, Ctrl+F8 re-announce,
+  Alt+F8 inline word changes, Ctrl+Shift+F8 whitespace toggle. Covered by
+  `tests/unit/core/test_compare_service.py` (#193/#194).
+- **Compare-mode sound events.** Five earcons — `compare_enter_mode`,
+  `compare_exit_mode`, `compare_next_difference`, `compare_previous_difference`,
+  `compare_no_more_differences` — fired across the compare dialog and the legacy
+  F8 session, with a Compare section in the Sound Events dialog. Covered by
+  `tests/unit/core/test_compare_sound_events.py` (#186).
+- **Code-aware editing.** `quill/core/language_profile.py` dispatches a language
+  profile by file extension (Python, JS/TS, Kotlin, Shell, Markdown, JSON, TOML,
+  SQL, plain fallback); `quill/core/token_nav.py` adds Next/Previous Token
+  navigation; **Navigate → Set Document Language** overrides detection. Covered
+  by `tests/unit/core/test_language_profile.py`, `test_token_nav.py` (#181).
+- **Text encoding tools.** `quill/core/encoding_tools.py` (wx-free) backs three
+  Format → HTML & Encoding commands: Show Non-ASCII Characters (review report
+  with Latin-1 / Windows-1252 convertibility), Convert Non-ASCII to HTML Entities
+  (named with numeric fallback), and Re-encode As (UTF-8 / UTF-8 BOM / Latin-1 /
+  Windows-1252 / ASCII, lossless via numeric-entity fallback). Covered by
+  `tests/unit/core/test_encoding_tools.py` (#197).
+- **Speak-status commands.** QUILL-key chords speak the window title
+  (`Ctrl+Shift+Grave, F`), the full file path (`, P`), and a status summary
+  (`, Q`) without leaving the editor (#189).
+- **CLI `--goto` and `--diff`.** `--goto FILE[:LINE[:COL]]` opens a file at a
+  position in one argument; `--diff LEFT RIGHT` opens two files straight into
+  compare mode. `_parse_goto` correctly handles Windows drive-letter paths (#192).
+- **Report a Bug enhancements.** The dialog opens focused on Summary and adds a
+  screen-reader picker (None / JAWS / NVDA / Narrator / VoiceOver / Other,
+  pre-selected from detection) plus remembered name and email fields, all sent
+  with the report (#188).
+- **Compare power features.** Character-level diff highlighting, word-level
+  speech of inline changes, and Compare Selection With Clipboard, alongside the
+  difference list, whitespace options, and accessible speech of the MVP
+  (#193/#194).
+- **Document switching with Ctrl+Tab / Ctrl+Shift+Tab** moves to the next or
+  previous open document (#190).
+- **Persistent startup folder.** A setting controls the initial folder for Open
+  and Save As; file dialogs now default to Documents instead of the install
+  directory (#168).
+- **Feature search** now finds copy tray, macros, and abbreviations (#171).
+- **Developer file extensions** added to the Open dialog wildcard (Kotlin, TS,
+  Go, Rust, and more) (#191); **file-open focus** now lands in the editor with a
+  screen-reader announcement, removing the Alt+Tab workaround (#187).
+- **HEIC/HEIF image support** for AI image description (#164).
+- **About screen** lists all GitHub contributors, fetched from the contributors
+  API with a baked-in offline fallback; Ken Perry and Kelly Ford added.
+
+### Bug fixes and security
+
+- **Setup Wizard accessibility fixes.** The "Play sounds for mode changes"
+  checkbox on step 2 now carries its label on the control, so screen readers
+  announce it instead of an unlabeled checkbox (#208). On step 3, the Feature
+  Profile choices use a single `wx.RadioBox` so arrowing past the last choice
+  wraps within the group instead of escaping into the Back/Next/Cancel buttons,
+  and the group is announced as one labelled control (#209).
+- **Quill exits reliably when run from source.** A modeless top-level window
+  (such as the Ask Quill chat frame) could keep the wx main loop alive after
+  the main window closed, leaving the process running. `_on_close` now destroys
+  straggler top-level windows so the app always exits (#210).
+- **Report a Bug fields are now editable.** The form fields no longer reject
+  keyboard input under NVDA; the dialog was rebuilt without the intermediate
+  `wx.Panel` that broke editing, and moved from Tools to Help (#178). The bug
+  report also no longer blocks the UI thread — the network call runs off-thread
+  with a timeout fallback (#188).
+- **Screen-reader chatter silenced.** JAWS no longer announces "splitter window"
+  and "panel" on menu close and app focus; the layout container is no longer
+  exposed in the accessibility tree (#170).
+- **Describe Image** no longer fails silently — corrected an `AttributeError`
+  on the region-tracking call (#165).
+- **Startup is faster and quieter.** Screen-reader detection is offloaded to a
+  background thread, a WebView2 prewarm crash is fixed, and the title no longer
+  flashes "untitled Quill unavailable" before the app finishes loading
+  (#176/#177). The preview pane no longer hangs for minutes and is dismissable
+  (#174).
+- **First-run experience fixed.** The first window now gains foreground focus so
+  the trust/privacy dialog is reachable (#166); the personalization wizard can be
+  re-triggered after first run (#167); the wizard's startup beep and Cancel
+  focus are fixed.
+- **Crash-recovery snapshot preview** is no longer blank for screen readers
+  (#180).
+- **User guide opens correctly.** It opens as read-only HTML in the browser
+  instead of as an editable Markdown tab (#173), with a glossary of domain terms
+  (#172), and a WebView2 fault no longer throws a `0x8007139f` error — the
+  preview control is caught and rebuilt (#175/#183).
+- **macOS: API keys and tokens persist via the login Keychain** instead of
+  crashing on save when the Windows DPAPI import was unavailable (#160).
+- **macOS notarized build** signs Pillow's bundled dylibs and uses
+  hardened-runtime entitlements, fixing notarization.
+- **Manage Features dialog** and the SSH Quick Connect / Site Manager dialogs
+  were clarified and corrected (#161/#162).
+- **Embedded Python build** bootstraps setuptools and fixes the LicenseFile path.
+- Internal sound-design notes moved out of the repo root (`x.md` → `docs/wsp.md`).
+
+### Governance
+
+- **Kelly Ford** added as a project owner (contributors list, CODEOWNERS, and
+  repo maintain access) alongside the existing maintainers.
+
 ## 0.5.0 — Developer Console, GitHub Integration, Keyboard Packs, Autoupdate (2026-06-12)
 
 ### New features
@@ -11,18 +138,24 @@
   repositories (File > Open Remote > GitHub). Token stored in Windows Credential
   Manager; first-use consent dialog before any network call.
 - **Keyboard packs (.kqp).** Export and import complete keybinding sets as
-  self-contained `.kqp` zip archives (File > Keyboard Pack). Validated on import;
+  self-contained `.kqp` JSON files (File > Keyboard Pack). Validated on import;
   atomic write on export.
 - **Autoupdate pipeline.** Vendored `accessibleapps/app_updater` under
   `quill/_vendor/autoupdate`; release scripts (`build_update_zip.py`,
   `fetch_bootstrappers.py`, `generate_file_manifest.py`) produce
   installer-compatible update ZIPs with SHA-256 manifests.
-- **Context-sensitive help.** `Alt+H` announces the most relevant shortcuts for
-  the current focus context. Implemented in `quill/ui/context_help.py`.
+- **Context-sensitive help.** `Ctrl+Shift+Grave, Shift+H` announces the most relevant shortcuts for
+  the current focus context (`Alt+H` is reserved for the Help menu mnemonic).
+  F1 shows per-control help; Shift+F1 opens "What Can I Do Here?".
+  Implemented in `quill/ui/context_help.py` and `quill/ui/main_frame.py`.
 - **Setup wizard.** First-run nine-page wizard guides new users through screen
   reader, AI, SSH, and cloud configuration.
-- **Translation infrastructure.** Babel-based i18n scaffolding; all user-facing
-  strings in new modules wrapped with `_()`.
+- **Translation infrastructure.** Babel-based i18n scaffolding: `quill/locale/quill.pot`
+  template, `babel.cfg` extraction config, and `quill/core/i18n.py` runtime loader.
+  Strings in legacy modules and several new 0.5.0 surfaces (GitHub provider,
+  update flow status strings) are not yet wrapped with `_()`. No translations are
+  shipped; the `.pot` template is the floor. See
+  `docs/localization/translation-contributor-plan.md` for contribution workflow.
 - **Per-provider model memory.** AI chat remembers the last selected model per
   provider and restores it on next open.
 
@@ -34,7 +167,7 @@
   stalled). Purged from `pyproject.toml`, CI, and scripts.
 - Stray `leasey.html` at repo root removed.
 
-## Security Hardening and UX Delight (1.0 Release Pass)
+## Security Hardening and UX Delight — 1.0 Release Pass (2026-05-01)
 
 This section records the 13 HIGH-severity security fixes, 16 UX delight features, and the LOW/NIT fixes applied during the pre-1.0 code review. All items below were open in `issues.md` before this pass and are now closed.
 
@@ -64,7 +197,7 @@ This section records the 13 HIGH-severity security fixes, 16 UX delight features
 - **Live contrast checker (`Ctrl+Shift+Grave, Shift+C`).** `announce_contrast_ratio()` computes the WCAG 2.1 relative-luminance ratio for the current theme and announces it. Also fires automatically after `_apply_theme()`.
 - **Magic Paste (`Ctrl+Alt+V`).** `magic_paste()` inspects the clipboard for a URL, Markdown block, or base64 image and presents a picker before inserting.
 - **Recovery diff UX.** `_offer_crash_recovery()` now includes a 30-line read-only snapshot preview so users can review content before deciding to restore.
-- **Status bar context help (`Alt+H`).** `show_context_help()` announces the most useful keys for the current mode in priority order.
+- **Status bar context help (`Ctrl+Shift+Grave, Shift+H`).** `announce_context_mode_shortcuts()` announces the most useful keys for the current mode in priority order. (`Alt+H` is reserved for the Help menu mnemonic.)
 - **Soft error recovery link.** `_show_error_with_hint()` is used for file-open, export, and import errors. A "What to try next..." toggle reveals a `wx.TE_READONLY` area with contextual guidance.
 - **TTS fallback announcement.** `_check_tts_fallback_on_startup()` fires at startup and announces "Screen reader fallback active. F8 to retry TTS." when `pyttsx3` could not be initialised. `retry_tts_init()` exposed in `prism_bridge.py`.
 - **Recovery `had_replacements` note.** `read_recovery_snapshot()` returns `(text, had_replacements)`; the recovery dialog shows a warning when replacement characters are detected.

@@ -9,16 +9,23 @@ relies on its helpers: ``self.editor``, ``self.document``, ``self.settings``,
 ``self._create_document_tab`` and the ``_apply_*`` mutation helpers.
 
 The wx-free logic lives in dedicated ``quill/core`` modules (unicode_insert,
-datetime_insert, wrap_ops, set_ops, regex_ops, cursor_address, indent_infer,
-clipboard_collector, key_describer, run_target) and ``quill/core/line_ops``; this
-layer only wires those into the editor, dialogs, and announcements.
+wrap_ops, set_ops, regex_ops, cursor_address, indent_infer, clipboard_collector,
+key_describer, run_target) and ``quill/core/line_ops``; this layer only wires
+those into the editor, dialogs, and announcements.
+
+NOTE: the former ``insert_date_time`` and ``calculate_and_insert_date`` EDS-2
+and EDS-3 methods were removed in lock-step with the date/time consolidation
+that moved all Insert-menu date/time items into the bundled
+``com.quill.bundled.insert-tools`` Quillin (``Insert > Date and Time``).
+``quill.core.datetime_insert`` is no longer imported here for that reason;
+``datetime.now`` is still used for unrelated helpers (clipboard collector,
+session metadata).
 """
 
 from __future__ import annotations
 
 import os
 import webbrowser
-from datetime import datetime
 from pathlib import Path
 
 from quill.core import format_ops as _fmt
@@ -28,12 +35,6 @@ from quill.core.cursor_address import (
     describe_document_status,
     describe_selection_length,
     offset_for_percent,
-)
-from quill.core.datetime_insert import (
-    DEFAULT_DATETIME_FORMAT,
-    calculate_date,
-    format_datetime,
-    parse_weekday,
 )
 from quill.core.document import Document
 from quill.core.html_to_markdown import extract_cf_html_fragment, html_to_markdown
@@ -59,8 +60,6 @@ from quill.core.run_target import classify_target, is_dangerous_executable, targ
 from quill.core.set_ops import format_lines, lines_common_to_both, lines_in_first_not_second
 from quill.core.storage import read_json, write_json_atomic
 from quill.core.unicode_insert import CodepointError, parse_codepoint
-
-_DATE_INSERT_FORMAT = "%Y-%m-%d"
 
 
 class PowerToolsActionsMixin:
@@ -191,60 +190,14 @@ class PowerToolsActionsMixin:
             return
         self._power_tools_insert_at_cursor(character, f"Inserted U+{ord(character):04X}")
 
-    # --------------------------------------------------------- EDS-2 date/time
-    def insert_date_time(self) -> None:
-        fmt = str(getattr(self.settings, "datetime_insert_format", "") or DEFAULT_DATETIME_FORMAT)
-        rendered = format_datetime(datetime.now(), fmt)
-        self._power_tools_insert_at_cursor(rendered, f"Inserted date and time: {rendered}")
-
-    # ------------------------------------------------------- EDS-3 calc a date
-    def calculate_and_insert_date(self) -> None:
-        from quill.ui.web_form import show_web_form
-
-        now = datetime.now()
-        values = show_web_form(
-            self.frame,
-            self._wx,
-            title="Calculate Date",
-            intro=(
-                "Enter a year and month, then either a fixed day, or a week and "
-                "weekday (for example week 4, Thursday for the 4th Thursday)."
-            ),
-            fields=[
-                {"name": "year", "label": "Year", "type": "text", "value": str(now.year)},
-                {"name": "month", "label": "Month (1-12)", "type": "text", "value": str(now.month)},
-                {"name": "day", "label": "Day of month (optional)", "type": "text", "value": ""},
-                {
-                    "name": "week",
-                    "label": "Week (optional, -1 = last)",
-                    "type": "text",
-                    "value": "",
-                },
-                {
-                    "name": "weekday",
-                    "label": "Weekday name (optional)",
-                    "type": "text",
-                    "value": "",
-                },
-            ],
-        )
-        if values is None:
-            return
-        try:
-            year = int(str(values.get("year", "")).strip())
-            month = int(str(values.get("month", "")).strip())
-            day_raw = str(values.get("day", "")).strip()
-            week_raw = str(values.get("week", "")).strip()
-            weekday_raw = str(values.get("weekday", "")).strip()
-            day = int(day_raw) if day_raw else None
-            week = int(week_raw) if week_raw else None
-            weekday = parse_weekday(weekday_raw) if weekday_raw else None
-            result = calculate_date(year, month, day=day, week=week, weekday=weekday)
-        except ValueError as error:
-            self._set_status(f"Could not calculate date: {error}")
-            return
-        rendered = result.strftime(_DATE_INSERT_FORMAT)
-        self._power_tools_insert_at_cursor(rendered, f"Inserted date: {rendered}")
+    # NOTE: EDS-2 (``insert_date_time``) and EDS-3 (``calculate_and_insert_date``)
+    # were removed in the date/time consolidation that moved all Insert-menu
+    # date/time items into the bundled ``com.quill.bundled.insert-tools``
+    # Quillin (``Insert > Date and Time``). The handlers used to live here and
+    # the corresponding ``power.insert_date_time`` / ``power.calculate_and_insert_date``
+    # commands are no longer registered. ``quill.core.datetime_insert`` still
+    # exists for tests and downstream callers but is no longer imported by this
+    # module.
 
     # ----------------------------------- EDS-4/5 line transforms (migrated)
     # ``number_lines`` and ``hard_wrap_lines`` moved onto the contribution
@@ -585,6 +538,35 @@ class PowerToolsActionsMixin:
         if message is not None:
             self._announce(message)
 
+    def _maybe_play_indent_tone(self) -> None:
+        """Play a pitched tone when the caret moves to a new indent level.
+
+        Off unless the user picks a scale in Preferences (``indent_tone_scale``).
+        The level is ``indent columns // indent size`` clamped to 0-7, matching
+        the 8 levels the tone packs ship. Blank / whitespace-only lines hold the
+        previous level so cursoring through gaps stays silent.
+        """
+        scale = str(getattr(self.settings, "indent_tone_scale", "") or "")
+        if not scale:
+            return
+        text = self.editor.GetValue()
+        cursor = self.editor.GetInsertionPoint()
+        line_start = text.rfind("\n", 0, cursor) + 1
+        newline = text.find("\n", cursor)
+        line_end = len(text) if newline == -1 else newline
+        if not text[line_start:line_end].strip():
+            return
+        indent_size = int(getattr(self.settings, "indent_size", 4) or 4)
+        level = max(0, min(7, self._current_indent_columns() // max(1, indent_size)))
+        previous = getattr(self, "_indent_tone_last_level", None)
+        self._indent_tone_last_level = level
+        if previous is None or level == previous:
+            return
+        direction = "up" if level > previous else "down"
+        from quill.ui.sound_manager import post_sound
+
+        post_sound(f"indent_level_{level}_{direction}")
+
     def infer_indent(self) -> None:
         unit = infer_indent_unit(self.editor.GetValue())
         description = describe_indent_unit(unit)
@@ -720,6 +702,67 @@ class PowerToolsActionsMixin:
         self._power_tools_transform_selection_or_document(
             _fmt.encode_html_entities, "Encoded HTML entities"
         )
+
+    # ----------------------------------------- #197 encoding tools
+    def show_non_ascii(self) -> None:
+        """Open a read-only report of every non-ASCII character (#197)."""
+        from quill.core import encoding_tools
+
+        report = encoding_tools.summarize_non_ascii(self.editor.GetValue())
+        self._power_tools_open_text_in_new_buffer(report, "Non-ASCII characters")
+
+    def encode_all_non_ascii(self) -> None:
+        """Replace every non-ASCII character with its HTML entity (#197)."""
+        from quill.core import encoding_tools
+
+        self._power_tools_transform_selection_or_document(
+            encoding_tools.encode_non_ascii_to_entities,
+            "Converted non-ASCII characters to HTML entities",
+        )
+
+    def reencode_file(self) -> None:
+        """Save a copy of the document in a chosen text encoding (#197)."""
+        from quill.core import encoding_tools
+
+        wx = self._wx
+        text = self.editor.GetValue()
+        labels = [label for _codec, label in encoding_tools.ENCODING_CHOICES]
+        with wx.SingleChoiceDialog(
+            self.frame,
+            "Choose the target encoding for the saved copy:",
+            "Re-encode As",
+            labels,
+        ) as chooser:
+            if self._show_modal_dialog(chooser, "Re-encode As") != wx.ID_OK:
+                self._set_status("Re-encode cancelled")
+                return
+            index = chooser.GetSelection()
+        if index == wx.NOT_FOUND:
+            self._set_status("Re-encode cancelled")
+            return
+        codec, label = encoding_tools.ENCODING_CHOICES[index]
+        data = encoding_tools.reencode_text(text, codec)
+
+        default_dir = ""
+        if hasattr(self, "_file_dialog_default_dir"):
+            default_dir = self._file_dialog_default_dir()
+        with wx.FileDialog(
+            self.frame,
+            f"Save re-encoded copy ({label})",
+            defaultDir=default_dir,
+            wildcard="All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as dialog:
+            if self._show_modal_dialog(dialog, "Save re-encoded copy") != wx.ID_OK:
+                self._set_status("Re-encode cancelled")
+                return
+            target = Path(dialog.GetPath())
+        try:
+            target.write_bytes(data)
+        except OSError as error:
+            self._set_status(f"Could not write file: {error}")
+            return
+        self._set_status(f"Saved re-encoded copy ({label}) to {target}")
 
     # -------------------------------------- EDS-22 line-level TextMonkey transforms
     def trim_blank_lines(self) -> None:

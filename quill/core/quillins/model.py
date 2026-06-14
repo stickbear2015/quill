@@ -2,7 +2,7 @@
 
 This module is the wx-free, dependency-free heart of the Quillins framework. It
 defines the immutable data model for a ``quill.extension/1`` manifest (the same
-contract documented in ``docs/scripting.md`` §13), the catalogue of capabilities
+contract documented in ``docs/quillins.md`` §13), the catalogue of capabilities
 an extension may request, the host API version, and the typed errors an author
 or the host may encounter.
 
@@ -26,7 +26,7 @@ RUNTIME_PYTHON = "python"
 RUNTIME_NODE = "node"
 RUNTIMES: frozenset[str] = frozenset({RUNTIME_PYTHON, RUNTIME_NODE})
 
-# Capability catalogue (docs/scripting.md §14.1). Default-deny: an extension may
+# Capability catalogue (docs/quillins.md §14.1). Default-deny: an extension may
 # only do what it declares, and ``fs.*``/``net`` additionally pass the per-action
 # consent gate at runtime. A pure snippet-only Quillin declares none of these.
 CAP_EDITOR_READ = "editor.read"
@@ -68,7 +68,13 @@ CONSENT_GATED_CAPABILITIES: frozenset[str] = frozenset({
     CAP_NET,
 })
 
-# The fixed set of top-level menus an extension may attach a command under.
+# The fixed set of menu parents an extension may attach a command under.
+# These are the conventional top-level menus ("File", "Insert", ...) and a
+# handful of conventional submenu names (e.g. "Date and Time") that the host
+# builds and exposes to Quillins. The host maps each parent string to the
+# correct live wx menu; submenu parents are routed to the dedicated submenu
+# declared in ``quill/ui/main_frame_menu.py`` and skip the conventional
+# "Append a separator + the item" path used for the top-level menus.
 MENU_PARENTS: tuple[str, ...] = (
     "File",
     "Edit",
@@ -79,6 +85,10 @@ MENU_PARENTS: tuple[str, ...] = (
     "Search",
     "View",
     "Help",
+    # Conventional submenu parents. Keep this list in lock-step with the
+    # submenus actually built by ``quill.ui.main_frame_menu._build_menus``
+    # and with the schema enum in ``quill/core/schemas/extension.json``.
+    "Date and Time",
 )
 
 # Optional visibility guards for a context-menu contribution.
@@ -189,6 +199,10 @@ class Contributions:
     menus: tuple[MenuContribution, ...] = ()
     context_menu: tuple[ContextMenuContribution, ...] = ()
     hotkeys: tuple[HotkeyContribution, ...] = ()
+    # QSP: optional sound pack shipped inside the extension bundle.
+    # sound_pack is a relative directory path; sound_events maps event IDs to WAV filenames.
+    sound_pack: str = ""
+    sound_events: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

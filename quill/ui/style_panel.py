@@ -83,7 +83,9 @@ class TrainStyleDialog:
             avail, reason = assistant.is_available()
             self._wx.CallAfter(self._on_ai_availability_checked, avail, reason)
 
-        threading.Thread(target=_check_avail, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: AI availability probe.
+            target=_check_avail, daemon=True
+        ).start()
 
     def _on_ai_availability_checked(self, available: bool, reason: str | None) -> None:
         if not available:
@@ -146,7 +148,9 @@ class TrainStyleDialog:
                 guide = f"Error: {exc}"
             self._wx.CallAfter(self._deliver_guide, guide)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(  # GATE-40-OK: style-guide build worker.
+            target=worker, daemon=True
+        ).start()
 
     def _deliver_guide(self, guide: str) -> None:
         self.guide.SetValue(guide)
