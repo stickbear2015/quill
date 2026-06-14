@@ -20549,57 +20549,77 @@ class MainFrame(
             self._set_status("No predictions available")
 
     def _prompt_snippet_editor(self, existing: Snippet | None = None) -> Snippet | None:
+        # One accessible dialog with an explicitly named field per value, instead
+        # of a chain of wx.TextEntryDialog prompts. On macOS a TextEntryDialog's
+        # prompt does not become the edit control's accessible name, so VoiceOver
+        # read the snippet fields as unlabeled (issue #212). Each TextCtrl below
+        # gets a visible StaticText label and a matching SetName, and validation
+        # happens in-dialog so a blind user hears which field is missing rather
+        # than the dialog closing silently.
         wx = self._wx
         name = existing.name if existing is not None else ""
         trigger = existing.trigger if existing is not None else ";"
         description = existing.description if existing is not None else ""
         body = existing.body if existing is not None else "${cursor}"
-        with wx.TextEntryDialog(
-            self.frame,
-            "Snippet name:",
-            "Edit Snippet" if existing is not None else "New Snippet",
-            value=name,
-        ) as name_dialog:
-            if self._show_modal_dialog(name_dialog, "Snippet Name") != wx.ID_OK:
+
+        title = "Edit Snippet" if existing is not None else "New Snippet"
+        with wx.Dialog(self.frame, title=title) as dialog:
+            root = wx.BoxSizer(wx.VERTICAL)
+
+            def _field(label_text: str, accessible_name: str, value: str, *, multiline=False):
+                root.Add(wx.StaticText(dialog, label=label_text), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+                style = wx.TE_MULTILINE if multiline else 0
+                ctrl = wx.TextCtrl(
+                    dialog, value=value, style=style, size=(-1, 90) if multiline else (-1, -1)
+                )
+                ctrl.SetName(accessible_name)
+                root.Add(ctrl, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 8)
+                return ctrl
+
+            name_ctrl = _field("&Name (required):", "Name", name)
+            trigger_ctrl = _field("&Trigger (required, example: ;meeting):", "Trigger", trigger)
+            description_ctrl = _field("&Description (optional):", "Description", description)
+            body_ctrl = _field(
+                "&Body (required) - supports ${input:name}, ${choice:a|b}, "
+                "${date}, ${time}, ${cursor}:",
+                "Body",
+                body,
+                multiline=True,
+            )
+
+            buttons = dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
+            if buttons is not None:
+                root.Add(buttons, 0, wx.EXPAND | wx.ALL, 8)
+            apply_modal_ids(dialog, affirmative_id=wx.ID_OK, escape_id=wx.ID_CANCEL)
+            dialog.SetSizerAndFit(root)
+
+            def _on_ok(event: object) -> None:
+                # Validate before closing so the missing field is announced and
+                # focus moves to it; the dialog stays open to be corrected.
+                if not name_ctrl.GetValue().strip():
+                    self._announce("Snippet name is required")
+                    name_ctrl.SetFocus()
+                    return
+                if not trigger_ctrl.GetValue().strip():
+                    self._announce("Snippet trigger is required")
+                    trigger_ctrl.SetFocus()
+                    return
+                if not body_ctrl.GetValue():
+                    self._announce("Snippet body is required")
+                    body_ctrl.SetFocus()
+                    return
+                event.Skip()
+
+            dialog.Bind(wx.EVT_BUTTON, _on_ok, id=wx.ID_OK)
+            name_ctrl.SetFocus()
+            dialog._quill_keep_initial_focus = True
+            if self._show_modal_dialog(dialog, title) != wx.ID_OK:
                 return None
-            name = name_dialog.GetValue().strip()
-        if not name:
-            self._set_status("Snippet name is required")
-            return None
-        with wx.TextEntryDialog(
-            self.frame,
-            "Trigger text (example: ;meeting):",
-            "Snippet Trigger",
-            value=trigger,
-        ) as trigger_dialog:
-            if self._show_modal_dialog(trigger_dialog, "Snippet Trigger") != wx.ID_OK:
-                return None
-            trigger = trigger_dialog.GetValue().strip()
-        if not trigger:
-            self._set_status("Snippet trigger is required")
-            return None
-        with wx.TextEntryDialog(
-            self.frame,
-            "Optional description:",
-            "Snippet Description",
-            value=description,
-        ) as description_dialog:
-            if self._show_modal_dialog(description_dialog, "Snippet Description") != wx.ID_OK:
-                return None
-            description = description_dialog.GetValue().strip()
-        with wx.TextEntryDialog(
-            self.frame,
-            "Snippet body (supports ${input:name}, ${choice:a|b}, ${date}, ${time}, ${cursor}):",
-            "Snippet Body",
-            value=body,
-            style=wx.OK | wx.CANCEL | wx.TE_MULTILINE,
-        ) as body_dialog:
-            if self._show_modal_dialog(body_dialog, "Snippet Body") != wx.ID_OK:
-                return None
-            body = body_dialog.GetValue()
-        if not body:
-            self._set_status("Snippet body is required")
-            return None
+            name = name_ctrl.GetValue().strip()
+            trigger = trigger_ctrl.GetValue().strip()
+            description = description_ctrl.GetValue().strip()
+            body = body_ctrl.GetValue()
+
         if existing is not None:
             snippet_id = existing.id
         else:
