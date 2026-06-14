@@ -50,6 +50,10 @@ ui = [
     "html_to_text>=0.1.0",
 ]
 spellcheck = ["pyenchant>=3.3.0"]
+# Cross-platform earcon audio via BASS (Un4seen). Enables true mixing so multiple
+# sounds can play simultaneously. Falls back to winsound (Windows) or silence without
+# this extra. Confirm Un4seen commercial license terms before paid distribution.
+audio = ["sound_lib>=0.8.8"]
 # Edit files over SSH/SFTP (issue #139): browse a remote host, download to edit,
 # upload on save with a tilde backup. paramiko handles password and OpenSSH-key
 # auth; it is optional so the rest of Quill runs without it.
@@ -122,6 +126,8 @@ packages = ["quill"]
 "quill/data/th_en_US_LICENSE.txt" = "quill/data/th_en_US_LICENSE.txt"
 "quill/data/th_en_US_WordNet_LICENSE.txt" = "quill/data/th_en_US_WordNet_LICENSE.txt"
 "quill/core/schemas/extension.json" = "quill/core/schemas/extension.json"
+"quill/core/schemas/sound_pack.json" = "quill/core/schemas/sound_pack.json"
+"quill/assets/sound_packs" = "quill/assets/sound_packs"
 "quill/quillins_bundled" = "quill/quillins_bundled"
 
 [tool.pytest.ini_options]
