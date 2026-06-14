@@ -1157,6 +1157,13 @@ class MainFrame(
             self._refresh_title()
         except Exception:
             self._report_startup_task_failure("startup finalization")
+        if not safe_mode:
+            try:
+                from quill.ui import sound_manager
+
+                sound_manager.init(self.settings)
+            except Exception:
+                self._report_startup_task_failure("sound manager init")
 
     @property
     def _help_frame(self) -> object:
@@ -1981,6 +1988,18 @@ class MainFrame(
             "Toggle Announcement Trace Capture",
             self.toggle_announcement_trace_capture,
             None,
+        )
+        self.commands.register(
+            "tools.sound_toggle",
+            "Toggle Sound Notifications",
+            self.toggle_sound,
+            self._binding_for("tools.sound_toggle"),
+        )
+        self.commands.register(
+            "tools.sound_events",
+            "Manage Sound Events",
+            self.open_sound_events_dialog,
+            self._binding_for("tools.sound_events"),
         )
         self.commands.register(
             "tools.dictation_toggle",
@@ -3255,6 +3274,8 @@ class MainFrame(
             "tools.dictionary_status": self._id_dictionary_status,
             "tools.announcement_backend": self._id_announcement_backend,
             "tools.announcement_trace_toggle": self._id_toggle_announcement_trace,
+            "tools.sound_toggle": self._id_toggle_sound,
+            "tools.sound_events": self._id_sound_events,
             "tools.watch_folder_toggle": self._id_watch_folder_toggle,
             "tools.watch_folder_settings": self._id_watch_folder_settings,
             "tools.watch_folder_status": self._id_watch_folder_status,
@@ -3977,6 +3998,7 @@ class MainFrame(
     def _on_editor_caret_activity(self, event: object) -> None:
         self._refresh_statusbar()
         self._maybe_announce_indent()
+        self._maybe_play_indent_tone()
         event.Skip()
 
     def _on_editor_key_up(self, event: object) -> None:
@@ -5202,6 +5224,12 @@ class MainFrame(
         save_settings(self.settings)
         self.flush_persistent_undo()
         mark_clean_exit(self.session_id)
+        try:
+            from quill.ui import sound_manager
+
+            sound_manager.shutdown()
+        except Exception:  # noqa: BLE001
+            pass
         event.Skip()
 
     def _on_iconize(self, event: object) -> None:
@@ -6653,6 +6681,10 @@ class MainFrame(
         self._location_ring = LocationRing()
         self._location_ring.record(0)
         self._set_status("New document")
+        from quill.core.sound_events import SoundEvent
+        from quill.ui.sound_manager import post_sound
+
+        post_sound(SoundEvent.DOCUMENT_CREATED)
 
     def _file_dialog_default_dir(self) -> str:
         """Return the best initial directory for a file open/save dialog (#168).
@@ -7717,6 +7749,10 @@ class MainFrame(
         self.flush_persistent_undo()
         self._refresh_title()
         self._set_status(f"Saved {self.document.name}")
+        from quill.core.sound_events import SoundEvent
+        from quill.ui.sound_manager import post_sound
+
+        post_sound(SoundEvent.DOCUMENT_SAVED)
         # If this file was opened over SSH, upload it back to the remote host
         # with a tilde backup in its original newline style (#139).
         self.maybe_upload_remote_on_save()
@@ -8675,6 +8711,12 @@ class MainFrame(
         self._refresh_title()
         self._refresh_view_menu_checks()
         self._clear_navigation_issue_state()
+        try:
+            from quill.ui import sound_manager
+
+            sound_manager.on_settings_changed(self.settings)
+        except Exception:  # noqa: BLE001
+            pass
         self._set_status(status)
 
     def open_menu_editor(self) -> None:
@@ -9891,6 +9933,40 @@ class MainFrame(
         """Open Settings at the Accessibility tab where announcement trace can be toggled."""
         self.open_general_preferences()
         self._set_status("Announcement trace setting is in Settings > Accessibility")
+
+    def toggle_sound(self, enabled: bool | None = None) -> None:
+        from quill.core.settings import save_settings
+        from quill.core.sound_events import SoundEvent
+        from quill.ui import sound_manager
+
+        current = bool(getattr(self.settings, "sound_enabled", True))
+        if enabled is None:
+            enabled = not current
+        if not enabled:
+            sound_manager.post_sound(SoundEvent.SOUND_OFF)
+        self.settings.sound_enabled = enabled
+        save_settings(self.settings)
+        sound_manager.on_settings_changed(self.settings)
+        if enabled:
+            sound_manager.post_sound(SoundEvent.SOUND_ON)
+        state = "on" if enabled else "off"
+        self._announce(f"Sound notifications {state}")
+        self._set_status(f"Sound notifications {state}")
+
+    def open_sound_events_dialog(self) -> None:
+        from quill.core.settings import save_settings
+        from quill.ui import sound_manager
+        from quill.ui.sound_events_dialog import SoundEventsDialog
+
+        disabled_str = str(getattr(self.settings, "sound_events_disabled", ""))
+        disabled = frozenset(e.strip() for e in disabled_str.split(",") if e.strip())
+        loaded = sound_manager.get_loaded_events()
+        dialog = SoundEventsDialog(self.frame, disabled, loaded_events=loaded or None)
+        result = self._show_modal_dialog(dialog, "Sound Events")
+        if result == self._wx.ID_OK:
+            self.settings.sound_events_disabled = dialog.get_disabled()
+            save_settings(self.settings)
+            sound_manager.on_settings_changed(self.settings)
 
     def _set_keyboard_pack(self, pack_name: str) -> None:
         self.settings.keyboard_pack = pack_name
@@ -17672,6 +17748,10 @@ class MainFrame(
             return
         if not matches:
             self._set_status("No matches found")
+            from quill.core.sound_events import SoundEvent
+            from quill.ui.sound_manager import post_sound
+
+            post_sound(SoundEvent.SEARCH_NOT_FOUND)
             return
 
         cursor = self.editor.GetInsertionPoint()
@@ -17700,6 +17780,10 @@ class MainFrame(
 
         if chosen is None:
             self._set_status("No matches found from the current position")
+            from quill.core.sound_events import SoundEvent
+            from quill.ui.sound_manager import post_sound
+
+            post_sound(SoundEvent.SEARCH_NOT_FOUND)
             return
 
         start, end = chosen
@@ -17716,6 +17800,10 @@ class MainFrame(
             " (wrapped)" if wrapped and getattr(self.settings, "announce_wrap", True) else ""
         )
         self._set_status(f"Found {direction} at position {start + 1}{wrap_suffix}")
+        from quill.core.sound_events import SoundEvent
+        from quill.ui.sound_manager import post_sound
+
+        post_sound(SoundEvent.SEARCH_WRAPPED if wrapped else SoundEvent.SEARCH_FOUND)
 
     def _ensure_extend_selection_anchor(self) -> None:
         if not self._extend_selection_mode or self._extend_selection_anchor is not None:
