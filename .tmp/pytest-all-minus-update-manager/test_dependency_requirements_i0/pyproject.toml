@@ -1,9 +1,0 @@
-[build-system]
-requires = ["hatchling>=1.0"]
-
-[project]
-dependencies = ["requests>=2"]
-
-[project.optional-dependencies]
-dev = ["pytest>=9"]
-ui = ["wxPython>=4.2.5"]

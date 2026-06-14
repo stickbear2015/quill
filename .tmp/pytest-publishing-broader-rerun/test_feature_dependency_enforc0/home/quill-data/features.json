@@ -1,9 +1,0 @@
-{
-  "active_profile_id": "essential",
-  "overrides": {
-    "core.search": "on",
-    "core.search.regex": "on"
-  },
-  "previous_profile_id": null,
-  "show_quiet_features": true
-}

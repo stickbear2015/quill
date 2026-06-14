@@ -1,7 +1,0 @@
-{
-  "extension_map": {
-    ".py": "writer"
-  },
-  "prompt_on_modifier": false,
-  "prompt_on_startup": true
-}

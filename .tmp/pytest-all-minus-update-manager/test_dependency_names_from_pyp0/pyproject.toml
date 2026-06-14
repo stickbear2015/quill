@@ -1,4 +1,0 @@
-[project]
-dependencies = ["requests>=2", "rich==13"]
-[project.optional-dependencies]
-dev = ["pytest>=8"]

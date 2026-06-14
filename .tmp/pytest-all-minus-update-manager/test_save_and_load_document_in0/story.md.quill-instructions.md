@@ -1,1 +1,0 @@
-Second person, present tense.
