@@ -5379,6 +5379,31 @@ class MainFrame(
         enabled = bool(event.IsChecked())
         self.toggle_extend_selection_mode(enabled)
 
+    def _clear_recovery_logs(self, logs_path: Path) -> int:
+        """Delete log files in *logs_path*; return how many were removed.
+
+        A file held open by the active logger (typically the current
+        ``quill.log`` on Windows) cannot be unlinked, so it is truncated to zero
+        bytes instead and still counted as cleared. Best effort: anything that
+        can be neither removed nor truncated is skipped.
+        """
+        removed = 0
+        try:
+            entries = [entry for entry in logs_path.iterdir() if entry.is_file()]
+        except OSError:
+            return 0
+        for entry in entries:
+            try:
+                entry.unlink()
+                removed += 1
+            except OSError:
+                try:
+                    entry.write_bytes(b"")
+                    removed += 1
+                except OSError:
+                    continue
+        return removed
+
     def _offer_crash_recovery(self) -> None:
         if not self._recovery_offers:
             return
@@ -5456,12 +5481,14 @@ class MainFrame(
 
         restore_button = wx.Button(dialog, id=wx.ID_YES, label="Restore Latest Snapshot")
         open_logs_button = wx.Button(dialog, label="Open Logs Folder")
+        clear_logs_button = wx.Button(dialog, label="Clear Logs")
         save_diagnostics_button = wx.Button(dialog, label="Save Diagnostics...")
         skip_label = "Discard and Continue" if offer.dismissal_count >= 3 else "Skip Recovery"
         skip_button = wx.Button(dialog, id=wx.ID_NO, label=skip_label)
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         buttons.Add(restore_button, 0, wx.RIGHT, 6)
         buttons.Add(open_logs_button, 0, wx.RIGHT, 6)
+        buttons.Add(clear_logs_button, 0, wx.RIGHT, 6)
         buttons.Add(save_diagnostics_button, 0, wx.RIGHT, 6)
         buttons.AddStretchSpacer(1)
         buttons.Add(skip_button, 0)
@@ -5470,6 +5497,7 @@ class MainFrame(
 
         restore_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_YES))
         open_logs_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_APPLY))
+        clear_logs_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_CLEAR))
         save_diagnostics_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_SAVE))
         skip_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_NO))
         dialog.SetDefaultItem(restore_button)
@@ -5484,6 +5512,21 @@ class MainFrame(
                 )
                 if result == wx.ID_APPLY:
                     self.open_logs_folder()
+                    continue
+                if result == wx.ID_CLEAR:
+                    removed = self._clear_recovery_logs(logs_path)
+                    if removed:
+                        message = (
+                            f"Removed {removed} log file{'s' if removed != 1 else ''} from:\n"
+                            f"{logs_path}"
+                        )
+                    else:
+                        message = f"There were no log files to remove in:\n{logs_path}"
+                    with wx.MessageDialog(
+                        self.frame, message, "Logs Cleared", wx.OK | wx.ICON_INFORMATION
+                    ) as confirm:
+                        self._show_modal_dialog(confirm, "Logs Cleared", restore_editor_focus=False)
+                    self._set_status(f"Cleared {removed} log file(s)")
                     continue
                 if result == wx.ID_SAVE:
                     self.save_diagnostics_bundle()

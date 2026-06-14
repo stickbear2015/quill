@@ -34,6 +34,7 @@
   "quill/ui/main_frame.py::MainFrame._edit_watch_profile._pick_folder::wx.DirDialog": "native",
   "quill/ui/main_frame.py::MainFrame._edit_watch_profile::wx.Dialog": "hardened_custom",
   "quill/ui/main_frame.py::MainFrame._offer_crash_recovery::wx.Dialog": "hardened_custom",
+  "quill/ui/main_frame.py::MainFrame._offer_crash_recovery::wx.MessageDialog": "native",
   "quill/ui/main_frame.py::MainFrame._open_find_replace::wx.FindReplaceDialog": "native",
   "quill/ui/main_frame.py::MainFrame._present_quick_nav::wx.Dialog": "hardened_custom",
   "quill/ui/main_frame.py::MainFrame._prompt_code_language::wx.TextEntryDialog": "native",
