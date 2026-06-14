@@ -117,12 +117,14 @@ class _KeyboardSoundPage(_WizardPage):
         grid.Add(pack_label, flag=wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self._pack, flag=wx.EXPAND)
 
-        sound_label = wx.StaticText(
-            self, label="Play sounds for mode changes:", name="wizard.kb_sound_label"
+        # The label lives on the checkbox itself, not a separate StaticText, so
+        # screen readers announce it instead of reading an unlabeled control
+        # (#208). An empty cell keeps the two-column grid aligned.
+        self._sounds = wx.CheckBox(
+            self, label="Play sounds for mode changes", name="wizard.kb_sounds_check"
         )
-        self._sounds = wx.CheckBox(self, name="wizard.kb_sounds_check")
         self._sounds.SetValue(bool(settings.quill_key_sound_enter))
-        grid.Add(sound_label, flag=wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(wx.StaticText(self, label=""), flag=wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self._sounds)
 
         sizer.Add(grid, flag=wx.LEFT | wx.RIGHT | wx.BOTTOM, border=12)
@@ -153,31 +155,35 @@ class _ProfilePage(_WizardPage):
         desc.Wrap(440)
         sizer.Add(desc, flag=wx.LEFT | wx.RIGHT | wx.BOTTOM, border=12)
 
-        self._profiles: list[str] = []
-        self._radio_btns: list[wx.RadioButton] = []
-        first = True
-        for profile_id, profile in PROFILE_DEFINITIONS.items():
-            style = wx.RB_GROUP if first else 0
-            rb = wx.RadioButton(
-                self,
-                label=f"{profile.name}  -  {profile.description}",
-                style=style,
-                name=f"wizard.profile_{profile_id}",
-            )
-            if profile_id == feature_manager.active_profile_id:
-                rb.SetValue(True)
-            self._profiles.append(profile_id)
-            self._radio_btns.append(rb)
-            sizer.Add(rb, flag=wx.LEFT | wx.BOTTOM, border=8)
-            first = False
+        # A single RadioBox (not a row of individual RadioButtons): arrow keys
+        # navigate within the group and wrap top-to-bottom, instead of escaping
+        # into the Back/Next/Cancel buttons at the ends (#209). Screen readers
+        # also announce it as one labelled radio group.
+        self._profiles: list[str] = list(PROFILE_DEFINITIONS.keys())
+        choices = [
+            f"{profile.name}  -  {profile.description}" for profile in PROFILE_DEFINITIONS.values()
+        ]
+        self._radio = wx.RadioBox(
+            self,
+            label="Choose a profile",
+            choices=choices,
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+            name="wizard.profile_choices",
+        )
+        try:
+            active_index = self._profiles.index(feature_manager.active_profile_id)
+        except ValueError:
+            active_index = 0
+        self._radio.SetSelection(active_index)
+        sizer.Add(self._radio, flag=wx.ALL, border=12)
 
         self.SetSizer(sizer)
 
     def collect(self, _settings: Settings, overrides: dict) -> None:
-        for rb, profile_id in zip(self._radio_btns, self._profiles, strict=False):
-            if rb.GetValue():
-                overrides["_profile"] = profile_id
-                return
+        index = self._radio.GetSelection()
+        if 0 <= index < len(self._profiles):
+            overrides["_profile"] = self._profiles[index]
 
 
 class _RemoteAccessPage(_WizardPage):
