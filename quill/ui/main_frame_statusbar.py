@@ -259,15 +259,12 @@ class StatusBarMixin:
     def _statusbar_braille_text(self) -> str:
         """Return the short-form braille cell text, or "" if not active.
 
-        Hidden for non-BRF documents and when the active document has no
-        resolved braille state. The cell filter in :meth:`_statusbar_items`
-        is responsible for keeping the cell out of the visible list when
-        this would be empty.
+        Hidden for non-BRF documents. For a BRF document the resolver is
+        built from the document's braille metadata and cached on the frame
+        (keyed by document identity + text length) so a caret move reuses
+        it; an edit that changes the length rebuilds it.
         """
-        document = getattr(self, "document", None)
-        if document is None:
-            return ""
-        resolver = getattr(document, "_brf_resolver", None)
+        resolver = self._active_brf_resolver()
         if resolver is None:
             return ""
         editor = getattr(self, "editor", None)
@@ -281,6 +278,40 @@ class StatusBarMixin:
             return short_form_from_resolver(resolver, char_offset)
         except (ValueError, TypeError):
             return ""
+
+    def _active_brf_resolver(self) -> object | None:
+        """Return a BraillePositionResolver for the active BRF document, or None.
+
+        ``Document`` is a slots dataclass, so the resolver cannot be attached
+        to it; it is cached on the frame instead. Returns None for any
+        non-BRF document.
+        """
+        document = getattr(self, "document", None)
+        if document is None:
+            return None
+        meta = getattr(document, "source_metadata", None) or {}
+        if meta.get("source_kind") != "brf":
+            return None
+        text = getattr(document, "text", "") or ""
+        key = (id(document), len(text))
+        cache = getattr(self, "_brf_resolver_cache", None)
+        if cache is not None and cache[0] == key:
+            return cache[1]
+        from quill.core.braille_position import BraillePositionResolver
+        from quill.core.brf_document import BRFDocument
+
+        brf_doc = BRFDocument.from_text_and_suffix(
+            text,
+            str(meta.get("brf_suffix", "")),
+            had_bom=bool(meta.get("brf_had_bom", False)),
+            non_ascii_offsets=list(meta.get("brf_non_ascii_offsets", []) or []),
+            cell_width=int(meta.get("brf_cell_width", 40) or 40),
+            line_height=int(meta.get("brf_line_height", 25) or 25),
+            profile=str(meta.get("brf_profile", "ueb_english")),
+        )
+        resolver = BraillePositionResolver(brf_doc)
+        self._brf_resolver_cache = (key, resolver)
+        return resolver
 
     def _get_action_suggestion(self) -> object | None:
         """Return the Annisuggestion for the current session, or None."""

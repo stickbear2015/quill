@@ -41,7 +41,7 @@
     "quill/core/copy_tray.py": 139,
     "quill/ui/main_frame_copy_tray.py": 332,
     "quill/ui/copy_tray_dialog.py": 267,
-    "quill/ui/main_frame_statusbar.py": 585,
+    "quill/ui/main_frame_statusbar.py": 616,
     "quill/core/abbreviations.py": 266,
     "quill/core/multi_press.py": 59,
     "quill/ui/main_frame_abbreviations.py": 202,
@@ -107,5 +107,6 @@
   "_rebaseline_2026_06_14_reportbug": "#210 follow-up (report-a-bug failsafe + token unification): report_bug() now prefers feedback_hub but on ANY runtime failure falls back to the always-present built-in form (a missing/broken feedback_hub, which ships from a separate repo, must never strand the user with no dialog). Extracted _report_bug_via_hub() which passes a unified token from the new core.feedback_token.effective_github_token (QUILL secure store first, env import second). New files keep growth off main_frame; core/schemas/feedback.json gains a screen_reader select so the SR combo shows in the feedback_hub dialog too.",
   "_rebaseline_2026_06_14_hardexit": "#210 (still reopened): the guarded close cannot rescue a shutdown step that BLOCKS the UI thread or a wx main loop that never returns. Reporter diagnostics show 5-10s UI stalls. main_frame.py grows for: (1) arming a daemon hard-exit watchdog once _on_close passes its veto checks, and (2) reordering _on_close so save-settings/undo-flush/clean-exit-marker run BEFORE the blocking teardown (ssh, sound) so the 5s force-exit can never lose user data. The watchdog itself is extracted to the new quill/stability/shutdown_watchdog.py (arm_hard_exit) to keep main_frame growth minimal.",
   "_rebaseline_2026_06_14_crashreport": "#210 follow-up (crash-dialog one-click report): _send_crash_report (consent for the PUBLIC tracker, direct issue creation via the unified token, redacted log summary, clear-logs-and-close on success, manual-form fallback otherwise) plus the Send Bug Report button in the Crash Recovery dialog. Submission + redaction logic lives in the new core/issue_submit.py. main_frame.py budget re-measured after merging main (#212 macOS Preferences work).",
-  "_rebaseline_2026_06_14_braille_statusbar": "Braille Mode WIP: main_frame_statusbar.py 558->585 for the braille status bar cell wiring (new core/braille_statusbar.py module + feature_catalog/settings_normalizers/main_frame integration). WIP checkpoint; CQ-1 decomposition is the path to lower it."
+  "_rebaseline_2026_06_14_braille_statusbar": "Braille Mode WIP: main_frame_statusbar.py 558->585 for the braille status bar cell wiring (new core/braille_statusbar.py module + feature_catalog/settings_normalizers/main_frame integration). WIP checkpoint; CQ-1 decomposition is the path to lower it.",
+  "_rebaseline_2026_06_14_braille_statusbar_wire": "#233 (BR-010) completion: main_frame_statusbar.py 585->616 for _active_brf_resolver, which builds and caches a BraillePositionResolver from the active BRF document's source_metadata (Document is a slots dataclass so the resolver cannot be attached to it). The cell now renders live and refreshes via the existing _refresh_statusbar on caret activity."
 }
