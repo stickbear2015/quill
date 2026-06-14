@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 
+import quill.stability.shutdown_watchdog as watchdog
 import quill.ui.main_frame as mf
 from quill.ui.main_frame import MainFrame
 
@@ -84,3 +85,65 @@ def test_on_close_vetoes_when_documents_cannot_close(
 
     assert vetoed == [True]
     assert skipped == []
+
+
+class _FakeTimer:
+    """Records that a hard-exit watchdog timer was started, without arming it."""
+
+    instances: list[_FakeTimer] = []
+
+    def __init__(self, interval: float, function: Any) -> None:
+        self.interval = interval
+        self.function = function
+        self.daemon = False
+        self.started = False
+        _FakeTimer.instances.append(self)
+
+    def start(self) -> None:
+        self.started = True
+
+
+def _arm_capable_frame(monkeypatch: pytest.MonkeyPatch) -> MainFrame:
+    frame = _frame_for_close(monkeypatch)
+    # A real frame enables the hard-exit watchdog; __new__ frames do not, which
+    # is why the resilience tests above never arm a real os._exit timer.
+    frame._hard_exit_enabled = True
+    _FakeTimer.instances = []
+    monkeypatch.setattr(watchdog.threading, "Timer", _FakeTimer)
+    return frame
+
+
+def test_committed_close_arms_hard_exit_watchdog(monkeypatch: pytest.MonkeyPatch) -> None:
+    frame = _arm_capable_frame(monkeypatch)
+    event = SimpleNamespace(Skip=lambda: None, Veto=lambda: None)
+
+    frame._on_close(event)
+
+    assert len(_FakeTimer.instances) == 1, "a committed close must arm the watchdog (#210)"
+    timer = _FakeTimer.instances[0]
+    assert timer.started is True
+    assert timer.daemon is True
+    assert timer.interval > 0
+
+
+def test_vetoed_close_does_not_arm_watchdog(monkeypatch: pytest.MonkeyPatch) -> None:
+    frame = _arm_capable_frame(monkeypatch)
+    frame._can_close_all_documents = lambda: False  # type: ignore[method-assign]
+    event = SimpleNamespace(Skip=lambda: None, Veto=lambda: None)
+
+    frame._on_close(event)
+
+    assert _FakeTimer.instances == [], "a vetoed close must not force-exit the process"
+
+
+def test_force_exit_callback_calls_os_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    frame = _arm_capable_frame(monkeypatch)
+    event = SimpleNamespace(Skip=lambda: None, Veto=lambda: None)
+    frame._on_close(event)
+
+    exits: list[int] = []
+    monkeypatch.setattr(watchdog.os, "_exit", lambda code: exits.append(code))
+
+    _FakeTimer.instances[0].function()
+
+    assert exits == [0], "the watchdog must force the process to exit when it fires"
