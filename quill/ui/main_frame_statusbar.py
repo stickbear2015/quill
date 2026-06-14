@@ -13,11 +13,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 
+from quill.core.braille_statusbar import short_form_from_resolver
 from quill.core.marks import line_column_for_position
 from quill.core.metrics import compute_document_stats
 from quill.core.palette import load_palette_usage, top_suggestion
 from quill.core.settings import STATUS_BAR_ITEMS, Settings, save_settings
-from quill.platform.windows.sr_announce import announce
+from quill.platform.sr_announce import announce
 
 
 @dataclass(slots=True)
@@ -85,11 +86,8 @@ class StatusBarMixin:
         # the user's status bar order.
         if "suggestion" not in visible and self._get_action_suggestion() is not None:
             visible.append("suggestion")
-        if getattr(self, "_active_notebook", None) is not None and "notebook_goal" not in visible:
-            nb = self._active_notebook
-            goal = getattr(nb, "goal", None)
-            if goal is not None and getattr(goal, "enabled", False):
-                visible.append("notebook_goal")
+        if "braille" not in visible and self._statusbar_braille_text():
+            visible.append("braille")
         if not visible:
             return ["message"]
         if "message" not in visible:
@@ -219,6 +217,8 @@ class StatusBarMixin:
             if profile is None:
                 return "Plain text"
             return profile.name
+        if item == "braille":
+            return self._statusbar_braille_text()
         if item == "sr_name":
             # A11Y live indicator (§8.3): show the detected screen reader name.
             # Cache the result on the instance to avoid re-running tasklist on
@@ -255,6 +255,63 @@ class StatusBarMixin:
                 return f"Goal reached: {count:,} {unit}"
             return f"{count:,} / {target:,} {unit}"
         return ""
+
+    def _statusbar_braille_text(self) -> str:
+        """Return the short-form braille cell text, or "" if not active.
+
+        Hidden for non-BRF documents. For a BRF document the resolver is
+        built from the document's braille metadata and cached on the frame
+        (keyed by document identity + text length) so a caret move reuses
+        it; an edit that changes the length rebuilds it.
+        """
+        resolver = self._active_brf_resolver()
+        if resolver is None:
+            return ""
+        editor = getattr(self, "editor", None)
+        if editor is None:
+            return ""
+        try:
+            char_offset = editor.GetCurrentPos()
+        except Exception:  # noqa: BLE001
+            return ""
+        try:
+            return short_form_from_resolver(resolver, char_offset)
+        except (ValueError, TypeError):
+            return ""
+
+    def _active_brf_resolver(self) -> object | None:
+        """Return a BraillePositionResolver for the active BRF document, or None.
+
+        ``Document`` is a slots dataclass, so the resolver cannot be attached
+        to it; it is cached on the frame instead. Returns None for any
+        non-BRF document.
+        """
+        document = getattr(self, "document", None)
+        if document is None:
+            return None
+        meta = getattr(document, "source_metadata", None) or {}
+        if meta.get("source_kind") != "brf":
+            return None
+        text = getattr(document, "text", "") or ""
+        key = (id(document), len(text))
+        cache = getattr(self, "_brf_resolver_cache", None)
+        if cache is not None and cache[0] == key:
+            return cache[1]
+        from quill.core.braille_position import BraillePositionResolver
+        from quill.core.brf_document import BRFDocument
+
+        brf_doc = BRFDocument.from_text_and_suffix(
+            text,
+            str(meta.get("brf_suffix", "")),
+            had_bom=bool(meta.get("brf_had_bom", False)),
+            non_ascii_offsets=list(meta.get("brf_non_ascii_offsets", []) or []),
+            cell_width=int(meta.get("brf_cell_width", 40) or 40),
+            line_height=int(meta.get("brf_line_height", 25) or 25),
+            profile=str(meta.get("brf_profile", "ueb_english")),
+        )
+        resolver = BraillePositionResolver(brf_doc)
+        self._brf_resolver_cache = (key, resolver)
+        return resolver
 
     def _get_action_suggestion(self) -> object | None:
         """Return the Annisuggestion for the current session, or None."""
@@ -310,6 +367,7 @@ class StatusBarMixin:
             "language_profile": "Active language profile. Press Enter to change language.",
             "sr_name": "Detected screen reader. Press Enter to re-detect.",
             "suggestion": "Frequently used command. Press Enter to run it.",
+            "braille": "Braille position. Press Enter for Read Braille Status.",
         }
         return labels.get(item, self._STATUS_BAR_LABELS.get(item, item))
 

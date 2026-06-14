@@ -1,0 +1,9 @@
+{
+  "builtin_overrides": {
+    "builtin-check-grammar": {
+      "enabled": true,
+      "text": "Custom grammar text {selection}"
+    }
+  },
+  "user_prompts": []
+}

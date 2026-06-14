@@ -1,0 +1,18 @@
+{
+  "created": "2026-06-14T22:40:06.860906+00:00",
+  "entries": [],
+  "goal": {
+    "daily_target": 500,
+    "enabled": false,
+    "today_count": 0,
+    "today_date": null,
+    "unit": "words"
+  },
+  "last_opened": null,
+  "name": "my_novel",
+  "root_dir": "C:\\code\\git-src\\quill\\.tmp\\pytest-all-minus-update-manager\\test_create_from_folder_uses_f0\\my_novel",
+  "saved_searches": [],
+  "schema": "quill.notebook/1",
+  "snapshots": [],
+  "vocabulary": []
+}

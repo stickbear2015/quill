@@ -1,0 +1,9 @@
+{
+  "extensions": {
+    "com.example.fence": {
+      "enabled": false,
+      "granted_capabilities": []
+    }
+  },
+  "schema_version": 1
+}

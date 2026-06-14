@@ -1,0 +1,18 @@
+{
+  "created": "2026-06-14T22:40:06.474564+00:00",
+  "entries": [],
+  "goal": {
+    "daily_target": 500,
+    "enabled": false,
+    "today_count": 0,
+    "today_date": null,
+    "unit": "words"
+  },
+  "last_opened": null,
+  "name": "Novel",
+  "root_dir": null,
+  "saved_searches": [],
+  "schema": "quill.notebook/1",
+  "snapshots": [],
+  "vocabulary": []
+}

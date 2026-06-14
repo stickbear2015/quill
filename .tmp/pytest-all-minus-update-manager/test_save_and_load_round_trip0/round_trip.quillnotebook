@@ -1,0 +1,30 @@
+{
+  "created": "2026-06-14T22:40:06.517469+00:00",
+  "entries": [
+    {
+      "id": "0da3e614-560e-4f5f-a4c0-589e4edadc03",
+      "last_caret_pos": 0,
+      "last_opened": null,
+      "path": "intro.md",
+      "tags": [],
+      "title": "Introduction",
+      "word_count": null
+    }
+  ],
+  "goal": {
+    "daily_target": 500,
+    "enabled": false,
+    "today_count": 0,
+    "today_date": null,
+    "unit": "words"
+  },
+  "last_opened": null,
+  "name": "Draft",
+  "root_dir": null,
+  "saved_searches": [],
+  "schema": "quill.notebook/1",
+  "snapshots": [],
+  "vocabulary": [
+    "quillnotebook"
+  ]
+}

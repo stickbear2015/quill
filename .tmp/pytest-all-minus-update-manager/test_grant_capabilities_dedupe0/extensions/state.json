@@ -1,0 +1,12 @@
+{
+  "extensions": {
+    "com.example.fence": {
+      "enabled": false,
+      "granted_capabilities": [
+        "editor.read",
+        "editor.write"
+      ]
+    }
+  },
+  "schema_version": 1
+}

@@ -44,6 +44,7 @@ Quill is also in beta. Expect polish, depth, and real daily utility. Also expect
   - [PDF and OCR-derived text](#pdf-and-ocr-derived-text)
   - [Remote files (FTP, SFTP, HTTPS, WebDAV, S3)](#remote-files-ftp-sftp-https-webdav-s3)
   - [GitHub Remote Files](#github-remote-files)
+- [Braille Mode (BRF, BRL, PEF, UEB)](#braille-mode-brf-brl-pef-ueb)
 - [Help, Learning, and Daily Confidence](#help-learning-and-daily-confidence)
   - [Context-Sensitive Help (F1)](#context-sensitive-help-f1)
   - [Personalising QUILL](#personalising-quill)
@@ -1536,6 +1537,26 @@ GitHub's file API is limited to 1 MB. Files larger than that must be downloaded 
 **Enabling the feature**
 
 GitHub remote access is controlled by the feature flag `core.github_remote`. If it is not visible, open **File > Open from Remote** and check whether the GitHub items appear. If PyGithub is not installed, QUILL shows a message explaining how to install it: `pip install "quill[github]"`.
+
+## Braille Mode (BRF, BRL, PEF, UEB)
+
+QUILL opens and edits formatted braille text files — `.brf`, `.brl`, `.pef`, and `.ueb` — as plain NABCC (braille ASCII). The point is to let a braille proofreader move through a transcription the way it is actually laid out, in braille pages and cells, with speech that tells you exactly where you are.
+
+**Opening a braille file.** Open any `.brf`/`.brl`/`.pef`/`.ueb` file the way you open anything else. QUILL reads it as braille text: a UTF-8 byte-order mark is stripped if present, and the file is scanned for any character that is not braille ASCII. Nothing is transformed on the way in — what you see is the file's bytes.
+
+**Saving is byte-for-byte.** When you save a braille file, QUILL preserves it exactly: no trailing-space trimming, no line-ending normalization, and form feeds (the hard page breaks) are kept. If the text contains characters outside the braille-ASCII range, QUILL still saves them as-is and gives you a single, non-blocking spoken warning so nothing is silently changed. This means a round-trip — open, save — gives you back an identical file.
+
+**The braille status cell.** While a braille file is active, the status bar carries a braille cell that updates as you move: it reads like `BRF Pg 12/87 | Ln 14/25 | Cell 31/40 | Print 7`. That is the braille page, the line within the page, the cell within the line, and the print page. Print-page detection arrives in a later phase; until then the print segment reads `Print ?`.
+
+**The Braille menu.** A top-level **Braille** menu groups the commands. Bindings are intentionally left unset so nothing collides with your screen reader or existing editor keys; you can assign your own in the keyboard customizer, or run them from the Command Palette.
+
+- **Status** — Read Braille Status (respects your status verbosity), Read Detailed Braille Status, Read Current Line and Cell, Read Current Braille Page, Read Current Print Page, and Read Progress Summary (how far through the document you are).
+- **Navigation** — Go to Braille Page… (type a page number), Next Braille Page, and Previous Braille Page. Stepping past the first or last page tells you there is no more.
+- **Page Tools** — Insert Braille Page Break (a form feed) and Remove Braille Page Break at the cursor, plus Recalculate Page Map (rebuild the page map after edits) and a placeholder for Normalize Line Endings.
+
+Every status and navigation command is safe to run on a non-braille document — it simply tells you "This is not a braille document" rather than doing anything.
+
+**Translation (optional Braille Pack).** Forward and back translation between print text and UEB braille require the optional **QUILL Braille Pack** (liblouis plus the English UEB tables). The pack is not bundled by default; when it is absent, the **Translation** submenu is hidden so you never see disabled items, and a **Braille → Install Braille Pack…** item points you at the docs. When the pack is installed, the Translation submenu offers Translate to UEB Grade 1, Translate to UEB Grade 2, Translate Selection to UEB, and Back-Translate UEB. Forward translation opens the BRF result in a new document and tells you how many braille pages it produced. Back-translation always opens its result as a clearly labeled **draft** ("Back-translation draft. N words. Review against the BRF.") because no automatic back-translation is authoritative. Translation runs entirely out of process, so a liblouis failure can never take QUILL down; if it fails, QUILL announces the reason and does not open an empty document. The Translation submenu and the installer are also hidden in Safe Mode.
 
 ## Help, Learning, and Daily Confidence
 

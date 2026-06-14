@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>braille</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="quill-braille-mode-plan">QUILL Braille Mode Plan</h1>
+<h2 id="working-title">Working Title</h2>
+<p>QUILL Braille Mode</p>
+<h2 id="product-vision">Product Vision</h2>
+<p>QUILL Braille Mode will provide a lightweight, screen-reader-first
+environment for opening, editing, validating, navigating, translating,
+and tracking progress in BRF files, with a focus on English UEB
+workflows.</p>
+<p>This feature should not attempt to replace Duxbury, BrailleBlaster,
+or full production transcription systems in its first release. Instead,
+QUILL should become a fast, dependable, accessible tool for blind users
+who need to work directly with BRF files, understand where they are,
+track transcription or proofreading progress, and optionally perform
+English UEB translation without bloating the editor.</p>
+<h2 id="primary-audience">Primary Audience</h2>
+<p>The primary audience is screen reader users, especially:</p>
+<ul>
+<li>Blind transcriptionists</li>
+<li>Blind proofreaders</li>
+<li>Blind braille readers working with BRF files</li>
+<li>Blind developers or educators reviewing braille output</li>
+<li>Users who need to inspect or lightly edit BRF without launching a
+full transcription suite</li>
+</ul>
+<p>Visual preview features should be minimal, optional, and never
+required for the workflow.</p>
+<h2 id="core-philosophy">Core Philosophy</h2>
+<p>QUILL should not visually imitate braille as its main purpose.</p>
+<p>QUILL should make BRF files understandable, navigable, inspectable,
+and manageable through speech, keyboard commands, status information,
+and structured navigation.</p>
+<p>The experience should answer these questions instantly:</p>
+<ul>
+<li>What braille page am I on?</li>
+<li>What print page am I on, if known?</li>
+<li>What line and cell am I on?</li>
+<li>Am I on a continuation page?</li>
+<li>Is this page too long?</li>
+<li>Is this line too long?</li>
+<li>Where did I leave off?</li>
+<li>Which pages have I proofed?</li>
+<li>Which pages still need review?</li>
+<li>Is the file likely valid BRF?</li>
+<li>Can I translate or back-translate this section without installing a
+huge package?</li>
+</ul>
+<h2 id="scope-summary">Scope Summary</h2>
+<h3 id="included-in-quill-core">Included in QUILL Core</h3>
+<p>QUILL core should include:</p>
+<ul>
+<li>Open and save <code>.brf</code> and <code>.brl</code></li>
+<li>Preserve all spaces, line breaks, and form feeds</li>
+<li>Detect BRF page breaks</li>
+<li>Calculate braille page, line, and cell position</li>
+<li>Status bar support</li>
+<li>Screen-reader announcement commands</li>
+<li>Go to braille page</li>
+<li>Go to print page when detectable</li>
+<li>Insert page break</li>
+<li>Validate BRF layout</li>
+<li>Detect page numbering conventions</li>
+<li>Track reading/proofing progress</li>
+<li>Save progress in a sidecar file</li>
+<li>Provide keyboard-first warnings and navigation</li>
+</ul>
+<h3 id="optional-add-on">Optional Add-On</h3>
+<p>A separate optional Braille Pack should include:</p>
+<ul>
+<li>Liblouis runtime</li>
+<li>English UEB Grade 1 table</li>
+<li>English UEB Grade 2 table</li>
+<li>Required table dependencies only</li>
+<li>Translation worker process</li>
+<li>Plain text to UEB BRF</li>
+<li>BRF to draft print text</li>
+<li>Translate selection</li>
+<li>Back-translate current page</li>
+<li>Back-translate selection</li>
+</ul>
+<p>This keeps the base editor lightweight.</p>
+<h2 id="deployment-and-packaging-the-braille-pack-liblouis">Deployment
+and Packaging the Braille Pack (liblouis)</h2>
+<p>liblouis is a C library with optional Python bindings and a
+<code>lou_translate</code> command-line tool. QUILL never imports
+liblouis in-process (see the out-of-process worker, BR-021); the pack
+only has to put a liblouis runtime plus the UEB tables somewhere the
+worker subprocess can find them. The remaining question — answered here
+so it is no longer a gap — is how that runtime reaches a user's
+machine.</p>
+<h3 id="what-the-pack-contains">What the pack contains</h3>
+<ul>
+<li>The liblouis runtime for the platform: <code>liblouis.dll</code>
+(Windows) or the shared library, <strong>or</strong> the self-contained
+<code>lou_translate(.exe)</code> CLI. QUILL prefers the CLI because it
+removes all ctypes/binding packaging: the worker simply shells to
+<code>lou_translate</code> with a table name and the text on stdin.</li>
+<li>The English UEB tables (<code>en-ueb-g1.ctb</code>,
+<code>en-ueb-g2.ctb</code>) and <strong>only</strong> their required
+dependency tables.</li>
+<li>A small <code>manifest.json</code> (pack version, table list,
+SHA-256 of each file) so <code>braille_pack_version()</code> can report
+a version and the installer can verify integrity.</li>
+<li>The third-party <code>LICENSE</code> files (see Licensing
+below).</li>
+</ul>
+<p>The pack installs into <code>&lt;install-dir&gt;/braille-pack/</code>
+(Windows) or the platform data dir.
+<code>is_braille_pack_installed()</code> (BR-020) checks, in order:
+<code>lou_translate</code> on <code>PATH</code>, the bundled
+<code>braille-pack/</code> location, then an importable
+<code>louis</code> module — so any of the three delivery paths below is
+detected the same way.</p>
+<h3 id="delivery-options">Delivery options</h3>
+<ol type="1">
+<li><strong>Optional Inno Setup component (recommended
+default).</strong> Ship the pack as a selectable component in the
+Windows installer. This is offline, deterministic, needs no hosting, and
+"just works" for users who opt in at install time.</li>
+<li><strong>Download-on-demand from inside QUILL.</strong>
+<code>install_braille_pack()</code> fetches a pinned, signed pack
+archive when the user explicitly chooses <strong>Braille → Install
+Braille Pack…</strong>. This keeps the base installer lean and lets a
+user who skipped the component add it later.</li>
+<li><strong>System liblouis already on PATH.</strong> Power users (and
+most Linux installs) can <code>apt install liblouis-bin</code> /
+<code>brew install liblouis</code>; detection finds it with no QUILL
+packaging at all.</li>
+</ol>
+<p><strong>Recommendation: ship 1 and 2 together.</strong> The optional
+component is the primary, offline path; download-on-demand is the
+fallback for users who skipped it. Both resolve to the same detection
+logic, so the Translation submenu appears whenever <em>any</em> path
+succeeded and stays hidden otherwise (never shown disabled).</p>
+<h3 id="inno-setup-specifics">Inno Setup specifics</h3>
+<ul>
+<li>Add a <code>[Components]</code> entry, e.g.
+<code>Name: "braillepack"; Description: "Braille translation pack (liblouis + UEB tables)"; Types: full</code>
+— left <strong>unchecked in the default/compact install</strong> so the
+base installer stays small.</li>
+<li>Tag the pack files in <code>[Files]</code> with
+<code>Components: braillepack</code> so they are only laid down when the
+component is selected, into <code>{app}\braille-pack\</code>.</li>
+<li>The build pipeline vendors a <strong>pinned</strong> liblouis
+Windows build + tables into the packaging tree and verifies each file's
+SHA-256 against <code>manifest.json</code> before Inno Setup runs. No
+build ever pulls "latest".</li>
+</ul>
+<h3 id="download-on-demand-constraints-security">Download-on-demand
+constraints (security)</h3>
+<p><code>install_braille_pack()</code> is currently a no-op stub by
+design. When the real download lands it MUST:</p>
+<ul>
+<li>Be triggered only by the explicit <strong>Install Braille
+Pack…</strong> action — no auto-prompt, no auto-download, no silent
+network calls.</li>
+<li>Fetch a <strong>pinned URL</strong> (a specific QUILL release
+asset), verify the archive's SHA-256 against an embedded expected hash,
+and verify a release signature before unpacking.</li>
+<li>Be added to the network-egress audit (<code>_REVIEWED_EGRESS</code>)
+so the egress gate passes; until then, the stub keeps the gate
+green.</li>
+<li>Respect Safe Mode: like AI and the watch folder, the installer and
+the Translation submenu are hidden when
+<code>QUILL_SAFE_MODE=1</code>.</li>
+</ul>
+<h3 id="licensing">Licensing</h3>
+<p>liblouis is LGPL-2.1-or-later and the UEB tables carry their own
+(mostly free) licenses. Because QUILL invokes liblouis <strong>out of
+process</strong> (a separate executable/process, never linked or
+imported into QUILL), the LGPL's dynamic linking obligations are not
+triggered for QUILL itself. The pack must still ship the upstream
+<code>LICENSE</code>/<code>COPYING</code> files and the build must
+record the exact upstream version so corresponding source can be offered
+on request.</p>
+<h3 id="deployment-script">Deployment script</h3>
+<p><code>scripts/build_braille_pack.py</code> is the deterministic half
+of packaging. Given a directory of already-vendored liblouis runtime
+files + tables, it:</p>
+<ol type="1">
+<li>computes a SHA-256 for every file and writes
+<code>manifest.json</code> (pack version, liblouis version, platform,
+per-file hash + size);</li>
+<li>zips the tree into
+<code>quill-braille-pack-&lt;version&gt;-&lt;platform&gt;.zip</code>;</li>
+<li>prints the archive's SHA-256 to pin in
+<code>quill.core.braille_pack</code>.</li>
+</ol>
+<p>It never touches the network. A separate, audited <strong>vendor
+step</strong> populates its input directory: download a <em>pinned</em>
+upstream liblouis build and the chosen tables, verify their hashes, and
+drop them in <code>vendor/braille-pack/</code>. The release CI job runs
+the vendor step then the build script, and uploads the archive as a
+<strong>QUILL GitHub release asset</strong>. That asset — not an
+upstream URL — is what QUILL downloads, which is the clean answer to
+"can QUILL pull these directly?": pulling straight from liblouis
+upstream is fragile (no stable, hash-pinned Windows binary asset) and a
+supply-chain risk, so QUILL only ever fetches packs we built, hashed,
+and host ourselves.</p>
+<h3 id="how-quill-obtains-a-pack-the-magic-behind-the-scenes">How QUILL
+obtains a pack (the magic behind the scenes)</h3>
+<p><code>install_braille_pack()</code> (today a stub) will:</p>
+<ol type="1">
+<li>Resolve a <strong>pinned URL + expected SHA-256</strong> from a
+small table shipped in QUILL (keyed by QUILL version), so a build only
+ever fetches the pack it was tested against.</li>
+<li>Download to a temp file through
+<code>quill/io/http_transport.py</code> (verified TLS, size cap,
+progress callback for the announcement).</li>
+<li>Verify the archive SHA-256 against the embedded expected hash (and a
+release signature if present); refuse to install on mismatch.</li>
+<li>Extract atomically into the per-user data dir
+<code>braille-pack/</code> (unzip to a temp dir, then
+<code>os.replace</code>), then re-run detection so the Translation
+submenu appears (on next menu build / restart).</li>
+</ol>
+<p>This call site is registered in the network-egress audit, runs only
+on the explicit <strong>Install Braille Pack…</strong> action, and is
+disabled in Safe Mode.</p>
+<h3 id="additional-languages-on-demand-language-packs">Additional
+languages (on-demand language packs)</h3>
+<p>liblouis ships tables for ~all supported languages; the runtime is
+identical, so "another language" is just another table file. Two
+strategies:</p>
+<ul>
+<li><strong>Bundle all tables (simplest).</strong> The full liblouis
+table set is only a few MB, so the base pack can include every table.
+"Additional languages" then needs no download at all — only UI to choose
+the table. Recommended unless installer size is critical.</li>
+<li><strong>Per-language packs (lean base).</strong> Ship the runtime +
+English UEB in the base pack and host each extra language as its own
+small archive. A hosted <code>language_index.json</code> (code, name,
+archive URL, SHA-256, bytes) drives an <strong>Install Braille
+Language…</strong> picker; selecting one downloads + verifies + extracts
+that language's tables into <code>braille-pack/tables/</code>, reusing
+the same pinned-URL + hash-verify flow above.</li>
+</ul>
+<p>Either way the worker just receives a table name (e.g.
+<code>fr-bfu-comp6.utb</code>); no QUILL code is language-specific.</p>
+<h3 id="implementation-status">Implementation status</h3>
+<p>Phase 5 software is complete: pack detection
+(<code>braille_pack.py</code>), the out-of-process worker + client
+(<code>braille_worker.py</code>, <code>braille_worker_client.py</code>),
+the Translation submenu and commands, and
+<code>scripts/build_braille_pack.py</code>. The remaining work is
+operational: vendor + host the first signed pack asset, pin its
+URL/hash, and flip <code>install_braille_pack</code> from stub to the
+verified download above (with its egress-audit entry).</p>
+<h2 id="supported-braille-variants-for-initial-release">Supported
+Braille Variants for Initial Release</h2>
+<p>Initial support should be intentionally narrow:</p>
+<ul>
+<li>English only</li>
+<li>UEB Grade 1</li>
+<li>UEB Grade 2</li>
+<li>Braille ASCII BRF</li>
+<li>Optional Unicode braille conversion for internal processing or
+export</li>
+</ul>
+<p>Do not include Nemeth, foreign-language tables, tactile graphics,
+PDF-to-BRF, DOCX-to-BRF, or eBraille authoring in the first release.</p>
+<h2 id="important-page-concepts-quill-should-understand">Important Page
+Concepts QUILL Should Understand</h2>
+<h3 id="1-physical-brf-page-break">1. Physical BRF Page Break</h3>
+<p>A BRF page break is usually represented by a form feed character.</p>
+<p>In QUILL, this should be treated as a structural page boundary.</p>
+<p>User-facing command names:</p>
+<ul>
+<li>Next Braille Page</li>
+<li>Previous Braille Page</li>
+<li>Insert Braille Page Break</li>
+<li>Delete Braille Page Break</li>
+<li>Show Page Breaks as Text</li>
+</ul>
+<p>Screen reader announcement:</p>
+<p>“Page break. Beginning braille page 12.”</p>
+<h3 id="2-calculated-braille-page">2. Calculated Braille Page</h3>
+<p>If a BRF file does not contain form feeds, QUILL should calculate
+braille pages using the active profile.</p>
+<p>Default profile:</p>
+<ul>
+<li>40 cells per line</li>
+<li>25 lines per page</li>
+</ul>
+<p>Also provide presets:</p>
+<ul>
+<li>40 by 25</li>
+<li>39 by 25</li>
+<li>32 by 25</li>
+<li>Custom cells and lines</li>
+</ul>
+<p>Screen reader announcement:</p>
+<p>“Calculated braille page 12. No form feed found.”</p>
+<h3 id="3-print-page-number">3. Print Page Number</h3>
+<p>A braille transcription can show the original print page number,
+usually at the end of line 1.</p>
+<p>QUILL should scan line 1 of each braille page for likely print page
+numbers.</p>
+<p>Examples QUILL should detect:</p>
+<ul>
+<li><code>#a</code></li>
+<li><code>#ab</code></li>
+<li><code>,iv</code></li>
+<li><code>a#c</code></li>
+<li><code>b#c</code></li>
+<li><code>#ab-#ad</code></li>
+</ul>
+<p>Screen reader announcement:</p>
+<p>“Print page 12.”</p>
+<p>or:</p>
+<p>“Print page 12, continuation b.”</p>
+<h3 id="4-page-change-indicator">4. Page Change Indicator</h3>
+<p>When a new print page begins in the middle of a braille page, a page
+change indicator may appear. This is commonly a line of unspaced dots
+3-6 ending with the new print page number.</p>
+<p>In Braille ASCII this often looks like a row of hyphens ending with a
+number, such as:</p>
+<p><code>-------------------------------------#ab</code></p>
+<p>QUILL should detect this as a print page boundary.</p>
+<p>Screen reader announcement:</p>
+<p>“Print page change indicator. New print page 12.”</p>
+<p>Commands:</p>
+<ul>
+<li>Next Print Page Change</li>
+<li>Previous Print Page Change</li>
+<li>List Print Page Changes</li>
+<li>Mark Current Line as Print Page Change</li>
+<li>Remove Print Page Change Mark</li>
+</ul>
+<h3 id="5-lettered-continuation-print-pages">5. Lettered Continuation
+Print Pages</h3>
+<p>A single print page often occupies multiple braille pages.
+Continuation pages may be marked by an unspaced letter before the print
+page number.</p>
+<p>Examples:</p>
+<ul>
+<li><code>#a</code> means print page 1</li>
+<li><code>a#a</code> means first continuation of print page 1</li>
+<li><code>b#a</code> means second continuation of print page 1</li>
+</ul>
+<p>QUILL should detect continuation letters and expose them clearly.</p>
+<p>Status example:</p>
+<p>“Braille page 3 of 87. Print page 1, continuation b. Line 14, cell
+31.”</p>
+<h3 id="6-braille-page-number">6. Braille Page Number</h3>
+<p>The braille page number is usually placed at the right margin on the
+last line of the braille page.</p>
+<p>QUILL should detect it separately from the print page number.</p>
+<p>Example status:</p>
+<p>“Print page 12. Braille page 34.”</p>
+<p>This matters because the user may care about either one depending on
+the task.</p>
+<h3 id="7-transcriber-generated-pages">7. Transcriber-Generated
+Pages</h3>
+<p>Some braille page numbers may be prefixed with <code>t</code>.</p>
+<p>Example:</p>
+<p><code>t1</code></p>
+<p>QUILL should detect these as transcriber-generated pages.</p>
+<p>Status example:</p>
+<p>“Transcriber-generated braille page t3.”</p>
+<h3 id="8-front-matter-braille-pages">8. Front Matter Braille Pages</h3>
+<p>Some front matter braille page numbers may be prefixed with
+<code>p</code>.</p>
+<p>Example:</p>
+<p><code>p1</code></p>
+<p>QUILL should detect these as preliminary/front-matter pages.</p>
+<p>Status example:</p>
+<p>“Front matter braille page p4.”</p>
+<h3 id="9-running-head">9. Running Head</h3>
+<p>A running head may appear on the first line of many braille
+pages.</p>
+<p>QUILL should not confuse a running head with body text or a page
+number.</p>
+<p>Status example:</p>
+<p>“Running head detected: Exploring Psychology.”</p>
+<p>Commands:</p>
+<ul>
+<li>Announce Running Head</li>
+<li>Ignore Running Head for Status</li>
+<li>Use Running Head in Status</li>
+<li>Detect Running Head Pattern</li>
+</ul>
+<h3 id="10-combined-print-page-numbers">10. Combined Print Page
+Numbers</h3>
+<p>A braille page may represent combined or omitted print pages.</p>
+<p>Examples:</p>
+<ul>
+<li><code>#be-#bi</code></li>
+<li><code>#dd-#de</code></li>
+<li><code>,iv-,v</code></li>
+</ul>
+<p>QUILL should detect these as ranges.</p>
+<p>Status example:</p>
+<p>“Print pages 25 through 29.”</p>
+<h3 id="11-implied-or-missing-print-page-numbers">11. Implied or Missing
+Print Page Numbers</h3>
+<p>Sometimes print page numbers are implied or absent in the original
+print.</p>
+<p>QUILL should not pretend these are certain unless they are present or
+user-confirmed.</p>
+<p>Status example:</p>
+<p>“Print page unknown. Braille page 14.”</p>
+<p>or:</p>
+<p>“Possible implied print page 8.”</p>
+<h2 id="status-bar-design">Status Bar Design</h2>
+<p>The visual status bar should remain short:</p>
+<p>BRF Pg 12/87 | Ln 14/25 | Cell 31/40 | Print 7 | 14%</p>
+<p>But the screen reader announcement should be richer.</p>
+<p>Normal spoken status:</p>
+<p>“Braille page 12 of 87. Line 14 of 25. Cell 31 of 40. Print page 7.
+Fourteen percent through file.”</p>
+<p>Detailed spoken status:</p>
+<p>“Braille page 12 of 87. Line 14 of 25. Cell 31 of 40. Print page 7,
+continuation a. Running head: Chapter 2. Last proofed page: 9. Three
+pages marked needs review.”</p>
+<p>Brief spoken status:</p>
+<p>“Page 12. Line 14. Cell 31.”</p>
+<h2 id="status-verbosity-settings">Status Verbosity Settings</h2>
+<p>Add a setting:</p>
+<p>Braille status verbosity:</p>
+<ul>
+<li>Brief</li>
+<li>Normal</li>
+<li>Detailed</li>
+</ul>
+<p>Also add settings for:</p>
+<ul>
+<li>Announce page changes automatically</li>
+<li>Announce print page changes automatically</li>
+<li>Announce line overflow while typing</li>
+<li>Announce cell position on demand only</li>
+<li>Include proofing status in announcement</li>
+<li>Include running head in announcement</li>
+<li>Include continuation page information</li>
+</ul>
+<p>Default should be conservative to avoid screen reader spam.</p>
+<h2 id="required-keyboard-commands">Required Keyboard Commands</h2>
+<h3 id="status-commands">Status Commands</h3>
+<ul>
+<li>Read Braille Status</li>
+<li>Read Detailed Braille Status</li>
+<li>Read Current Line and Cell</li>
+<li>Read Current Braille Page</li>
+<li>Read Current Print Page</li>
+<li>Read Current Running Head</li>
+<li>Read Progress Summary</li>
+</ul>
+<h3 id="navigation-commands">Navigation Commands</h3>
+<ul>
+<li>Go to Braille Page</li>
+<li>Go to Print Page</li>
+<li>Next Braille Page</li>
+<li>Previous Braille Page</li>
+<li>Next Print Page</li>
+<li>Previous Print Page</li>
+<li>Next Page Change Indicator</li>
+<li>Previous Page Change Indicator</li>
+<li>Next Layout Warning</li>
+<li>Previous Layout Warning</li>
+<li>Go to Last Reading Position</li>
+<li>Go to Last Proofed Page</li>
+</ul>
+<h3 id="editing-commands">Editing Commands</h3>
+<ul>
+<li>Insert Braille Page Break</li>
+<li>Remove Braille Page Break</li>
+<li>Insert Print Page Change Indicator</li>
+<li>Mark Current Line as Print Page Change</li>
+<li>Insert Braille Page Number</li>
+<li>Insert Running Head</li>
+<li>Normalize Line Endings</li>
+<li>Recalculate Page Map</li>
+</ul>
+<h3 id="proofing-commands">Proofing Commands</h3>
+<ul>
+<li>Mark Current Braille Page as Proofed</li>
+<li>Mark Current Braille Page as Needs Review</li>
+<li>Clear Proofing Mark</li>
+<li>Add Proofing Note</li>
+<li>List Pages Needing Review</li>
+<li>List Proofed Pages</li>
+<li>Export Proofing Report</li>
+</ul>
+<h3 id="translation-commands">Translation Commands</h3>
+<p>These commands are available only when the optional Braille Pack is
+installed:</p>
+<ul>
+<li>Translate Plain Text to UEB Grade 1 BRF</li>
+<li>Translate Plain Text to UEB Grade 2 BRF</li>
+<li>Translate Selection to UEB</li>
+<li>Back-Translate BRF to Draft Text</li>
+<li>Back-Translate Current Page</li>
+<li>Back-Translate Selection</li>
+<li>Compare Back-Translation with Source</li>
+</ul>
+<p>Back-translation must always be described as draft output.</p>
+<h2 id="menus">Menus</h2>
+<p>Add a Braille menu.</p>
+<p>Suggested structure:</p>
+<p>Braille Status Read Braille Status Read Detailed Braille Status Read
+Progress Summary</p>
+<p>Navigation Go to Braille Page Go to Print Page Next Braille Page
+Previous Braille Page Next Print Page Change Previous Print Page
+Change</p>
+<p>Page Tools Insert Braille Page Break Insert Print Page Change
+Indicator Rebuild Page Map Detect Print Page Numbers Detect Braille Page
+Numbers</p>
+<p>Proofing Mark Page as Proofed Mark Page as Needs Review Add Proofing
+Note List Pages Needing Review Export Proofing Report</p>
+<p>Validation Validate BRF Layout Next Warning Previous Warning Warnings
+Summary</p>
+<p>Translation Translate to UEB Grade 1 Translate to UEB Grade 2
+Back-Translate to Draft Text Install Braille Pack</p>
+<p>Settings Braille Document Settings Braille Status Settings
+Translation Settings</p>
+<h2 id="braille-document-settings-dialog">Braille Document Settings
+Dialog</h2>
+<p>This should be a simple, accessible dialog.</p>
+<p>Fields:</p>
+<ul>
+<li>Braille code</li>
+<li>Grade</li>
+<li>Cells per line</li>
+<li>Lines per page</li>
+<li>Use form feeds as page breaks</li>
+<li>Calculate pages if form feeds are missing</li>
+<li>Detect print page numbers</li>
+<li>Detect braille page numbers</li>
+<li>Detect page change indicators</li>
+<li>Track reading position</li>
+<li>Track proofing status</li>
+<li>Save sidecar progress file</li>
+<li>Status verbosity</li>
+<li>Automatic announcements</li>
+</ul>
+<p>No complex visual preview is required.</p>
+<h2 id="sidecar-progress-file">Sidecar Progress File</h2>
+<p>QUILL should not modify the BRF just to store workflow
+information.</p>
+<p>Use a sidecar file:</p>
+<p><code>filename.brf.quill.json</code></p>
+<p>Example:</p>
+<p>{ “documentType”: “brf”, “profile”: { “brailleCode”: “UEB”, “grade”:
+“2”, “cellsPerLine”: 40, “linesPerPage”: 25, “pageBreakMode”: “formFeed”
+}, “position”: { “lastOffset”: 48291, “lastBraillePage”: 42, “lastLine”:
+14, “lastCell”: 31, “lastPrintPage”: “18” }, “proofing”: {
+“lastProofedBraillePage”: 39, “pagesNeedingReview”: [12, 27, 31],
+“proofedPages”: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, “anchors”: [ { “type”:
+“printPage”, “printPage”: “1”, “braillePage”: 1, “offset”: 0,
+“confidence”: “detected” }, { “type”: “printPage”, “printPage”: “7”,
+“braillePage”: 12, “offset”: 13210, “confidence”: “userConfirmed” }],
+“notes”: [ { “braillePage”: 12, “line”: 22, “cell”: 1, “note”: “Check
+page change indicator.” }] }</p>
+<h2 id="validation-engine">Validation Engine</h2>
+<p>QUILL should include a BRF validator that is navigable by keyboard
+and useful through speech.</p>
+<p>Warnings should include:</p>
+<ul>
+<li>Line exceeds selected cell width</li>
+<li>Page exceeds selected line count</li>
+<li>Page has too few lines, possible missing content</li>
+<li>No form feeds found</li>
+<li>Mixed line endings</li>
+<li>Unexpected non-Braille-ASCII character</li>
+<li>Possible print text in BRF</li>
+<li>Page change indicator found on invalid line</li>
+<li>Page change indicator missing page number</li>
+<li>Braille page number missing</li>
+<li>Braille page number repeated</li>
+<li>Braille page number appears out of sequence</li>
+<li>Print page number appears out of sequence</li>
+<li>Continuation page letter appears out of sequence</li>
+<li>Running head inconsistent</li>
+<li>Trailing spaces warning, optional only</li>
+<li>File uses unusual page size</li>
+<li>File appears to be Unicode braille rather than Braille ASCII</li>
+</ul>
+<p>Warnings should be presented like this:</p>
+<p>“Warning 3 of 12. Braille page 14, line 26. Page has 26 lines;
+expected 25. Press Enter to move to issue.”</p>
+<h2 id="page-map-engine">Page Map Engine</h2>
+<p>The page map is the heart of the feature.</p>
+<p>For each page, store:</p>
+<ul>
+<li>Start offset</li>
+<li>End offset</li>
+<li>Physical page number</li>
+<li>Calculated page number</li>
+<li>Detected braille page number</li>
+<li>Detected print page number</li>
+<li>Continuation letter, if any</li>
+<li>Running head, if any</li>
+<li>Line count</li>
+<li>Maximum line length</li>
+<li>Whether form feed ended the page</li>
+<li>Warnings</li>
+<li>Proofing status</li>
+</ul>
+<p>This gives QUILL instant navigation and status.</p>
+<h2 id="print-page-detection-strategy">Print Page Detection
+Strategy</h2>
+<p>QUILL should use confidence levels.</p>
+<h3 id="high-confidence">High Confidence</h3>
+<ul>
+<li>Page change indicator line ending with a valid page number</li>
+<li>Line 1 right-margin page number matching expected pattern</li>
+<li>Repeated print page number with continuation letters</li>
+<li>User-confirmed print page anchor</li>
+</ul>
+<h3 id="medium-confidence">Medium Confidence</h3>
+<ul>
+<li>Right-aligned number on line 1</li>
+<li>Consistent sequence across several pages</li>
+<li>Combined page number pattern</li>
+</ul>
+<h3 id="low-confidence">Low Confidence</h3>
+<ul>
+<li>Number appears near right margin but pattern is ambiguous</li>
+<li>No running head detected</li>
+<li>Short page with multiple possible page number candidates</li>
+</ul>
+<p>QUILL should expose confidence in detailed status only.</p>
+<p>Example:</p>
+<p>“Print page 7, detected with high confidence.”</p>
+<h2 id="transcriptionist-progress-workflow">Transcriptionist Progress
+Workflow</h2>
+<h3 id="opening-a-brf">Opening a BRF</h3>
+<p>When opening a BRF, QUILL should announce:</p>
+<p>“BRF file opened. 87 braille pages detected. Print page tracking
+available. Last position: braille page 12, line 14, cell 31.”</p>
+<p>If no sidecar exists:</p>
+<p>“BRF file opened. 87 braille pages detected. No progress file
+found.”</p>
+<h3 id="during-work">During Work</h3>
+<p>The user can press the status command at any time:</p>
+<p>“Braille page 12 of 87. Line 14 of 25. Cell 31 of 40. Print page 7.
+Page not proofed.”</p>
+<h3 id="marking-progress">Marking Progress</h3>
+<p>Command:</p>
+<p>Mark Current Braille Page as Proofed</p>
+<p>Announcement:</p>
+<p>“Braille page 12 marked proofed.”</p>
+<p>Command:</p>
+<p>Mark Current Braille Page as Needs Review</p>
+<p>Announcement:</p>
+<p>“Braille page 12 marked needs review.”</p>
+<h3 id="progress-summary">Progress Summary</h3>
+<p>Command:</p>
+<p>Read Progress Summary</p>
+<p>Example:</p>
+<p>“Progress summary. 87 braille pages. Current page 12. 9 pages
+proofed. 3 pages need review. Last proofed page 9. Current print page 7.
+Estimated completion 10 percent.”</p>
+<h2 id="lightweight-translation-architecture">Lightweight Translation
+Architecture</h2>
+<p>The base QUILL installer should not bundle the whole braille
+world.</p>
+<p>Use a separate optional component:</p>
+<p>QUILL Braille Pack</p>
+<p>Contents:</p>
+<ul>
+<li>Liblouis runtime</li>
+<li>English UEB Grade 1 table</li>
+<li>English UEB Grade 2 table</li>
+<li>Required include files</li>
+<li>Small translation worker process</li>
+<li>Version manifest</li>
+</ul>
+<p>The translation worker should run out-of-process so that translation
+errors or crashes do not crash QUILL.</p>
+<p>Possible worker calls:</p>
+<ul>
+<li>translate_text_to_ueb_grade_1</li>
+<li>translate_text_to_ueb_grade_2</li>
+<li>back_translate_brf_to_text</li>
+<li>back_translate_selection</li>
+<li>validate_liblouis_installation</li>
+<li>list_available_tables</li>
+</ul>
+<h2 id="translation-safety">Translation Safety</h2>
+<p>Translation must be helpful but honest.</p>
+<p>Use these labels:</p>
+<ul>
+<li>“Translate to UEB”</li>
+<li>“Back-Translate to Draft Text”</li>
+<li>“Preview Translation”</li>
+<li>“Replace Selection with Translation”</li>
+<li>“Send Translation to New Document”</li>
+</ul>
+<p>Do not label back-translation as “convert to perfect print.”</p>
+<p>Back-translation announcement:</p>
+<p>“Draft back-translation complete. Review required.”</p>
+<h2 id="optional-source-to-brf-workflow">Optional Source-to-BRF
+Workflow</h2>
+<p>Later, QUILL can support a transcription workspace without making it
+visual-first.</p>
+<p>Instead of a complex side-by-side visual UI, use linked documents and
+commands.</p>
+<p>Commands:</p>
+<ul>
+<li>Link Source Position to Current BRF Position</li>
+<li>Read Linked Source Position</li>
+<li>Go to Linked BRF Position</li>
+<li>Go to Linked Source Position</li>
+<li>Compare Back-Translation with Source</li>
+<li>List Unlinked Source Pages</li>
+</ul>
+<p>Status example:</p>
+<p>“Source page 7 is linked to braille page 12, line 1.”</p>
+<h2 id="minimal-visual-design">Minimal Visual Design</h2>
+<p>Because this is for screen reader users, visual design should stay
+minimal.</p>
+<p>Avoid:</p>
+<ul>
+<li>Visual braille preview as the primary experience</li>
+<li>Color-coded warnings</li>
+<li>Graphical page map as the main navigation method</li>
+<li>Drag-and-drop page tools</li>
+<li>Mouse-dependent controls</li>
+<li>Hover-only explanations</li>
+<li>Complex split panes</li>
+</ul>
+<p>Acceptable minimal visual elements:</p>
+<ul>
+<li>Plain status bar text</li>
+<li>Plain dialogs</li>
+<li>Plain list of warnings</li>
+<li>Plain text progress report</li>
+<li>Optional hidden symbols for page breaks</li>
+</ul>
+<p>Everything must be keyboard accessible and screen-reader
+meaningful.</p>
+<h2 id="accessibility-requirements">Accessibility Requirements</h2>
+<ul>
+<li>All commands available from menus</li>
+<li>All commands assignable to keyboard shortcuts</li>
+<li>Focus remains in the editor after status commands</li>
+<li>Dialog fields have proper labels</li>
+<li>Warning lists are navigable with arrow keys</li>
+<li>Pressing Enter on a warning moves to the issue</li>
+<li>Escape closes dialogs without changing focus unexpectedly</li>
+<li>No screen reader spam while typing</li>
+<li>Automatic announcements are configurable</li>
+<li>Manual status command always available</li>
+<li>Status text should be copyable</li>
+<li>Progress report should open as plain text</li>
+</ul>
+<h2 id="implementation-phases">Implementation Phases</h2>
+<p>The phases below are written in <em>dependency order</em> (Phase 1
+first, then 2, 3, 4, 5, 6). The <strong>pragmatic shipping
+order</strong> — when each phase will actually land in the codebase and
+ship to users — is different because Phase 5 (the optional UEB
+Translation Pack) is intentionally opt-in and depends only on Phase
+1.</p>
+<h3 id="pragmatic-shipping-order">Pragmatic shipping order</h3>
+<p><code>1 → 5 → 2 → 3 → 4 → 6</code></p>
+<ul>
+<li><strong>Phase 1 (BRF Core)</strong> — open/save, page map, status,
+navigation. Foundation for every later phase.</li>
+<li><strong>Phase 5 (UEB Translation Pack, opt-in)</strong> —
+translation is the most independent phase. It needs Phase 1's open/save
+round-trip and <code>go_to_page</code> command, but it does not need
+print-page detection or validation. Ship it as soon as Phase 1 is stable
+so English UEB users get the feature without bundling every language and
+table.</li>
+<li><strong>Phase 2 (Page Intelligence)</strong> — print/braille page
+numbers, continuation letters, running heads, detailed status mode. The
+proofing counters in Phase 3 and the warning rules in Phase 4 both read
+Phase 2's detection signals, so this lands before them.</li>
+<li><strong>Phase 3 (Proofing and Progress)</strong> — sidecar, last
+position, mark proofed / needs review, progress summary. The sidecar
+schema lands <em>after</em> Phase 2 so it can include the print-page
+hint field from the start.</li>
+<li><strong>Phase 4 (Validation)</strong> — BRF validation engine. Most
+warnings are about things Phase 2 already detected as suspicious, so the
+validator lands after the detectors exist.</li>
+<li><strong>Phase 6 (Source-to-BRF linking)</strong> — depends on
+everything above.</li>
+</ul>
+<p>What this avoids:</p>
+<ul>
+<li><strong>Do not do Phase 3 before Phase 2.</strong> The progress
+summary voice prompt depends on print-page detection, and the sidecar
+schema would have to be re-migrated to add the print-page field.</li>
+<li><strong>Do not do Phase 4 before Phase 2.</strong> Most warning
+rules are checks on Phase 2's detection output; building the validator
+first means either writing rules with no signal to trigger or
+duplicating detection work in the validator.</li>
+<li><strong>Phase 5 can safely land before Phases 2, 3, and 4</strong>
+because translation is opt-in and out-of-process, but it must still wait
+for Phase 1's open/save and <code>go_to_page</code>.</li>
+</ul>
+<h3 id="phase-1-brf-core">Phase 1: BRF Core</h3>
+<p>Deliver:</p>
+<ul>
+<li>Open/save <code>.brf</code> and <code>.brl</code></li>
+<li>Preserve layout exactly</li>
+<li>Detect form feeds</li>
+<li>Calculate braille page, line, and cell</li>
+<li>Status bar support</li>
+<li>Read Braille Status command</li>
+<li>Go to Braille Page command</li>
+<li>Insert Page Break command</li>
+<li>Basic page profile settings</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>User can open a BRF and immediately know current braille page, line,
+and cell.</li>
+<li>User can navigate by braille page.</li>
+<li>File saves without damaging spacing, line endings, or form
+feeds.</li>
+</ul>
+<h3 id="phase-2-page-intelligence">Phase 2: Page Intelligence</h3>
+<p>Deliver:</p>
+<ul>
+<li>Detect print page numbers</li>
+<li>Detect braille page numbers</li>
+<li>Detect page change indicators</li>
+<li>Detect continuation page letters</li>
+<li>Detect running heads</li>
+<li>Add detailed status mode</li>
+<li>Add Go to Print Page</li>
+<li>Add Next/Previous Print Page Change</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>QUILL can say “print page 7” when the BRF contains usable page
+indicators.</li>
+<li>QUILL distinguishes braille page from print page.</li>
+<li>QUILL explains when print page is unknown or guessed.</li>
+</ul>
+<h3 id="phase-3-proofing-and-progress">Phase 3: Proofing and
+Progress</h3>
+<p>Deliver:</p>
+<ul>
+<li>Sidecar progress file</li>
+<li>Last position restore</li>
+<li>Mark page proofed</li>
+<li>Mark page needs review</li>
+<li>Add proofing notes</li>
+<li>Read Progress Summary</li>
+<li>Export Proofing Report</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>A transcriptionist can stop work and resume later.</li>
+<li>QUILL can report proofing progress by page.</li>
+<li>Workflow data does not modify the original BRF.</li>
+</ul>
+<h3 id="phase-4-validation">Phase 4: Validation</h3>
+<p>Deliver:</p>
+<ul>
+<li>BRF validation engine</li>
+<li>Warnings list</li>
+<li>Next/Previous Warning</li>
+<li>Page length warnings</li>
+<li>Line length warnings</li>
+<li>Page numbering warnings</li>
+<li>Page change indicator warnings</li>
+<li>Running head consistency warnings</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>User can locate layout problems without scanning the whole file
+manually.</li>
+<li>Warnings are spoken clearly and can be jumped to directly.</li>
+</ul>
+<h3 id="phase-5-optional-ueb-translation-pack">Phase 5: Optional UEB
+Translation Pack</h3>
+<p>Deliver:</p>
+<ul>
+<li>Detect installed Braille Pack</li>
+<li>Install or configure Braille Pack</li>
+<li>Translate plain text to UEB Grade 1</li>
+<li>Translate plain text to UEB Grade 2</li>
+<li>Back-translate BRF to draft text</li>
+<li>Translate selection</li>
+<li>Back-translate current page</li>
+<li>Send output to new document</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>Base QUILL remains lightweight.</li>
+<li>Translation is available only when requested.</li>
+<li>English UEB users get useful conversion without bundling every
+language and table.</li>
+</ul>
+<h3 id="phase-6-advanced-transcription-workflow">Phase 6: Advanced
+Transcription Workflow</h3>
+<p>Deliver:</p>
+<ul>
+<li>Source-to-BRF linking</li>
+<li>Source page anchors</li>
+<li>BRF page anchors</li>
+<li>Back-translation comparison</li>
+<li>Linked progress report</li>
+<li>Project mode for transcription jobs</li>
+</ul>
+<p>Success criteria:</p>
+<ul>
+<li>A transcriptionist can track source print pages and braille pages
+together.</li>
+<li>QUILL can help answer, “Where am I in the original source?”</li>
+</ul>
+<h2 id="data-structures">Data Structures</h2>
+<h3 id="brfpage">BRFPage</h3>
+<p>Fields:</p>
+<ul>
+<li>index</li>
+<li>startOffset</li>
+<li>endOffset</li>
+<li>lineStartOffsets</li>
+<li>lineCount</li>
+<li>maxCellCount</li>
+<li>hasFormFeed</li>
+<li>detectedBraillePageNumber</li>
+<li>detectedPrintPageNumber</li>
+<li>continuationLetter</li>
+<li>runningHead</li>
+<li>pageChangeIndicators</li>
+<li>warnings</li>
+<li>proofingStatus</li>
+</ul>
+<h3 id="pagechangeindicator">PageChangeIndicator</h3>
+<p>Fields:</p>
+<ul>
+<li>offset</li>
+<li>braillePage</li>
+<li>line</li>
+<li>detectedPrintPage</li>
+<li>confidence</li>
+</ul>
+<h3 id="proofingstatus">ProofingStatus</h3>
+<p>Values:</p>
+<ul>
+<li>none</li>
+<li>proofed</li>
+<li>needsReview</li>
+<li>skipped</li>
+<li>userNote</li>
+</ul>
+<h2 id="file-handling-rules">File Handling Rules</h2>
+<ul>
+<li>Never trim trailing spaces automatically.</li>
+<li>Never normalize line endings without permission.</li>
+<li>Never remove form feeds automatically.</li>
+<li>Never rewrite page numbers automatically without user action.</li>
+<li>Preserve original encoding when possible.</li>
+<li>Warn before saving if non-Braille-ASCII characters exist.</li>
+<li>Use a sidecar for QUILL metadata.</li>
+<li>Provide “Save As Clean BRF” as a deliberate command, not default
+behavior.</li>
+</ul>
+<h2 id="suggested-internal-modules">Suggested Internal Modules</h2>
+<ul>
+<li><code>brf_document.py</code></li>
+<li><code>brf_page_map.py</code></li>
+<li><code>brf_ascii.py</code></li>
+<li><code>brf_page_detection.py</code></li>
+<li><code>brf_status.py</code></li>
+<li><code>brf_validator.py</code></li>
+<li><code>brf_progress.py</code></li>
+<li><code>brf_sidecar.py</code></li>
+<li><code>braille_commands.py</code></li>
+<li><code>braille_pack.py</code></li>
+<li><code>braille_worker_client.py</code></li>
+</ul>
+<h2 id="suggested-testing">Suggested Testing</h2>
+<p>Unit tests:</p>
+<ul>
+<li>Form feed page detection</li>
+<li>Calculated page detection</li>
+<li>Line and cell calculation</li>
+<li>Print page number detection</li>
+<li>Braille page number detection</li>
+<li>Page change indicator detection</li>
+<li>Continuation page detection</li>
+<li>Running head detection</li>
+<li>Validation warnings</li>
+<li>Sidecar read/write</li>
+<li>Save without layout damage</li>
+</ul>
+<p>Accessibility tests:</p>
+<ul>
+<li>Open BRF with screen reader running</li>
+<li>Read status command</li>
+<li>Navigate warnings list</li>
+<li>Go to page dialog</li>
+<li>Mark proofing status</li>
+<li>Restore last position</li>
+<li>Ensure focus returns to editor</li>
+<li>Ensure no unsolicited announcements while typing</li>
+</ul>
+<p>Real-world test files:</p>
+<ul>
+<li>BRF with form feeds</li>
+<li>BRF without form feeds</li>
+<li>BRF with 39-cell lines</li>
+<li>BRF with 40-cell lines</li>
+<li>BRF with print page changes</li>
+<li>BRF with continuation pages</li>
+<li>BRF with front matter</li>
+<li>BRF with transcriber-generated pages</li>
+<li>BRF with no print page numbers</li>
+<li>BRF containing unexpected characters</li>
+<li>Unicode braille file mistakenly named <code>.brf</code></li>
+</ul>
+<h2 id="definition-of-done-for-version-1">Definition of Done for Version
+1</h2>
+<p>Version 1 is complete when a screen reader user can:</p>
+<ul>
+<li>Open a BRF</li>
+<li>Hear page, line, and cell status</li>
+<li>Navigate by braille page</li>
+<li>Insert a page break</li>
+<li>Know whether print page tracking is available</li>
+<li>Save without damaging the file</li>
+<li>Mark reading/proofing progress</li>
+<li>Resume from last position</li>
+<li>Run a validation check</li>
+<li>Jump directly to warnings</li>
+</ul>
+<h2 id="long-term-magic">Long-Term Magic</h2>
+<p>Future features could include:</p>
+<ul>
+<li>“Where am I?” global command that speaks document, braille page,
+print page, line, cell, running head, and proofing status</li>
+<li>Smart resume: “Continue where I left off”</li>
+<li>Proofing dashboard as plain text</li>
+<li>Automatic detection of page profile</li>
+<li>“Explain this BRF page” command</li>
+<li>Draft back-translation of current page</li>
+<li>Compare source paragraph with back-translated BRF</li>
+<li>Per-project transcription notes</li>
+<li>Export clean proofing report</li>
+<li>Optional eBraille awareness later, without forcing QUILL into full
+eBraille authoring</li>
+</ul>
+<h2 id="product-principle">Product Principle</h2>
+<p>The best version of this feature is not flashy.</p>
+<p>The best version is the one where a blind transcriptionist presses
+one command and immediately knows:</p>
+<p>“I am on braille page 42, print page 18, continuation b, line 14,
+cell 31. This page is not yet proofed. There is one layout warning on
+this page.”</p>
+<p>That is the magic.</p>
+<p>For the translation piece, I would use Liblouis only as an optional
+pack. Its official docs describe Python bindings for forward translation
+and back-translation, which fits QUILL’s wxPython stack nicely. (<a
+href="https://liblouis.io/documentation/liblouis/Python-bindings.html?utm_source=chatgpt.com"
+title="7.30 Python bindings">Liblouis</a>) Liblouis already has English
+UEB tables, including <code>en-ueb-g1.ctb</code> and
+<code>en-ueb-g2.ctb</code>; the Grade 2 table is about 196 KB in the
+project listing, so the real bloat risk is not the UEB table itself but
+bundling every language, every math table, and every possible
+dependency. (<a
+href="https://github.com/liblouis/liblouis/blob/master/tables/en-ueb-g2.ctb?utm_source=chatgpt.com"
+title="liblouis/tables/en-ueb-g2.ctb at master">GitHub</a>)</p>
+<p>My strongest recommendation: build <strong>BRF Core + Page
+Intelligence + Progress Tracking</strong> first. That gives blind
+transcriptionists immediate value without adding a heavy translator.
+Then ship <strong>UEB translation as an optional Braille
+Pack</strong>.</p>
+</body>
+</html>

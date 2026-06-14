@@ -1,0 +1,1 @@
+words_alpha.LICENSE.txt license text

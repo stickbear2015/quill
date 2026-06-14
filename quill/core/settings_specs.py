@@ -80,6 +80,11 @@ SETTING_GROUPS: tuple[SettingGroup, ...] = (
         "Developer Console",
         "Python and TypeScript consoles for developers and power users.",
     ),
+    SettingGroup(
+        "braille",
+        "Braille Mode",
+        "Page geometry, page-break heuristic, sidecar, and announcements for braille.",
+    ),
 )
 
 _GROUP_IDS = {group.id for group in SETTING_GROUPS}
@@ -1147,5 +1152,139 @@ SETTING_SPECS: tuple[SettingSpec, ...] = (
         "unknown host key rejects the connection so you notice the "
         "mismatch. Off unless you have a specific reason to change it.",
         keywords=("ssh", "host key", "trust", "paramiko", "security"),
+    ),
+    # --- Braille Mode (BR-008) ---------------------------------------------
+    SettingSpec(
+        "braille_cells_per_line",
+        "Cells per line",
+        "braille",
+        "int",
+        "How many characters a single braille line holds. NABCC literature "
+        "ranges from 28 (jumbo) to 42 (wide). 40 matches BANA and is the default.",
+        minimum=28,
+        maximum=42,
+        keywords=("braille", "cells", "line width", "page width", "brf"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_lines_per_page",
+        "Lines per page",
+        "braille",
+        "int",
+        "How many lines fit on one braille page. BANA hard copy is 25, "
+        "Braille Blaster sized embosser paper is 20-30.",
+        minimum=20,
+        maximum=30,
+        keywords=("braille", "lines", "page height", "brf"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_use_form_feeds",
+        "Use form feeds for page breaks",
+        "braille",
+        "bool",
+        "When on (the historical default), form-feed characters (0x0C) in a "
+        "BRF file are treated as authoritative page breaks. Turn off only "
+        "if the source never used form feeds.",
+        keywords=("braille", "form feed", "page break", "brf"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_calculate_pages",
+        "Calculate pages from geometry",
+        "braille",
+        "bool",
+        "When on and no form feeds are present, derive page boundaries from "
+        "the cells-per-line / lines-per-page setting. Off by default only "
+        "when both heuristics disagree; QUILL falls back to a hybrid mode.",
+        keywords=("braille", "calculate", "geometry", "page break", "brf"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_save_sidecar",
+        "Write sidecar on save",
+        "braille",
+        "bool",
+        "When on, saving a BRF file also writes a matching .brf.json sidecar "
+        "stamping the profile, line-ending report, and BOM presence so other "
+        "tools can recover the reading context.",
+        keywords=("braille", "sidecar", "json", "save", "brf"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_status_verbosity",
+        "Status verbosity",
+        "braille",
+        "choice",
+        "How much of the braille position to announce and display. "
+        "'brief' is page + line + cell; 'normal' adds print page; "
+        "'detailed' adds continuation, running head, and proofing status.",
+        choices=(
+            ("brief", "Brief"),
+            ("normal", "Normal"),
+            ("detailed", "Detailed"),
+        ),
+        keywords=("braille", "status", "verbosity", "announce", "speech"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_auto_announce_page_changes",
+        "Announce page changes automatically",
+        "braille",
+        "bool",
+        "When on, QUILL speaks the new page number whenever the caret "
+        "crosses a page boundary. Off by default to avoid speech churn.",
+        keywords=("braille", "announce", "page", "speech"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_auto_announce_print_page_changes",
+        "Announce print page changes",
+        "braille",
+        "bool",
+        "When on, QUILL speaks when the implied print page changes "
+        "(requires a print page map; otherwise the announcement is skipped).",
+        keywords=("braille", "announce", "print page", "speech"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_auto_announce_line_overflow",
+        "Announce line overflow",
+        "braille",
+        "bool",
+        "When on, QUILL warns when a source line exceeds the cells-per-line "
+        "budget. Off by default to keep read-aloud uninterrupted.",
+        keywords=("braille", "announce", "overflow", "line", "speech"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_include_proofing_status",
+        "Include proofing status in status string",
+        "braille",
+        "bool",
+        "When on, the detailed status string includes the last proofed "
+        "page and the number of pages that still need review.",
+        keywords=("braille", "proofing", "status", "review"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_include_running_head",
+        "Include running head in status string",
+        "braille",
+        "bool",
+        "When on, the detailed status string includes the current running "
+        "head (page header) when one is present in the sidecar.",
+        keywords=("braille", "running head", "header", "status"),
+        feature_id="core.braille",
+    ),
+    SettingSpec(
+        "braille_include_continuation",
+        "Include continuation in status string",
+        "braille",
+        "bool",
+        "When on, the detailed status string announces the continuation "
+        "letter (a, b, c) when a page overflows onto a continuation page.",
+        keywords=("braille", "continuation", "status", "speech"),
+        feature_id="core.braille",
     ),
 )

@@ -1,0 +1,13 @@
+[
+  {
+    "extra": {},
+    "host": "h",
+    "id": "keep",
+    "name": "Keep",
+    "port": 21,
+    "protocol": "ftp",
+    "root_dir": "",
+    "trust_first_use": false,
+    "username": ""
+  }
+]

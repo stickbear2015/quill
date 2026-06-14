@@ -1,0 +1,25 @@
+{
+  "profiles": [
+    {
+      "description": "Profile for writing flows.",
+      "feature_profile_data": {
+        "active_profile_id": "writer",
+        "overrides": {},
+        "previous_profile_id": null,
+        "schema_version": 1,
+        "show_quiet_features": true
+      },
+      "id": "custom_writer",
+      "inherits_parent": true,
+      "keymap_data": {
+        "file.save": "Ctrl+S"
+      },
+      "name": "Custom Writer",
+      "parent_profile_id": "writer",
+      "settings_data": {
+        "soft_wrap": true
+      }
+    }
+  ],
+  "schema_version": 1
+}

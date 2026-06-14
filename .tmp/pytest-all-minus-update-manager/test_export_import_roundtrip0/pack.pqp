@@ -1,0 +1,71 @@
+{
+  "schema": "quill.prompt-pack/1",
+  "name": "pack",
+  "prompts": [
+    {
+      "name": "Export Test",
+      "text": "Some text {selection}",
+      "category": "Custom"
+    },
+    {
+      "name": "Active Voice",
+      "text": "Rewrite the following text using active voice throughout. Return only the rewritten text:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Check Grammar",
+      "text": "You are a grammar and style editor. Review the following text and list only the corrections needed. For each correction, give: the original phrase, the corrected phrase, and a one-sentence reason. Do not rewrite the whole passage. If the text is correct, say \"No issues found.\"\n\nText:\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Conversational Tone",
+      "text": "Rewrite the following text in a friendly, conversational tone:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Fix Grammar",
+      "text": "Correct all grammar, punctuation, and spelling errors in the following text. Return only the corrected text with no explanation:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Formal Tone",
+      "text": "Rewrite the following text in a formal, professional tone:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Improve Clarity",
+      "text": "Rewrite the following text to be clearer and easier to read, without changing its meaning or length significantly:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Make Concise",
+      "text": "Rewrite the following text to be more concise, removing unnecessary words while preserving the full meaning:\n\n{selection}",
+      "category": "Editing"
+    },
+    {
+      "name": "Define This Term",
+      "text": "Provide a clear, concise definition of the following term or concept. Include a brief example if helpful:\n\n{selection}",
+      "category": "Research"
+    },
+    {
+      "name": "Find Counterarguments",
+      "text": "List the strongest counterarguments to the following claim or argument:\n\n{selection}",
+      "category": "Research"
+    },
+    {
+      "name": "Convert to Bullet Points",
+      "text": "Convert the following text into a clear, well-organized list of bullet points:\n\n{selection}",
+      "category": "Structure"
+    },
+    {
+      "name": "Summarize",
+      "text": "Write a one-paragraph summary of the following text:\n\n{selection}",
+      "category": "Structure"
+    },
+    {
+      "name": "Continue from Here",
+      "text": "Continue writing naturally from the following text, matching its style and voice. Write about the same length as what is provided:\n\n{selection}",
+      "category": "Writing"
+    }
+  ]
+}

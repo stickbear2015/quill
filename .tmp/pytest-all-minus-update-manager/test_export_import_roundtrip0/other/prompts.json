@@ -1,0 +1,15 @@
+{
+  "builtin_overrides": {},
+  "user_prompts": [
+    {
+      "category": "Custom",
+      "enabled": true,
+      "id": "28bb422e-611e-42f8-9d72-efa5bc702d4a",
+      "is_builtin": false,
+      "name": "Export Test",
+      "shortcut": "",
+      "source": "user",
+      "text": "Some text {selection}"
+    }
+  ]
+}

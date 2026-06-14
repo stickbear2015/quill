@@ -905,6 +905,43 @@ What to check when resuming:
 - `codex-handoff.md`
 - `codex-review-log.md`
 - `codex-plans/publishing-providers-framework.md`
+
+## 2026-06-14
+
+What I changed in this pass:
+
+- merged the latest `origin/main` into `features/publishing-providers-framework` again
+- resolved the new conflicts by taking upstream `main` for braille/close/crash-report/doc work and preserving only the publishing-owned surfaces we maintain
+- regenerated `tests/unit/ui/fixtures/dialog_inventory.json` and `tests/unit/ui/fixtures/main_frame_public_surface.json`
+- fixed `tests/unit/ui/test_main_frame_menu_contract.py` so `_menu_source()` includes every `main_frame*.py` module again; the narrowed upstream version had stopped seeing helper definitions in `main_frame_power_tools.py` and produced a false failure
+- remeasured `quill/tools/module_size_budgets.json` to the current integrated tree and kept the explicit publishing tracked entries
+- confirmed `CLAUDE.md` is identical to `origin/main`
+
+Why this was needed:
+
+- `main` had advanced again with the close-path fix we were waiting on, plus braille/mainline work that touched several of the same shell surfaces as the publishing branch
+- the branch needed another careful reintegration cycle without rewriting unrelated upstream behavior
+- the local notes needed a truthful checkpoint before commit/push
+
+Validation runs:
+
+- focused publishing-owned suite:
+  - `121 passed`
+- broader merge-sensitive suite:
+  - `429 passed`
+- full branch suite:
+  - blocked in this environment by upstream dependency/import issues in `tests/unit/ui/test_update_manager.py` (`requests`, then `platform_utils`)
+  - after ignoring that file, remaining non-publishing failures/timeouts are upstream/mainline:
+    - `tests/unit/core/ai/test_ai_sessions.py::test_list_and_most_recent`
+    - `tests/unit/core/test_recovery.py::test_begin_session_offers_previous_unclean_snapshot`
+    - `tests/unit/core/test_recovery.py::test_latest_session_snapshot_and_reader`
+    - `tests/unit/core/test_recovery.py::test_concurrent_begin_session_serialize_via_lock`
+    - timeout in `tests/unit/core/test_reset_caches.py::test_thesaurus_preload_after_reset_is_idempotent`
+
+What this means:
+
+- the publishing integration itself is passing in the owned and merge-adjacent areas
+- the remaining branch-wide red spots are not attributable to publishing code changes and should be treated as upstream/main/environment follow-up, not as regressions introduced by this branch
 - current branch status for any uncommitted planning-note edits
 
 ## 2026-06-09

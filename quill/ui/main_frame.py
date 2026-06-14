@@ -487,6 +487,7 @@ from quill.ui.editor_surface import PLAIN, RICH, surface_kind
 from quill.ui.html_paste_cleaner import analyze_paste
 from quill.ui.main_frame_abbreviations import AbbreviationsMixin
 from quill.ui.main_frame_ai_actions import AiActionsMixin
+from quill.ui.main_frame_braille import BrailleCommandsMixin
 from quill.ui.main_frame_browse import BrowseModeMixin
 from quill.ui.main_frame_copy_tray import CopyTrayMixin
 from quill.ui.main_frame_devtools import DevToolsMixin
@@ -782,6 +783,7 @@ class _IntellisensePopup:
 class MainFrame(
     AbbreviationsMixin,
     AiActionsMixin,
+    BrailleCommandsMixin,
     ImageCaptureMixin,
     BrowseModeMixin,
     MenuBuilderMixin,
@@ -830,6 +832,7 @@ class MainFrame(
         "sr_name": "Screen Reader",
         "suggestion": "Suggested Action",
         "notebook_goal": "Notebook Goal",
+        "braille": "Braille",
     }
     _STATUS_BAR_WIDTHS: dict[str, int] = {
         "message": -1,
@@ -854,6 +857,7 @@ class MainFrame(
         "sr_name": 160,
         "suggestion": 220,
         "notebook_goal": 200,
+        "braille": 320,
     }
     _STATUS_BAR_FEATURES: dict[str, str] = {
         "message": "core.app",
@@ -878,6 +882,7 @@ class MainFrame(
         "sr_name": "core.app",
         "suggestion": "core.app",
         "notebook_goal": "core.notebook",
+        "braille": "core.braille",
     }
     _MACRO_CONTROL_COMMANDS: frozenset[str] = frozenset({
         "tools.start_macro_recording",
@@ -1035,6 +1040,10 @@ class MainFrame(
         self._bookmarks: dict[str, int] = {}
         self._tray_icon: object | None = None
         self._is_exiting = False
+        # #210: a committed close arms a daemon watchdog that force-exits if the
+        # graceful wx shutdown wedges. Set only on real frames so __new__-built
+        # test frames never arm a real os._exit.
+        self._hard_exit_enabled = True
         self._ipc_timer: object | None = None
         self._status_message = "Ready"
         self._background_task_count = 0
@@ -1095,6 +1104,10 @@ class MainFrame(
         self._sticky_note_hotkey_id = wx.NewIdRef()
         self.commands = CommandRegistry()
         self.commands.set_run_listener(self._on_command_run)
+        # #235: surface the soft BRF save warning (non-NABCC chars saved as-is).
+        from quill.io.text import set_save_warning_hook
+
+        set_save_warning_hook(self._announce_brf_save_warning)
         self._recent_menu_ids: dict[int, Path] = {}
         self._recent_session_menu_ids: dict[int, Path] = {}
         self._session_menu_ids: dict[int, int] = {}
@@ -3214,6 +3227,7 @@ class MainFrame(
         )
         self._register_power_tools_commands()
         self._register_quillins_commands()
+        self._register_braille_commands()
 
     def _apply_accelerators(self) -> None:
         wx = self._wx
@@ -5277,15 +5291,42 @@ class MainFrame(
             widget.PopupMenu(menu, widget.ScreenToClient(point))
 
     def _on_close(self, event: object) -> None:
-        if self.settings.tray_enabled and not self._is_exiting:
-            self._ensure_tray_icon()
-            self.frame.Hide()
-            self._set_status("Quill is running in the system tray")
-            event.Veto()
-            return
-        if not self._can_close_all_documents():
-            event.Veto()
-            return
+        import logging
+
+        log = logging.getLogger(__name__)
+        # Tray mode hides instead of closing -- but only for a plain close, and a
+        # failure in the tray path must never trap the window open.
+        if not self._is_exiting:
+            try:
+                if self.settings.tray_enabled:
+                    self._ensure_tray_icon()
+                    self.frame.Hide()
+                    self._set_status("Quill is running in the system tray")
+                    event.Veto()
+                    return
+            except Exception:  # noqa: BLE001 - a tray failure must not block exit
+                log.warning("Tray hide failed during close; closing instead", exc_info=True)
+
+        # Offer to save. A user Cancel legitimately vetoes the close; an
+        # *exception* here is a bug, not a cancel -- per #210 the window must
+        # still close, so we log and proceed rather than aborting the handler
+        # with no hard-exit armed (the previous behaviour: a raising save prompt
+        # left the editor stuck open with nothing to force it shut).
+        try:
+            if not self._can_close_all_documents():
+                event.Veto()
+                return
+        except Exception:  # noqa: BLE001 - never trap the window open on a prompt bug
+            log.warning("Save-on-close prompt failed; closing anyway (#210)", exc_info=True)
+
+        # #210: the close is committed. Arm the daemon hard-exit BEFORE any
+        # cleanup so a blocking/throwing step -- or a wx main loop that never
+        # returns -- can never leave the process running with no closable window.
+        if getattr(self, "_hard_exit_enabled", False):
+            from quill.stability.shutdown_watchdog import arm_hard_exit
+
+            log.info("Close committed; arming hard-exit watchdog (#210)")
+            arm_hard_exit()
 
         # #210: the window must always close. Every shutdown step below runs
         # under its own guard so that one failing or slow step (a watch worker,
@@ -5305,6 +5346,13 @@ class MainFrame(
 
             sound_manager.shutdown()
 
+        # #210: persist critical state FIRST, before any teardown step that can
+        # block (ssh socket, sound backend). If a later step wedges and the
+        # hard-exit watchdog fires, settings, undo history, and the clean-exit
+        # marker are already written, so the fast exit loses nothing.
+        _safely("save settings", lambda: save_settings(self.settings))
+        _safely("persistent undo flush", self.flush_persistent_undo)
+        _safely("clean-exit marker", lambda: mark_clean_exit(self.session_id))
         # H-3-ui: destroy the modeless Watch Queue Monitor so it does not
         # outlive the main frame and leak a window reference.
         if self._watch_queue_monitor is not None:
@@ -5322,9 +5370,6 @@ class MainFrame(
         prune = getattr(self, "prune_orphaned_github_temp", None)
         if callable(prune):
             _safely("github temp prune", prune)
-        _safely("save settings", lambda: save_settings(self.settings))
-        _safely("persistent undo flush", self.flush_persistent_undo)
-        _safely("clean-exit marker", lambda: mark_clean_exit(self.session_id))
         _safely("sound manager", _shutdown_sound_manager)
         # Destroy any straggler top-level windows (e.g. a modeless Ask Quill
         # chat frame) so they do not keep the wx main loop alive after the main
@@ -5455,6 +5500,79 @@ class MainFrame(
                     continue
         return removed
 
+    def _send_crash_report(self, offer: object, logs_path: Path) -> bool:
+        """File a crash report from the recovery dialog. Returns True to close it.
+
+        The Quill issue tracker is public, so this asks for explicit consent and
+        only sends a redacted log summary. With a stored GitHub token it creates
+        the issue directly, clears the logs, and returns True (close the dialog);
+        without one it opens the manual report form and returns False.
+        """
+        wx = self._wx
+        from quill.core.feedback_token import effective_github_token
+        from quill.core.issue_submit import build_log_summary, submit_crash_issue
+
+        with wx.MessageDialog(
+            self.frame,
+            "This files a report on Quill's PUBLIC issue tracker and includes a "
+            "redacted summary of your most recent log file. Personal data is "
+            "scrubbed, but the issue is visible to anyone. Send it now?",
+            "Send Bug Report",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION,
+        ) as consent:
+            if (
+                self._show_modal_dialog(consent, "Send Bug Report", restore_editor_focus=False)
+                != wx.ID_YES
+            ):
+                self._set_status("Bug report cancelled")
+                return False
+
+        if not effective_github_token():
+            self._set_status("No GitHub token: opening the bug report form")
+            self._report_bug_legacy()
+            return False
+
+        body = (
+            "Quill offered crash recovery after an unclean exit. Submitted "
+            "automatically from the Crash Recovery dialog.\n\n" + build_log_summary(logs_path)
+        )
+        issue_url, error = submit_crash_issue(
+            summary="Crash recovery: Quill detected an unclean exit",
+            message=body,
+            app_version=__version__ or "0.0.0",
+            github_token=effective_github_token(),
+            metadata={
+                "session": getattr(offer, "session_id", ""),
+                "snapshot": str(getattr(offer, "snapshot", "")),
+            },
+        )
+        if not issue_url:
+            self._set_status(f"Could not file report: {error}")
+            with wx.MessageDialog(
+                self.frame,
+                f"The report could not be filed automatically:\n{error}\n\n"
+                "Opening the manual report form instead.",
+                "Bug Report",
+                wx.OK | wx.ICON_WARNING,
+            ) as failed:
+                self._show_modal_dialog(failed, "Bug Report", restore_editor_focus=False)
+            self._report_bug_legacy()
+            return False
+
+        self._copy_to_clipboard(issue_url)
+        self._clear_recovery_logs(logs_path)
+        self._record_notification(f"Filed crash report: {issue_url}", "support")
+        self._set_status(f"Filed crash report: {issue_url}")
+        with wx.MessageDialog(
+            self.frame,
+            f"Thanks. Your report was filed and the logs were cleared:\n{issue_url}\n\n"
+            "The link is on your clipboard.",
+            "Bug Report Sent",
+            wx.OK | wx.ICON_INFORMATION,
+        ) as done:
+            self._show_modal_dialog(done, "Bug Report Sent", restore_editor_focus=False)
+        return True
+
     def _offer_crash_recovery(self) -> None:
         if not self._recovery_offers:
             return
@@ -5534,6 +5652,7 @@ class MainFrame(
         open_logs_button = wx.Button(dialog, label="Open Logs Folder")
         clear_logs_button = wx.Button(dialog, label="Clear Logs")
         save_diagnostics_button = wx.Button(dialog, label="Save Diagnostics...")
+        send_report_button = wx.Button(dialog, label="Send Bug Report")
         skip_label = "Discard and Continue" if offer.dismissal_count >= 3 else "Skip Recovery"
         skip_button = wx.Button(dialog, id=wx.ID_NO, label=skip_label)
         buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -5541,6 +5660,7 @@ class MainFrame(
         buttons.Add(open_logs_button, 0, wx.RIGHT, 6)
         buttons.Add(clear_logs_button, 0, wx.RIGHT, 6)
         buttons.Add(save_diagnostics_button, 0, wx.RIGHT, 6)
+        buttons.Add(send_report_button, 0, wx.RIGHT, 6)
         buttons.AddStretchSpacer(1)
         buttons.Add(skip_button, 0)
         root.Add(buttons, 0, wx.ALL | wx.EXPAND, 8)
@@ -5550,6 +5670,7 @@ class MainFrame(
         open_logs_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_APPLY))
         clear_logs_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_CLEAR))
         save_diagnostics_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_SAVE))
+        send_report_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_HELP))
         skip_button.Bind(wx.EVT_BUTTON, lambda _e: dialog.EndModal(wx.ID_NO))
         dialog.SetDefaultItem(restore_button)
         apply_modal_ids(dialog, affirmative_id=wx.ID_YES, escape_id=wx.ID_NO)
@@ -5581,6 +5702,11 @@ class MainFrame(
                     continue
                 if result == wx.ID_SAVE:
                     self.save_diagnostics_bundle()
+                    continue
+                if result == wx.ID_HELP:
+                    if self._send_crash_report(offer, logs_path):
+                        mark_recovery_offer_dismissed(offer)
+                        return
                     continue
                 if result != wx.ID_YES:
                     mark_recovery_offer_dismissed(offer)
@@ -6324,6 +6450,11 @@ class MainFrame(
 
     def _record_notification(self, message: str, category: str = "info") -> None:
         self._notifications = add_notification(message, category)
+
+    def _announce_brf_save_warning(self, message: str) -> None:
+        """Surface the soft BRF save warning (#235): status + announcement."""
+        self._set_status(message)
+        self._announce(message)
 
     def _announce(self, message: str) -> None:
         self._status_message = message
@@ -11690,17 +11821,36 @@ class MainFrame(
         self._set_status(f"Saved diagnostics bundle to {bundle_path.name}")
 
     def report_bug(self) -> None:
-        if not self._feedback_hub_available():
-            self._report_bug_legacy()
-            return
+        # feedback_hub is an optional, separately-shipped component (#210
+        # follow-up). When it is importable we prefer it, but any runtime
+        # failure must still leave the user with a working report dialog, so we
+        # fall back to the always-present built-in form rather than crashing
+        # with no window.
+        if self._feedback_hub_available():
+            try:
+                self._report_bug_via_hub()
+                return
+            except Exception:  # noqa: BLE001 - never strand the user without a form
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "feedback_hub bug report failed; using the built-in form", exc_info=True
+                )
+                self._set_status("Report a Bug: using the built-in form")
+        self._report_bug_legacy()
+
+    def _report_bug_via_hub(self) -> None:
         from feedback_hub import load_schema
         from feedback_hub.wx_dialog import FeedbackDialog
+
+        from quill.core.feedback_token import effective_github_token
 
         schema_path = Path(__file__).parent.parent / "core" / "schemas" / "feedback.json"
         dlg = FeedbackDialog(
             self.frame,
             schema=load_schema(schema_path),
             app_version=__version__ or "0.0.0",
+            github_token=effective_github_token(),
         )
         result = self._show_modal_dialog(dlg, "Report an Issue")
         dlg.Destroy()
@@ -22722,3 +22872,13 @@ def run_app(
         watchdog = getattr(frame, "_stability_watchdog", None)
         if watchdog is not None:
             watchdog.stop()
+    # #210: the GUI loop has ended and our timers are stopped, so QUILL is done.
+    # Force the process to terminate rather than returning up the stack: a
+    # lingering non-daemon thread (a TTS driver loop, an audio backend, a
+    # leftover worker) must never be able to keep QUILL alive with no window. The
+    # hard-exit watchdog in _on_close covers the other half -- a main loop that
+    # never returns at all.
+    import logging
+
+    logging.shutdown()
+    os._exit(0)

@@ -4678,6 +4678,55 @@ The tab's `source_label` is set to `GitHub: owner/repo (branch)` and shown in th
 
 ---
 
+## §26. Braille Mode (BRF/BRL/PEF/UEB)
+
+Braille Mode makes QUILL a first-class proofreading environment for formatted
+braille text files. The full plan lives in `docs/braille.md`; this section
+captures the shipped requirements. The detailed engine design and the liblouis
+deployment/packaging plan are in `docs/braille.md`.
+
+### Requirements
+
+- **Open (BR-004).** `.brf`, `.brl`, `.pef`, and `.ueb` are recognised as a
+  braille-text family and read as NABCC (braille ASCII): a UTF-8 BOM is stripped,
+  non-braille-ASCII characters are recorded (not transformed), and line-ending
+  and form-feed shape is detected. The pure model lives in `quill/core/brf_*`
+  (document, ascii guard, page map) and `quill/core/braille_position.py`.
+- **Save byte-for-byte (BR-012).** Saving a braille file performs no line-ending
+  normalization, no trailing-space trimming, and preserves form feeds and
+  encoding, so open→save is byte-identical. A single soft, non-blocking warning
+  is surfaced when non-NABCC characters are written; the characters are saved
+  as-is (falling back to UTF-8) so a unicode-braille codepoint never crashes the
+  save.
+- **Status bar (BR-010).** While a braille document is active the status bar
+  carries a braille cell — `BRF Pg p/P | Ln l/L | Cell c/C | Print n` — rebuilt
+  from a cached `BraillePositionResolver` and refreshed on caret movement. The
+  print-page segment reads `Print ?` until print-page detection (BR-013) lands.
+- **Commands and menu (BR-011).** A top-level **Braille** menu groups Status,
+  Navigation, and Page Tools commands. Default bindings are intentionally unset
+  so nothing collides with screen-reader or editor shortcuts; commands are
+  reachable from the menu, the Command Palette, and any user-assigned key. Every
+  command degrades to a spoken "not a braille document" on non-braille files.
+- **Translation, optional and out-of-process (BR-020/021/022).** Forward and
+  back UEB translation require the optional **Braille Pack** (liblouis + UEB
+  tables). liblouis is **never** imported in-process: each translation runs a
+  short-lived worker subprocess via `stability.safe_subprocess`, killed on
+  timeout and respawned on the next call, so a liblouis crash or hang cannot take
+  QUILL down. The Translation submenu is shown only when the pack is detected and
+  QUILL is not in Safe Mode; otherwise it is hidden (never disabled). Back-
+  translation output is always labelled a *draft*. On worker failure QUILL
+  announces the reason and opens no empty document.
+
+### Non-goals (this phase)
+
+Print-page detection, the proofing/sidecar workflow, and the bundled translation
+pack are tracked separately (BR-013 and later). The translation install path is a
+no-op stub until the signed, audited download lands; see the deployment plan in
+`docs/braille.md`.
+
+
+---
+
 # Appendix: Engineering documentation
 
 _Folded in from the former docs/QUILL-PRD.md on 2026-06-13._

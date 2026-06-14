@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from quill.core.feature_catalog import FEATURE_ALIASES, FEATURE_DEFINITIONS
+from quill.core.feature_catalog import FEATURE_ALIASES, FEATURE_DEFINITIONS, FeatureDefinition
 from quill.core.feature_command_map import COMMAND_FEATURE_MAP
 from quill.core.paths import app_data_dir
 from quill.core.storage import read_json, write_json_atomic
@@ -228,6 +228,7 @@ PROFILE_DEFINITIONS: dict[str, FeatureProfile] = {
             "future.character_inspector": FEATURE_STATE_QUIET,
             "future.cleanup": FEATURE_STATE_QUIET,
             "future.regex_library": FEATURE_STATE_QUIET,
+            "future.publishing": FEATURE_STATE_QUIET,
         },
     ),
     PROFILE_FULL_QUILL: FeatureProfile(

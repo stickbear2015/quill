@@ -1,0 +1,28 @@
+{
+  "created": "2026-06-14T22:40:06.808618+00:00",
+  "entries": [
+    {
+      "id": "ba78f7a8-d2c4-483e-8202-fe1cd4d0d11b",
+      "last_caret_pos": 0,
+      "last_opened": null,
+      "path": "a.md",
+      "tags": [],
+      "title": "A",
+      "word_count": null
+    }
+  ],
+  "goal": {
+    "daily_target": 500,
+    "enabled": false,
+    "today_count": 0,
+    "today_date": null,
+    "unit": "words"
+  },
+  "last_opened": null,
+  "name": "proj",
+  "root_dir": "C:\\code\\git-src\\quill\\.tmp\\pytest-all-minus-update-manager\\test_create_from_folder_exclud0\\proj",
+  "saved_searches": [],
+  "schema": "quill.notebook/1",
+  "snapshots": [],
+  "vocabulary": []
+}

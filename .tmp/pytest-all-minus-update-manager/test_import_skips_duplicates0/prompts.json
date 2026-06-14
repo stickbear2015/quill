@@ -1,0 +1,15 @@
+{
+  "builtin_overrides": {},
+  "user_prompts": [
+    {
+      "category": "Custom",
+      "enabled": true,
+      "id": "f0d69c97-0052-4953-b868-a2e1bc75b20e",
+      "is_builtin": false,
+      "name": "Unique Name",
+      "shortcut": "",
+      "source": "user",
+      "text": "text {selection}"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "slots": [
+    {
+      "copied_at": "2026-06-14T22:39:16.466442+00:00",
+      "label": "my label",
+      "pinned": false,
+      "text": "some text"
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    },
+    {
+      "copied_at": "",
+      "label": "",
+      "pinned": false,
+      "text": ""
+    }
+  ],
+  "version": 1
+}

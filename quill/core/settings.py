@@ -192,6 +192,22 @@ class Settings:
     indent_tone_scale: str = ""
     # Abbreviation backspace: "delete" removes expansion, "revert" puts the original back.
     abbreviation_backspace_behavior: str = "delete"
+    # Braille Mode (BR-008): page geometry, page-break heuristic, sidecar,
+    # and status-string / auto-announcement toggles. The defaults match the
+    # historical `one_crazy_night.brf` corpus fixture so existing
+    # documents round-trip unchanged.
+    braille_cells_per_line: int = 40
+    braille_lines_per_page: int = 25
+    braille_use_form_feeds: bool = True
+    braille_calculate_pages: bool = True
+    braille_save_sidecar: bool = True
+    braille_status_verbosity: str = "normal"
+    braille_auto_announce_page_changes: bool = False
+    braille_auto_announce_print_page_changes: bool = False
+    braille_auto_announce_line_overflow: bool = False
+    braille_include_proofing_status: bool = True
+    braille_include_running_head: bool = False
+    braille_include_continuation: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Settings:
@@ -514,6 +530,35 @@ class Settings:
         abbreviation_backspace_behavior = str(data.get("abbreviation_backspace_behavior", "delete"))
         if abbreviation_backspace_behavior not in {"delete", "revert"}:
             abbreviation_backspace_behavior = "delete"
+        # Braille Mode (BR-008) field parsing with clamping and validation.
+        try:
+            braille_cells_per_line = int(data.get("braille_cells_per_line", 40))
+        except (TypeError, ValueError):
+            braille_cells_per_line = 40
+        braille_cells_per_line = max(28, min(42, braille_cells_per_line))
+        try:
+            braille_lines_per_page = int(data.get("braille_lines_per_page", 25))
+        except (TypeError, ValueError):
+            braille_lines_per_page = 25
+        braille_lines_per_page = max(20, min(30, braille_lines_per_page))
+        braille_use_form_feeds = bool(data.get("braille_use_form_feeds", True))
+        braille_calculate_pages = bool(data.get("braille_calculate_pages", True))
+        braille_save_sidecar = bool(data.get("braille_save_sidecar", True))
+        braille_status_verbosity = str(data.get("braille_status_verbosity", "normal"))
+        if braille_status_verbosity not in {"brief", "normal", "detailed"}:
+            braille_status_verbosity = "normal"
+        braille_auto_announce_page_changes = bool(
+            data.get("braille_auto_announce_page_changes", False)
+        )
+        braille_auto_announce_print_page_changes = bool(
+            data.get("braille_auto_announce_print_page_changes", False)
+        )
+        braille_auto_announce_line_overflow = bool(
+            data.get("braille_auto_announce_line_overflow", False)
+        )
+        braille_include_proofing_status = bool(data.get("braille_include_proofing_status", True))
+        braille_include_running_head = bool(data.get("braille_include_running_head", False))
+        braille_include_continuation = bool(data.get("braille_include_continuation", True))
         raw_mp = int(data.get("multi_press_window_ms", 400))
         multi_press_window_ms = max(100, min(1000, raw_mp))
         if recent_files_limit < 1:
@@ -669,6 +714,18 @@ class Settings:
             sound_events_disabled=sound_events_disabled,
             indent_tone_scale=indent_tone_scale,
             abbreviation_backspace_behavior=abbreviation_backspace_behavior,
+            braille_cells_per_line=braille_cells_per_line,
+            braille_lines_per_page=braille_lines_per_page,
+            braille_use_form_feeds=braille_use_form_feeds,
+            braille_calculate_pages=braille_calculate_pages,
+            braille_save_sidecar=braille_save_sidecar,
+            braille_status_verbosity=braille_status_verbosity,
+            braille_auto_announce_page_changes=braille_auto_announce_page_changes,
+            braille_auto_announce_print_page_changes=braille_auto_announce_print_page_changes,
+            braille_auto_announce_line_overflow=braille_auto_announce_line_overflow,
+            braille_include_proofing_status=braille_include_proofing_status,
+            braille_include_running_head=braille_include_running_head,
+            braille_include_continuation=braille_include_continuation,
         )
 
 

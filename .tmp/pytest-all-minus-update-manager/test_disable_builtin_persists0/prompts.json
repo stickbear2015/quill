@@ -1,0 +1,9 @@
+{
+  "builtin_overrides": {
+    "builtin-check-grammar": {
+      "enabled": false,
+      "text": "You are a grammar and style editor. Review the following text and list only the corrections needed. For each correction, give: the original phrase, the corrected phrase, and a one-sentence reason. Do not rewrite the whole passage. If the text is correct, say \"No issues found.\"\n\nText:\n{selection}"
+    }
+  },
+  "user_prompts": []
+}

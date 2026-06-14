@@ -1,0 +1,26 @@
+[
+  {
+    "extra": {
+      "s3_bucket": "b"
+    },
+    "host": "s3.amazonaws.com",
+    "id": "alpha",
+    "name": "Alpha",
+    "port": 443,
+    "protocol": "s3",
+    "root_dir": "",
+    "trust_first_use": false,
+    "username": ""
+  },
+  {
+    "extra": {},
+    "host": "ftp.example.com",
+    "id": "beta",
+    "name": "Beta",
+    "port": 21,
+    "protocol": "ftp",
+    "root_dir": "",
+    "trust_first_use": false,
+    "username": ""
+  }
+]

@@ -490,6 +490,41 @@ When returning later, tell Codex:
 
 `Check codex-handoff.md and codex-review-log.md first, then continue planning.`
 
+## 2026-06-14 Main Merge Refresh
+
+- merged the latest `origin/main` into `features/publishing-providers-framework` again, this time bringing in the close-fix follow-up and braille/mainline work from `d861abb` (`feat(braille): Phase 5 translation + docs; fix(#210): never trap the editor open`)
+- resolved the merge by keeping upstream main behavior for:
+  - braille feature/catalog/settings/statusbar wiring
+  - `_on_close` hard-exit + crash-report recovery flow
+  - consolidated docs/release notes
+- re-applied only the publishing-owned pieces on top:
+  - `future.publishing` feature definition/profile visibility
+  - `File > Publish` menu and command surfaces
+  - publishing remote metadata and provider-neutral flows
+- regenerated:
+  - `tests/unit/ui/fixtures/dialog_inventory.json`
+  - `tests/unit/ui/fixtures/main_frame_public_surface.json`
+- corrected the menu-contract test so it reads all `main_frame*.py` modules again, including the power-tools helper definitions that publishing still depends on
+- confirmed `CLAUDE.md` matches `origin/main`
+
+## 2026-06-14 Verification Refresh
+
+- publishing-owned verification slice:
+  - `.venv\Scripts\pytest.exe tests/unit/core/test_features.py tests/unit/core/test_publishing.py tests/unit/core/test_publishing_browse.py tests/unit/core/test_publishing_framework.py tests/unit/ui/test_main_frame.py tests/unit/ui/test_main_frame_menu_contract.py tests/unit/ui/test_publishing_connection_dialog_a11y.py tests/unit/ui/test_dialog_inventory.py tests/unit/ui/test_main_frame_characterization.py tests/unit/tools/test_module_size_budget.py tests/unit/tools/test_check_banned_patterns.py tests/unit/tools/test_network_egress_audit.py tests/unit/tools/test_dialog_button_contract.py tests/unit/ui/test_dialog_hardening_contract.py -q --basetemp=.tmp\pytest-publishing-final-rerun`
+  - result: `121 passed`
+- broader merge-sensitive slice:
+  - `.venv\Scripts\pytest.exe tests/unit/ui/test_main_frame.py tests/unit/ui/test_main_frame_accessibility.py tests/unit/ui/test_main_frame_browse.py tests/unit/ui/test_main_frame_characterization.py tests/unit/ui/test_main_frame_clear_logs.py tests/unit/ui/test_main_frame_close_resilience.py tests/unit/ui/test_main_frame_compare_and_macros.py tests/unit/ui/test_main_frame_ctx1_wiring.py tests/unit/ui/test_main_frame_cq16_characterization.py tests/unit/ui/test_main_frame_dict2_wiring.py tests/unit/ui/test_main_frame_editing_lens.py tests/unit/ui/test_main_frame_feat19_wiring.py tests/unit/ui/test_main_frame_feedback.py tests/unit/ui/test_main_frame_forget_key.py tests/unit/ui/test_main_frame_heading_style.py tests/unit/ui/test_main_frame_insert_link.py tests/unit/ui/test_main_frame_libraries.py tests/unit/ui/test_main_frame_menu_contract.py tests/unit/ui/test_main_frame_menu_editor.py tests/unit/ui/test_main_frame_navigation.py tests/unit/ui/test_main_frame_onboarding.py tests/unit/ui/test_main_frame_open_threading.py tests/unit/ui/test_main_frame_preview_dark.py tests/unit/ui/test_main_frame_prompt_search.py tests/unit/ui/test_main_frame_quill_key.py tests/unit/ui/test_main_frame_quillins.py tests/unit/ui/test_main_frame_regex_helper.py tests/unit/ui/test_main_frame_save_as_format.py tests/unit/ui/test_main_frame_settings_dialog.py tests/unit/ui/test_main_frame_share_dialogs.py tests/unit/ui/test_main_frame_statusbar_context.py tests/unit/ui/test_main_frame_undo_atomic.py tests/unit/ui/test_main_frame_watch_service.py tests/unit/ui/test_remote_sites_dialog.py tests/unit/ui/test_connection_dialog_a11y.py tests/unit/ui/test_dialog_inventory.py tests/unit/ui/test_dialog_hardening_contract.py tests/unit/core/test_features.py tests/unit/core/test_remote_sites.py tests/unit/core/test_github_provider.py tests/unit/core/test_publishing.py tests/unit/core/test_publishing_browse.py tests/unit/core/test_publishing_framework.py tests/unit/tools/test_module_size_budget.py tests/unit/tools/test_check_banned_patterns.py tests/unit/tools/test_network_egress_audit.py tests/unit/tools/test_dialog_button_contract.py -q --basetemp=.tmp\pytest-publishing-broader-rerun`
+  - result: `429 passed`
+- full branch suite status in this environment:
+  - `pytest -q --basetemp=.tmp\pytest-all-branch` stops during collection in `tests/unit/ui/test_update_manager.py` because upstream dependencies are missing (`requests`, then `platform_utils`)
+  - after installing `requests`, `pytest -q --ignore tests/unit/ui/test_update_manager.py --basetemp=.tmp\pytest-all-minus-update-manager` still reveals upstream/mainline failures outside publishing ownership:
+    - `tests/unit/core/ai/test_ai_sessions.py::test_list_and_most_recent`
+    - `tests/unit/core/test_recovery.py::test_begin_session_offers_previous_unclean_snapshot`
+    - `tests/unit/core/test_recovery.py::test_latest_session_snapshot_and_reader`
+    - `tests/unit/core/test_recovery.py::test_concurrent_begin_session_serialize_via_lock`
+    - later run timeout in `tests/unit/core/test_reset_caches.py::test_thesaurus_preload_after_reset_is_idempotent`
+- conclusion: the publishing integration is green in the owned and merge-touching areas; the remaining full-suite blockers are upstream/environment issues, not introduced by the publishing branch work
+
 ## File Policy
 
 - these files are temporary local memory aids

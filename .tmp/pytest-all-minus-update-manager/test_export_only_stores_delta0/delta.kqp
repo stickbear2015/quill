@@ -1,0 +1,10 @@
+{
+  "author": "",
+  "bindings": {
+    "edit.find": "Alt+F"
+  },
+  "description": "",
+  "kqp_version": 1,
+  "name": "Delta",
+  "version": "1.0"
+}

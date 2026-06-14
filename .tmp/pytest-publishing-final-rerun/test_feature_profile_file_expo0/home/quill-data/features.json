@@ -1,0 +1,8 @@
+{
+  "active_profile_id": "developer_power_text",
+  "overrides": {
+    "future.cleanup": "quiet"
+  },
+  "previous_profile_id": null,
+  "show_quiet_features": true
+}

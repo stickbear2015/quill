@@ -1,0 +1,1 @@
+{"schema": "quill.extension/1", "id": "com.example.bad", "name": "Code Fence", "version": "nope", "contributes": {"commands": [{"id": "ext.fence.wrap", "title": "Wrap", "run": {"snippet": "x"}}]}}

@@ -1,0 +1,15 @@
+{
+  "builtin_overrides": {},
+  "user_prompts": [
+    {
+      "category": "Custom",
+      "enabled": false,
+      "id": "575a7607-4f48-429f-a413-27458893dd65",
+      "is_builtin": false,
+      "name": "Disabled Prompt",
+      "shortcut": "",
+      "source": "user",
+      "text": "text"
+    }
+  ]
+}

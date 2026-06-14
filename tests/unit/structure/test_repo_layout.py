@@ -78,6 +78,7 @@ def test_consolidated_docs_live_at_docs_root() -> None:
         "quillins.md",
         "userguide.md",
         "QUILL-PRD.md",
+        "braille.md",
     ):
         assert (docs / name).is_file(), f"missing consolidated docs/{name}"
     for folder in ("planning", "accessibility", "features", "engineering", "qa"):

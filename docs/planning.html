@@ -248,6 +248,22 @@ are at the top in priority order; the completed log is the running total
 at the bottom.</strong> Below the completed log is the consolidated
 planning archive (ROADMAP, editors, glow, aa, pi) with the deeper,
 ID-tagged idea backlog.</p>
+<h2 id="future-feature-plans">Future feature plans</h2>
+<p>Long-form specs for features that have not been promoted to a release
+yet live under <code>docs/</code>. These are reference designs, not
+active milestones:</p>
+<ul>
+<li><strong><a
+href="braille.md"><code>docs/braille.md</code></a></strong> —
+<strong>QUILL Braille Mode</strong> (<code>.brf</code>/<code>.brl</code>
+/<code>.pef</code>/<code>.ueb</code>). A six-phase roadmap (BRF Core,
+Page Intelligence, Proofing &amp; Progress, Validation, optional UEB
+Translation Pack, Source-to-BRF linking). English UEB only in v1.0;
+liblouis lives in an out-of-process worker, never bundled.
+Implementation will only begin after the current 0.5.0/0.6.0 push ships,
+but the spec is the source of truth for the data structures, status bar
+design, and screen-reader announcements.</li>
+</ul>
 <hr />
 <h2 id="open-issues-priority-order">Open issues (priority order)</h2>
 <h3 id="p0--verify-what-shipped-this-pass-ship-blocking">P0 — verify

@@ -1,0 +1,11 @@
+{
+  "last_macro_name": "demo",
+  "macros": {
+    "demo": {
+      "steps": [
+        "edit.find"
+      ]
+    }
+  },
+  "recording_name": null
+}
